@@ -14,7 +14,7 @@ async function serveAsset(request, env) {
   if (response.status !== 404) return withHeaders(response);
   const url = new URL(request.url);
   if (url.pathname.includes(".")) return withHeaders(response);
-  return withHeaders(await env.ASSETS.fetch(new Request(new URL("/", request.url), request)));
+  return withHeaders(await env.ASSETS.fetch(new Request(new URL("/index.html", request.url), request)));
 }
 
 function withHeaders(response) {

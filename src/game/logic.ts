@@ -110,7 +110,7 @@ export const attachClockHand = (state: GameState): GameState => {
 }
 
 export const setClockTime = (state: GameState, time: string): GameState => {
-  if (isNearTrueRouteTime(time) && state.clockState.canManualRotate) {
+  if (isNearTrueRouteTime(time) && state.clockState.canManualRotate && !state.trueRouteUnlocked) {
     return unlockTrueRoute({
       ...state,
       clockState: {
@@ -202,7 +202,7 @@ export const reducer = (state: GameState, action: GameAction): GameState => {
       }
       if (hotspot.itemReward) next = obtainItem(next, hotspot.itemReward)
       if (hotspot.memoryReward) next = unlockMemory(next, hotspot.memoryReward)
-      if (hotspot.id === 'grand-clock' && state.normalEndingCleared && state.clockState.handAttached) {
+      if (hotspot.id === 'grand-clock' && state.normalEndingCleared && state.clockState.handAttached && !state.trueRouteUnlocked) {
         next = { ...next, clockState: { ...next.clockState, canManualRotate: true } }
       }
       const message = typeof hotspot.message === 'function' ? hotspot.message(next) : hotspot.message

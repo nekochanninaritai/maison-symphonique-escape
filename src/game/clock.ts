@@ -10,6 +10,11 @@ export type ClockRect = {
   height: number
 }
 
+export type ClockDragSession = {
+  lastAngle: number
+  totalMinutes: number
+}
+
 export const minutesFromTime = (time: string): number => {
   const [hours, minutes] = time.split(':').map(Number)
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return 0
@@ -40,4 +45,42 @@ export const timeFromClockPoint = (point: ClockPoint, rect: ClockRect, currentTi
   const currentHour = Math.floor(currentMinutes / 60)
   const nextMinute = minuteFromClockAngle(clockAngleFromPoint(point, rect))
   return normalizeTime(currentHour * 60 + nextMinute)
+}
+
+export const normalizeAngleDelta = (fromAngle: number, toAngle: number): number => {
+  return ((((toAngle - fromAngle) % 360) + 540) % 360) - 180
+}
+
+export const createClockDragSessionFromAngle = (angle: number, currentTime: string): ClockDragSession => ({
+  lastAngle: angle,
+  totalMinutes: minutesFromTime(currentTime),
+})
+
+export const updateClockDragSessionFromAngle = (
+  session: ClockDragSession,
+  nextAngle: number,
+): { session: ClockDragSession; time: string } => {
+  const deltaAngle = normalizeAngleDelta(session.lastAngle, nextAngle)
+  const nextSession = {
+    lastAngle: nextAngle,
+    totalMinutes: session.totalMinutes + deltaAngle / 6,
+  }
+  return {
+    session: nextSession,
+    time: normalizeTime(nextSession.totalMinutes),
+  }
+}
+
+export const createClockDragSession = (
+  point: ClockPoint,
+  rect: ClockRect,
+  currentTime: string,
+): ClockDragSession => createClockDragSessionFromAngle(clockAngleFromPoint(point, rect), currentTime)
+
+export const updateClockDragSession = (
+  session: ClockDragSession,
+  point: ClockPoint,
+  rect: ClockRect,
+): { session: ClockDragSession; time: string } => {
+  return updateClockDragSessionFromAngle(session, clockAngleFromPoint(point, rect))
 }

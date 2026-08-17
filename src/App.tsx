@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
-import { timeFromClockPoint } from './game/clock'
+import { createClockDragSession, updateClockDragSession } from './game/clock'
 import { getMemoryCount, getVisibleHotspots, reducer } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
+import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 
@@ -129,7 +130,7 @@ function GameScreen({
           <h2>{currentArea.name}</h2>
         </div>
         <div className="hud">
-          <ClockWidget state={state} onAction={onAction} />
+          <ClockWidget state={state} />
           <MemoryMeter state={state} />
         </div>
       </header>
@@ -154,6 +155,7 @@ function GameScreen({
             onClick={() => {
               if (state.selectedItemId && hotspot.useTarget) {
                 onAction({ type: 'USE_SELECTED_ITEM', targetId: hotspot.useTarget })
+                if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
                 return
               }
               onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
@@ -171,12 +173,26 @@ function GameScreen({
             <p className="eyebrow">Focus Scene</p>
             <h3>{focusHotspot.focusScene.title}</h3>
             <p>{focusHotspot.focusScene.description}</p>
-            <button type="button" onClick={() => onFocus(null)}>閉じる</button>
+            {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
+            {state.messageQueue.length > 0 && (
+              <div className="focusMessage" aria-live="polite">
+                {state.messageQueue.map((message) => <p key={message}>{message}</p>)}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                onAction({ type: 'CLEAR_MESSAGES' })
+                onFocus(null)
+              }}
+            >
+              閉じる
+            </button>
           </div>
         </div>
       )}
 
-      <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />
+      {!activeFocus && <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />}
 
       <nav className="areaNav" aria-label="Area exits">
         {currentArea.exits.map((exit) => (
@@ -206,47 +222,82 @@ function GameScreen({
   )
 }
 
-function ClockWidget({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
-  const [dragging, setDragging] = useState(false)
-  const [manualTime, setManualTime] = useState(state.clockState.currentTime)
+function ClockWidget({ state }: { state: GameState }) {
   const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
   const minuteDeg = minute * 6
   const hourDeg = ((hour % 12) + minute / 60) * 30
-
-  useEffect(() => setManualTime(state.clockState.currentTime), [state.clockState.currentTime])
 
   return (
     <div className="clockWidget">
       <button
         type="button"
-        className={`clockFace ${state.clockState.canManualRotate ? 'manual' : ''}`}
+        className="clockFace"
         aria-label="大時計"
-        onPointerDown={(event) => {
-          if (!state.clockState.canManualRotate) return
-          setDragging(true)
-          event.currentTarget.setPointerCapture(event.pointerId)
-        }}
-        onPointerMove={(event) => {
-          if (!dragging || !state.clockState.canManualRotate) return
-          const nextTime = timeFromClockPoint(
-            { x: event.clientX, y: event.clientY },
-            event.currentTarget.getBoundingClientRect(),
-            state.clockState.currentTime,
-          )
-          onAction({ type: 'SET_CLOCK_TIME', time: nextTime })
-        }}
-        onPointerUp={() => setDragging(false)}
       >
         <span className="clockHand hour" style={{ transform: `rotate(${hourDeg}deg)` }} />
         {state.clockState.handAttached && <span className="clockHand minute" style={{ transform: `rotate(${minuteDeg}deg)` }} />}
       </button>
       <span>{state.clockState.currentTime}</span>
-      {state.clockState.canManualRotate && (
-        <label className="timeInput">
-          <span>時刻</span>
-          <input value={manualTime} onChange={(event) => setManualTime(event.target.value)} onBlur={() => onAction({ type: 'SET_CLOCK_TIME', time: manualTime })} />
-        </label>
-      )}
+    </div>
+  )
+}
+
+function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+  const dragSessionRef = useRef<ClockDragSession | null>(null)
+  const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
+  const minuteDeg = minute * 6
+  const hourDeg = ((hour % 12) + minute / 60) * 30
+  const canManipulate = state.clockState.canManualRotate && state.clockState.handAttached
+
+  useEffect(() => {
+    if (!canManipulate) dragSessionRef.current = null
+  }, [canManipulate])
+
+  return (
+    <div className="grandClockFocus">
+      <div className="clockReadout">
+        <span>TIME</span>
+        <strong>{state.clockState.currentTime}</strong>
+      </div>
+      <button
+        type="button"
+        className={`largeClockFace ${canManipulate ? 'manual' : ''}`}
+        aria-label="大時計の長針"
+        onPointerDown={(event) => {
+          if (!canManipulate) return
+          event.preventDefault()
+          event.currentTarget.setPointerCapture(event.pointerId)
+          dragSessionRef.current = createClockDragSession(
+            { x: event.clientX, y: event.clientY },
+            event.currentTarget.getBoundingClientRect(),
+            state.clockState.currentTime,
+          )
+        }}
+        onPointerMove={(event) => {
+          const dragSession = dragSessionRef.current
+          if (!dragSession || !canManipulate) return
+          event.preventDefault()
+          const next = updateClockDragSession(
+            dragSession,
+            { x: event.clientX, y: event.clientY },
+            event.currentTarget.getBoundingClientRect(),
+          )
+          dragSessionRef.current = next.session
+          onAction({ type: 'SET_CLOCK_TIME', time: next.time })
+        }}
+        onPointerUp={(event) => {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId)
+          }
+          dragSessionRef.current = null
+        }}
+        onPointerCancel={() => { dragSessionRef.current = null }}
+      >
+        <span className="clockHand hour large" style={{ transform: `rotate(${hourDeg}deg)` }} />
+        {state.clockState.handAttached && <span className="clockHand minute large" style={{ transform: `rotate(${minuteDeg}deg)` }} />}
+        {!state.clockState.handAttached && <span className="missingHand">長針なし</span>}
+      </button>
+      {canManipulate && <p className="clockHint">長針を反時計回りへ戻せる。</p>}
     </div>
   )
 }

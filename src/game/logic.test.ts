@@ -8,7 +8,15 @@ import {
   setClockTime,
   solvePuzzle,
 } from './logic'
-import { clockAngleFromPoint, minuteFromClockAngle, normalizeTime, timeFromClockPoint } from './clock'
+import {
+  clockAngleFromPoint,
+  createClockDragSessionFromAngle,
+  minuteFromClockAngle,
+  normalizeAngleDelta,
+  normalizeTime,
+  timeFromClockPoint,
+  updateClockDragSessionFromAngle,
+} from './clock'
 import { clearSave, loadGame, saveGame } from './save'
 
 describe('ClockState', () => {
@@ -46,6 +54,56 @@ describe('ClockState', () => {
     expect(minuteFromClockAngle(138)).toBe(23)
     expect(timeFromClockPoint({ x: 83.5, y: 87.2 }, rect, '09:00')).toBe('09:23')
     expect(normalizeTime(-1)).toBe('23:59')
+  })
+
+  it('moves the full clock time back by one hour after one counterclockwise rotation', () => {
+    let session = createClockDragSessionFromAngle(0, '18:00')
+
+    for (const angle of [300, 240, 180, 120, 60, 0]) {
+      const next = updateClockDragSessionFromAngle(session, angle)
+      session = next.session
+    }
+
+    expect(normalizeTime(session.totalMinutes)).toBe('17:00')
+  })
+
+  it('supports multiple counterclockwise rotations', () => {
+    let session = createClockDragSessionFromAngle(0, '18:00')
+
+    for (let rotation = 0; rotation < 3; rotation += 1) {
+      for (const angle of [300, 240, 180, 120, 60, 0]) {
+        const next = updateClockDragSessionFromAngle(session, angle)
+        session = next.session
+      }
+    }
+
+    expect(normalizeTime(session.totalMinutes)).toBe('15:00')
+  })
+
+  it('normalizes the 359 / 0 degree boundary without a large jump', () => {
+    const clockwiseBoundary = normalizeAngleDelta(359, 0)
+    const counterClockwiseBoundary = normalizeAngleDelta(0, 359)
+
+    expect(clockwiseBoundary).toBe(1)
+    expect(counterClockwiseBoundary).toBe(-1)
+  })
+
+  it('keeps manual clock control locked before the normal ending', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+
+    expect(state.clockState.canManualRotate).toBe(false)
+  })
+
+  it('unlocks manual clock control after the normal ending', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    state = reducer(state, { type: 'START_GAME' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+
+    expect(state.clockState.canManualRotate).toBe(true)
   })
 })
 

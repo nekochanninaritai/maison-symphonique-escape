@@ -4,11 +4,12 @@ import { areas } from './game/data/areas'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { createClockDragSession, updateClockDragSession } from './game/clock'
-import { getMemoryCount, getVisibleHotspots, reducer } from './game/logic'
+import { getMemoryCount, getPuzzleDependencyChecklist, getVisibleHotspots, reducer } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
 import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
+const focusOnlyPuzzleIds = new Set(['p05_piano', 'p06_grand_clock'])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -174,6 +175,7 @@ function GameScreen({
             <h3>{focusHotspot.focusScene.title}</h3>
             <p>{focusHotspot.focusScene.description}</p>
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
+            {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
               <div className="focusMessage" aria-live="polite">
                 {state.messageQueue.map((message) => <p key={message}>{message}</p>)}
@@ -207,13 +209,10 @@ function GameScreen({
       <section className="placeholderPuzzles">
         <h3>Placeholder Puzzle</h3>
         {Object.values(state.puzzles)
-          .filter((puzzle) => puzzle.areaId === state.currentArea)
+          .filter((puzzle) => puzzle.areaId === state.currentArea && !focusOnlyPuzzleIds.has(puzzle.puzzleId))
           .map((puzzle) => (
-            <PuzzleRow key={puzzle.puzzleId} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
+            <PuzzleRow key={puzzle.puzzleId} state={state} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
           ))}
-        {state.currentArea === 'garden' && state.puzzles['garden-placeholder'].status === 'solved' && state.worldMode === 'empty' && (
-          <button type="button" onClick={() => onAction({ type: 'GO_NORMAL_END' })}>NORMAL ENDへ</button>
-        )}
         {state.worldMode === 'memory' && state.currentArea === 'garden' && (
           <button type="button" onClick={() => onAction({ type: 'GO_TRUE_END' })}>TRUE ENDへ</button>
         )}
@@ -298,6 +297,22 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
         {!state.clockState.handAttached && <span className="missingHand">長針なし</span>}
       </button>
       {canManipulate && <p className="clockHint">長針を反時計回りへ戻せる。</p>}
+      {(state.puzzles.p06_grand_clock?.status === 'available' || state.puzzles.p06_grand_clock?.status === 'solved') && (
+        <PuzzleRow state={state} puzzle={state.puzzles.p06_grand_clock} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p06_grand_clock' })} />
+      )}
+    </div>
+  )
+}
+
+function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+  const puzzle = state.puzzles.p05_piano
+  return (
+    <div className="focusPuzzleStack">
+      {puzzle && (puzzle.status === 'available' || puzzle.status === 'solved') && (
+        <PuzzleRow state={state} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
+      )}
+      {state.flags.pianoMechanismUnlocked && !state.flags.pianoSecretOpened && <p className="clockHint">小さな鍵穴がある。</p>}
+      {state.flags.pianoSecretOpened && <p className="clockHint">秘密収納は開いている。</p>}
     </div>
   )
 }
@@ -344,12 +359,22 @@ function Inventory({ state, selectedItemName, onAction }: { state: GameState; se
   )
 }
 
-function PuzzleRow({ puzzle, onSolve }: { puzzle: Puzzle; onSolve: () => void }) {
+function PuzzleRow({ state, puzzle, onSolve }: { state: GameState; puzzle: Puzzle; onSolve: () => void }) {
+  const checklist = getPuzzleDependencyChecklist(state, puzzle)
   return (
     <div className="puzzleRow">
-      <span>{puzzle.title}</span>
+      <div>
+        <small>[ DEVELOPMENT PLACEHOLDER ]</small>
+        <span>{puzzle.title}</span>
+        {puzzle.description && <p>{puzzle.description}</p>}
+        {checklist.length > 0 && (
+          <ul>
+            {checklist.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        )}
+      </div>
       <strong>{puzzle.status}</strong>
-      <button type="button" disabled={puzzle.status === 'solved'} onClick={onSolve}>Solved</button>
+      <button type="button" disabled={puzzle.status !== 'available'} onClick={onSolve}>Solved</button>
     </div>
   )
 }
@@ -400,13 +425,34 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         {areaIds.map((areaId) => <button key={areaId} type="button" onClick={() => onAction({ type: 'MOVE', areaId })}>{areas[areaId].name}</button>)}
       </DebugGroup>
       <DebugGroup title="Puzzle">
-        {puzzleIds.map((puzzleId) => <button key={puzzleId} type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId })}>{puzzleId}</button>)}
+        {puzzleIds.map((puzzleId) => (
+          <div key={puzzleId} className="debugPuzzleControl">
+            <strong>{puzzleId}</strong>
+            <span>{state.puzzles[puzzleId].status}</span>
+            <small>{getPuzzleDependencyChecklist(state, state.puzzles[puzzleId]).join(' / ') || 'No requirements'}</small>
+            <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })}>locked</button>
+            <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'available' })}>available</button>
+            <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId, force: true })}>Solve</button>
+            <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })}>Reset</button>
+          </div>
+        ))}
         <button type="button" onClick={() => onAction({ type: 'RESET_PUZZLES' })}>Puzzleリセット</button>
         <button type="button" onClick={() => onAction({ type: 'SOLVE_ALL_PUZZLES' })}>全Puzzle Solved</button>
       </DebugGroup>
       <DebugGroup title="Item">
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'clock-hand' })}>長針取得</button>
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'transparent-card' })}>半透明カード取得</button>
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'small-key' })}>小さな鍵取得</button>
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'old-invitation' })}>古い招待状取得</button>
         <button type="button" onClick={() => onAction({ type: 'CLEAR_INVENTORY' })}>インベントリクリア</button>
+      </DebugGroup>
+      <DebugGroup title="Phase 2A Events">
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'dressingRoomUnlocked', value: true })}>Dressing unlock</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_CLUE', clueId: 'pianoSequence', obtained: true })}>Piano clue</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'pianoMechanismUnlocked', value: true })}>Piano mechanism</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'ceremonyLightVisible', value: true })}>Ceremony light</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'invitationObtained', value: true })}>Invitation flag</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'gardenUnlocked', value: true })}>Garden unlock</button>
       </DebugGroup>
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
@@ -466,6 +512,8 @@ function DebugState({ state }: { state: GameState }) {
       trueEndingCleared: state.trueEndingCleared,
       selectedItem: state.selectedItemId,
       puzzleStates: Object.fromEntries(Object.entries(state.puzzles).map(([id, puzzle]) => [id, puzzle.status])),
+      items: Object.fromEntries(Object.entries(state.inventory).map(([id, item]) => [id, { obtained: item.obtained, consumed: item.consumed }])),
+      clues: state.clues,
       gameFlags: state.flags,
     }, null, 2)}</pre>
   )

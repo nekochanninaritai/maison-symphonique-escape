@@ -19,21 +19,24 @@ export const areas: Record<string, Area> = {
           description: 'Maison Symphoniqueの入口にある大時計。長針だけが欠けている。',
         },
         message: (state) => {
-          if (state.normalEndingCleared && state.clockState.handAttached) {
+          if (state.normalEndingCleared && state.clockState.handAttached && !state.trueRouteUnlocked) {
             return ['時計は止まっている。', '長針に触れると、わずかに動いた。']
           }
+          if (state.flags.invitationObtained && state.puzzles.p06_grand_clock?.status !== 'solved') {
+            return ['古い招待状の裏面を、大時計の盤面へ重ねられそうだ。', '※正式問題は今後実装予定']
+          }
           if (state.clockState.handAttached) {
-            return ['長針は戻っている。', 'しかし、時計は止まったままだ。']
+            return ['長針は元の場所に戻っている。', 'しかし、時計は止まったままだ。']
           }
           return ['時計は止まっている。', '長針がない。']
         },
       },
       {
-        id: 'entrance-invitation',
+        id: 'entrance-desk',
         label: '受付台',
         position: { x: 12, y: 58, width: 24, height: 18 },
-        message: ['受付台には、まだ名前のない招待状が置かれている。'],
-        flagUpdate: { foundInvitationDesk: true },
+        message: ['受付台には、まだ名前のない記録帳が置かれている。'],
+        flagUpdate: { foundReceptionDesk: true },
       },
     ],
     exits: [{ to: 'waiting-room', label: '待合室へ' }],
@@ -52,16 +55,29 @@ export const areas: Record<string, Area> = {
         message: ['誰かを待っていた温度だけが、布地に残っている。'],
       },
       {
+        id: 'framed-score',
+        label: '額装された楽譜',
+        position: { x: 42, y: 20, width: 20, height: 22 },
+        useTarget: 'framed-score',
+        message: (state) =>
+          state.inventory['transparent-card']?.obtained && !state.clues.pianoSequence
+            ? ['額装された古い楽譜だ。', '半透明カードを重ねられそうだ。']
+            : ['額装された古い楽譜だ。'],
+      },
+      {
         id: 'dressing-door',
         label: '控室の扉',
         position: { x: 70, y: 28, width: 18, height: 38 },
-        message: ['控室へ続く扉が少し開いている。'],
+        message: (state) =>
+          state.puzzles.p01_waiting_room?.status === 'solved'
+            ? ['控室へ続く扉が開いている。']
+            : ['控室へ続く扉は、まだ静かに閉ざされている。'],
       },
     ],
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
-      { to: 'dressing-room', label: '控室へ' },
-      { to: 'ceremony', label: '挙式会場へ' },
+      { to: 'dressing-room', label: '控室へ', unlockCondition: (state) => state.puzzles.p01_waiting_room?.status === 'solved' },
+      { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.clockState.handAttached },
     ],
   },
   'dressing-room': {
@@ -70,6 +86,7 @@ export const areas: Record<string, Area> = {
     chapter: 'Waiting Room / Sub Area',
     emptyBackground: 'dressing-room',
     memoryBackground: 'dressing-room-memory',
+    unlockCondition: (state) => state.puzzles.p01_waiting_room?.status === 'solved',
     hotspots: [
       {
         id: 'clock-hand-case',
@@ -100,10 +117,19 @@ export const areas: Record<string, Area> = {
         },
         message: ['祭壇の前だけ、空気が少し澄んでいる。'],
       },
+      {
+        id: 'ceremony-light',
+        label: '淡い光',
+        position: { x: 60, y: 44, width: 16, height: 14 },
+        visibilityCondition: (state) => state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened,
+        message: ['祭壇の近くで、何かが光を反射している。', '小さな鍵を手に入れた。'],
+        itemReward: 'small-key',
+        flagUpdate: { smallKeyObtained: true },
+      },
     ],
     exits: [
       { to: 'waiting-room', label: '待合室へ' },
-      { to: 'reception', label: '披露宴会場へ' },
+      { to: 'reception', label: '披露宴会場へ', unlockCondition: (state) => state.flags.receptionUnlocked === true },
     ],
   },
   reception: {
@@ -112,23 +138,34 @@ export const areas: Record<string, Area> = {
     chapter: 'Reception',
     emptyBackground: 'reception',
     memoryBackground: 'reception-memory',
+    unlockCondition: (state) => state.flags.receptionUnlocked === true || state.worldMode === 'memory',
     hotspots: [
       {
         id: 'piano',
         label: 'ピアノ',
         position: { x: 58, y: 40, width: 28, height: 20 },
+        useTarget: 'piano',
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',
           description: '鍵盤に触れなくても、音楽の気配がかすかにある。',
         },
-        message: ['閉じたピアノが、次の音を待っている。'],
+        message: (state) => {
+          if (state.flags.pianoSecretOpened) {
+            return ['秘密収納は開いている。']
+          }
+          if (state.flags.pianoMechanismUnlocked) {
+            return ['ピアノの奥で、何かが外れたようだ。', '小さな鍵穴がある。']
+          }
+          return ['閉じたピアノが、次の音を待っている。']
+        },
       },
     ],
     exits: [
       { to: 'ceremony', label: '挙式会場へ' },
+      { to: 'waiting-room', label: '待合室へ' },
       { to: 'entrance', label: 'エントランスへ' },
-      { to: 'garden', label: '広場へ', unlockCondition: (state) => state.flags.gardenUnlocked === true },
+      { to: 'garden', label: '広場へ', unlockCondition: (state) => state.flags.gardenUnlocked === true || state.worldMode === 'memory' },
     ],
   },
   garden: {
@@ -145,7 +182,7 @@ export const areas: Record<string, Area> = {
         position: { x: 36, y: 18, width: 28, height: 42 },
         message: (state) =>
           state.worldMode === 'memory'
-            ? ['記憶の光が、門の向こうへ続いている。']
+            ? ['記憶の光が、庭の向こうへ続いている。']
             : ['広場の門は、最後の確認を待っている。'],
       },
     ],

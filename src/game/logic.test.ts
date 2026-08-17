@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   attachClockHand,
+  canMoveToArea,
   createInitialState,
   getMemoryCount,
   isNearTrueRouteTime,
@@ -119,14 +120,156 @@ describe('MemoryState', () => {
 })
 
 describe('PuzzleState', () => {
-  it('solves placeholder puzzles and applies rewards', () => {
+  it('starts with P01 available and P02-P07 locked', () => {
     let state = createInitialState()
-    state = solvePuzzle(state, 'reception-placeholder')
+    state = reducer(state, { type: 'START_GAME' })
 
-    expect(state.puzzles['reception-placeholder'].status).toBe('solved')
+    expect(state.puzzles.p01_waiting_room.status).toBe('available')
+    expect(state.puzzles.p02_ceremony.status).toBe('locked')
+    expect(state.puzzles.p03_reception.status).toBe('locked')
+    expect(state.puzzles.p04_sheet_overlay.status).toBe('locked')
+    expect(state.puzzles.p05_piano.status).toBe('locked')
+    expect(state.puzzles.p06_grand_clock.status).toBe('locked')
+    expect(state.puzzles.p07_garden_final.status).toBe('locked')
+  })
+
+  it('P01 solved unlocks Dressing Room', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    expect(state.puzzles.p01_waiting_room.status).toBe('solved')
+    expect(canMoveToArea(state, 'dressing-room')).toBe(true)
+  })
+
+  it('attaching the clock hand makes P02 available', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
+
+    expect(state.clockState.handAttached).toBe(true)
+    expect(state.puzzles.p02_ceremony.status).toBe('available')
+  })
+
+  it('P02 solved advances the clock and unlocks Reception', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    expect(state.clockState.currentTime).toBe('09:23')
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
+
+    expect(state.clockState.currentTime).toBe('12:00')
+    expect(state.flags.receptionUnlocked).toBe(true)
+    expect(canMoveToArea(state, 'reception')).toBe(true)
+  })
+
+  it('P03 solved obtains the transparent card', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p02_ceremony', true)
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p03_reception' })
+
+    expect(state.puzzles.p03_reception.status).toBe('solved')
+    expect(state.inventory['transparent-card'].obtained).toBe(true)
+  })
+
+  it('transparent card on the Waiting Room score solves P04 and obtains the piano clue', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p02_ceremony', true)
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p03_reception' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-score' })
+
+    expect(state.puzzles.p04_sheet_overlay.status).toBe('solved')
+    expect(state.clues.pianoSequence).toBe(true)
+    expect(state.flags.pianoClueObtained).toBe(true)
+  })
+
+  it('P04 solved makes P05 available', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p04_sheet_overlay', true)
+
+    expect(state.puzzles.p05_piano.status).toBe('available')
+  })
+
+  it('P05 solved unlocks the piano mechanism and Ceremony light', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p05_piano', true)
+
+    expect(state.flags.pianoMechanismUnlocked).toBe(true)
+    expect(state.flags.ceremonyLightVisible).toBe(true)
+  })
+
+  it('examining the Ceremony light obtains the small key', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_FLAG', flagId: 'ceremonyLightVisible', value: true })
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'ceremony-light' })
+
+    expect(state.inventory['small-key'].obtained).toBe(true)
+    expect(state.flags.smallKeyObtained).toBe(true)
+  })
+
+  it('piano mechanism plus small key opens the piano secret and obtains the invitation', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_FLAG', flagId: 'pianoMechanismUnlocked', value: true })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano' })
+
+    expect(state.flags.pianoSecretOpened).toBe(true)
+    expect(state.inventory['small-key'].consumed).toBe(true)
+    expect(state.inventory['old-invitation'].obtained).toBe(true)
+  })
+
+  it('obtaining the invitation makes P06 available', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p05_piano', true)
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'old-invitation' })
+
+    expect(state.puzzles.p06_grand_clock.status).toBe('available')
+  })
+
+  it('P06 solved unlocks Garden', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+
+    expect(state.puzzles.p06_grand_clock.status).toBe('solved')
     expect(state.flags.gardenUnlocked).toBe(true)
-    expect(state.memories.banquet.unlocked).toBe(true)
+    expect(canMoveToArea(state, 'garden')).toBe(true)
     expect(state.clockState.currentTime).toBe('18:00')
+  })
+
+  it('reaching Garden makes P07 available', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+
+    expect(state.flags.gardenReached).toBe(true)
+    expect(state.puzzles.p07_garden_final.status).toBe('available')
+  })
+
+  it('P07 solved goes to NORMAL END with memory 4 / 5', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final' })
+
+    expect(state.screen).toBe('normalEnd')
+    expect(state.normalEndingCleared).toBe(true)
+    expect(getMemoryCount(state)).toBe(4)
+  })
+
+  it('09:23 after NORMAL END still unlocks TRUE route and memory 5 / 5', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    state = reducer(state, { type: 'START_GAME' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '09:24' })
+
+    expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.trueRouteUnlocked).toBe(true)
+    expect(state.worldMode).toBe('memory')
+    expect(getMemoryCount(state)).toBe(5)
   })
 })
 

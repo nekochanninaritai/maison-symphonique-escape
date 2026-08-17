@@ -78,11 +78,19 @@ export type Puzzle = {
   areaId: AreaId
   status: PuzzleStatus
   prerequisites: string[]
+  requiredItems?: string[]
+  requiredFlags?: Record<string, boolean>
+  requiredClues?: string[]
+  requiredClockHandAttached?: boolean
+  description?: string
   rewards: {
     memories?: string[]
+    items?: string[]
+    clues?: string[]
     flags?: Record<string, boolean>
     unlockGarden?: boolean
     advanceClockTo?: string
+    goNormalEnd?: boolean
   }
 }
 
@@ -105,6 +113,7 @@ export type GameState = {
   examinedHotspots: Record<string, boolean>
   puzzles: Record<string, Puzzle>
   memories: Record<string, Memory>
+  clues: Record<string, boolean>
   flags: Record<string, boolean>
   clockState: ClockState
   normalEndingCleared: boolean
@@ -121,7 +130,8 @@ export type GameAction =
   | { type: 'EXAMINE'; hotspotId: string }
   | { type: 'SELECT_ITEM'; itemId: string | null }
   | { type: 'USE_SELECTED_ITEM'; targetId: string }
-  | { type: 'SOLVE_PUZZLE'; puzzleId: string }
+  | { type: 'SOLVE_PUZZLE'; puzzleId: string; force?: boolean }
+  | { type: 'SET_PUZZLE_STATUS'; puzzleId: string; status: PuzzleStatus }
   | { type: 'RESET_PUZZLES' }
   | { type: 'SOLVE_ALL_PUZZLES' }
   | { type: 'ADVANCE_CLOCK'; time: string }
@@ -130,6 +140,8 @@ export type GameAction =
   | { type: 'SET_WORLD_MODE'; worldMode: WorldMode }
   | { type: 'UNLOCK_MEMORY'; memoryId: string }
   | { type: 'SET_MEMORY_COUNT'; count: number }
+  | { type: 'SET_CLUE'; clueId: string; obtained: boolean }
+  | { type: 'SET_FLAG'; flagId: string; value: boolean }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

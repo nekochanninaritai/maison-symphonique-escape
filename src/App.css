@@ -319,6 +319,39 @@ h3 {
   border-top: 1px solid rgba(166, 120, 58, 0.25);
 }
 
+.puzzleRow > div {
+  display: grid;
+  gap: 4px;
+}
+
+.puzzleRow small {
+  color: var(--gold);
+  font-size: 0.72rem;
+}
+
+.puzzleRow p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.puzzleRow ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  list-style: none;
+}
+
+.focusPuzzleStack {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+
 .clockWidget,
 .memoryMeter {
   display: flex;
@@ -521,6 +554,25 @@ h3 {
 
 .debugGroup h4 {
   margin-bottom: 6px;
+}
+
+.debugPuzzleControl {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px;
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #374151;
+  border-radius: 6px;
+}
+
+.debugPuzzleControl small {
+  grid-column: 1 / -1;
+  color: #9ca3af;
+}
+
+.debugPuzzleControl button {
+  width: fit-content;
 }
 
 @media (max-width: 720px) {

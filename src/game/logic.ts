@@ -17,6 +17,7 @@ export const createInitialState = (): GameState => ({
   examinedHotspots: {},
   puzzles: createPuzzles(),
   memories: createMemories(),
+  clues: {},
   flags: {},
   clockState: {
     handObtained: false,
@@ -36,6 +37,40 @@ export const getVisibleHotspots = (state: GameState, areaId = state.currentArea)
 }
 
 export const getMemoryCount = (state: GameState): number => Object.values(state.memories).filter((memory) => memory.unlocked).length
+
+export const isItemAvailable = (state: GameState, itemId: string): boolean => {
+  const item = state.inventory[itemId]
+  return Boolean(item?.obtained && !item.consumed)
+}
+
+const hasPuzzlePrerequisites = (state: GameState, puzzle: Puzzle): boolean => {
+  const puzzlesSolved = puzzle.prerequisites.every((id) => state.puzzles[id]?.status === 'solved')
+  const itemsReady = (puzzle.requiredItems ?? []).every((itemId) => isItemAvailable(state, itemId))
+  const flagsReady = Object.entries(puzzle.requiredFlags ?? {}).every(([flagId, value]) => state.flags[flagId] === value)
+  const cluesReady = (puzzle.requiredClues ?? []).every((clueId) => state.clues[clueId] === true)
+  const clockReady = !puzzle.requiredClockHandAttached || state.clockState.handAttached
+  return puzzlesSolved && itemsReady && flagsReady && cluesReady && clockReady
+}
+
+export const refreshPuzzleAvailability = (state: GameState): GameState => ({
+  ...state,
+  puzzles: Object.fromEntries(
+    Object.entries(state.puzzles).map(([puzzleId, puzzle]) => [
+      puzzleId,
+      puzzle.status === 'solved'
+        ? puzzle
+        : { ...puzzle, status: hasPuzzlePrerequisites(state, puzzle) ? 'available' : 'locked' },
+    ]),
+  ),
+})
+
+export const getPuzzleDependencyChecklist = (state: GameState, puzzle: Puzzle): string[] => [
+  ...puzzle.prerequisites.map((id) => `${state.puzzles[id]?.status === 'solved' ? '✓' : '✗'} ${id} solved`),
+  ...(puzzle.requiredItems ?? []).map((itemId) => `${isItemAvailable(state, itemId) ? '✓' : '✗'} Item: ${itemId}`),
+  ...Object.entries(puzzle.requiredFlags ?? {}).map(([flagId, value]) => `${state.flags[flagId] === value ? '✓' : '✗'} Flag: ${flagId} = ${value}`),
+  ...(puzzle.requiredClues ?? []).map((clueId) => `${state.clues[clueId] ? '✓' : '✗'} Clue: ${clueId}`),
+  ...(puzzle.requiredClockHandAttached ? [`${state.clockState.handAttached ? '✓' : '✗'} Clock hand attached`] : []),
+]
 
 export const isNearTrueRouteTime = (time: string): boolean => {
   const [hour, minute] = time.split(':').map(Number)
@@ -85,6 +120,27 @@ export const obtainItem = (state: GameState, itemId: string): GameState => {
         : state.clockState,
   }
 }
+
+const consumeItem = (state: GameState, itemId: string): GameState => {
+  const item = state.inventory[itemId]
+  if (!item) return state
+  return {
+    ...state,
+    selectedItemId: state.selectedItemId === itemId ? null : state.selectedItemId,
+    inventory: {
+      ...state.inventory,
+      [itemId]: cloneItem(item, { obtained: false, consumed: true }),
+    },
+  }
+}
+
+const unlockClue = (state: GameState, clueId: string): GameState => ({
+  ...state,
+  clues: {
+    ...state.clues,
+    [clueId]: true,
+  },
+})
 
 export const attachClockHand = (state: GameState): GameState => {
   const hand = state.inventory['clock-hand']
@@ -152,17 +208,23 @@ export const unlockTrueRoute = (state: GameState): GameState => {
   return withMessage(next, ['時計の針が09:23で静かに止まった。', '最後の記憶が戻った。'])
 }
 
-export const solvePuzzle = (state: GameState, puzzleId: string): GameState => {
-  const puzzle = state.puzzles[puzzleId]
+export const solvePuzzle = (state: GameState, puzzleId: string, force = false): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  const puzzle = current.puzzles[puzzleId]
   if (!puzzle || puzzle.status === 'solved') return state
-  const missingPrerequisite = puzzle.prerequisites.some((id) => state.puzzles[id]?.status !== 'solved')
-  if (missingPrerequisite) {
-    return withMessage(state, ['このPlaceholder Puzzleは、まだ前提条件を満たしていない。'])
+  if (puzzle.status !== 'available' && !force) {
+    return withMessage(current, ['このPlaceholder Puzzleは、まだ前提条件を満たしていない。'])
   }
 
-  let next = updatePuzzle(state, puzzleId, { status: 'solved' })
+  let next = updatePuzzle(current, puzzleId, { status: 'solved' })
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
+  })
+  puzzle.rewards.items?.forEach((itemId) => {
+    next = obtainItem(next, itemId)
+  })
+  puzzle.rewards.clues?.forEach((clueId) => {
+    next = unlockClue(next, clueId)
   })
   if (puzzle.rewards.flags) {
     next = { ...next, flags: { ...next.flags, ...puzzle.rewards.flags } }
@@ -173,7 +235,21 @@ export const solvePuzzle = (state: GameState, puzzleId: string): GameState => {
   if (puzzle.rewards.advanceClockTo) {
     next = advanceClock(next, puzzle.rewards.advanceClockTo)
   }
-  return withMessage(next, [`${puzzle.title} をSolvedにした。`])
+  if (puzzle.rewards.goNormalEnd) {
+    next = {
+      ...next,
+      screen: 'normalEnd',
+      normalEndingCleared: true,
+      memories: Object.fromEntries(
+        Object.entries(next.memories).map(([id, memory], index) => [id, { ...memory, unlocked: index < 4 }]),
+      ),
+    }
+  }
+  const messages =
+    puzzleId === 'p05_piano'
+      ? ['カチッ。', 'ピアノの内部で、何かが動いたようだ。']
+      : [`${puzzle.title} をSolvedにした。`]
+  return withMessage(refreshPuzzleAvailability(next), messages)
 }
 
 export const canMoveToArea = (state: GameState, areaId: AreaId): boolean => {
@@ -181,7 +257,7 @@ export const canMoveToArea = (state: GameState, areaId: AreaId): boolean => {
   return Boolean(area) && (!area.unlockCondition || area.unlockCondition(state))
 }
 
-export const reducer = (state: GameState, action: GameAction): GameState => {
+const reduceCore = (state: GameState, action: GameAction): GameState => {
   switch (action.type) {
     case 'START_PROLOGUE':
       return { ...state, screen: 'prologue', messageQueue: [] }
@@ -191,7 +267,14 @@ export const reducer = (state: GameState, action: GameAction): GameState => {
       return { ...state, screen: 'title', chapter: 'Title', messageQueue: [] }
     case 'MOVE':
       if (!canMoveToArea(state, action.areaId)) return withMessage(state, ['まだその場所へは進めない。'])
-      return { ...state, screen: 'game', currentArea: action.areaId, chapter: areas[action.areaId].chapter, messageQueue: [] }
+      return {
+        ...state,
+        screen: 'game',
+        currentArea: action.areaId,
+        chapter: areas[action.areaId].chapter,
+        flags: action.areaId === 'garden' ? { ...state.flags, gardenReached: true } : state.flags,
+        messageQueue: [],
+      }
     case 'EXAMINE': {
       const hotspot = getVisibleHotspots(state).find((candidate) => candidate.id === action.hotspotId)
       if (!hotspot) return state
@@ -212,13 +295,37 @@ export const reducer = (state: GameState, action: GameAction): GameState => {
       return { ...state, selectedItemId: action.itemId }
     case 'USE_SELECTED_ITEM':
       if (state.selectedItemId === 'clock-hand' && action.targetId === 'grand-clock') return attachClockHand(state)
+      if (state.selectedItemId === 'transparent-card' && action.targetId === 'framed-score') {
+        const current = refreshPuzzleAvailability(state)
+        if (current.puzzles.p04_sheet_overlay?.status !== 'available') {
+          return withMessage(current, ['カードを重ねても、まだ何も読み取れない。'])
+        }
+        return withMessage(solvePuzzle(current, 'p04_sheet_overlay'), ['いくつかの音が読み取れた。', '※正式な音列は今後実装予定'])
+      }
+      if (state.selectedItemId === 'small-key' && action.targetId === 'piano') {
+        if (!state.flags.pianoMechanismUnlocked) {
+          return withMessage(state, ['鍵は合いそうだが、まだ内部の仕掛けが動いていない。'])
+        }
+        if (state.flags.pianoSecretOpened) {
+          return withMessage(state, ['秘密収納はすでに開いている。'])
+        }
+        return withMessage(
+          refreshPuzzleAvailability({
+            ...obtainItem(consumeItem(state, 'small-key'), 'old-invitation'),
+            flags: { ...state.flags, pianoSecretOpened: true, invitationObtained: true },
+          }),
+          ['小さな鍵が回った。', 'ピアノの秘密収納から、古い招待状を手に入れた。'],
+        )
+      }
       return withMessage(state, ['今は使えないようだ。'])
     case 'SOLVE_PUZZLE':
-      return solvePuzzle(state, action.puzzleId)
+      return solvePuzzle(state, action.puzzleId, action.force)
+    case 'SET_PUZZLE_STATUS':
+      return updatePuzzle(state, action.puzzleId, { status: action.status })
     case 'RESET_PUZZLES':
       return { ...state, puzzles: createPuzzles() }
     case 'SOLVE_ALL_PUZZLES':
-      return Object.keys(state.puzzles).reduce((next, puzzleId) => solvePuzzle(next, puzzleId), state)
+      return Object.keys(state.puzzles).reduce((next, puzzleId) => solvePuzzle(next, puzzleId, true), state)
     case 'ADVANCE_CLOCK':
       return advanceClock(state, action.time)
     case 'SET_CLOCK_TIME':
@@ -236,6 +343,10 @@ export const reducer = (state: GameState, action: GameAction): GameState => {
       )
       return { ...state, memories }
     }
+    case 'SET_CLUE':
+      return { ...state, clues: { ...state.clues, [action.clueId]: action.obtained } }
+    case 'SET_FLAG':
+      return { ...state, flags: { ...state.flags, [action.flagId]: action.value } }
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':
@@ -268,4 +379,9 @@ export const reducer = (state: GameState, action: GameAction): GameState => {
     default:
       return state
   }
+}
+
+export const reducer = (state: GameState, action: GameAction): GameState => {
+  if (action.type === 'RESET_ALL' || action.type === 'SET_PUZZLE_STATUS') return reduceCore(state, action)
+  return refreshPuzzleAvailability(reduceCore(state, action))
 }

@@ -1,0 +1,448 @@
+:root {
+  --paper: #fbf7ef;
+  --ink: #2b2522;
+  --muted: #74665d;
+  --line: #c8b69f;
+  --gold: #a6783a;
+  --rose: #a65f61;
+  --green: #506b5a;
+  --blue: #415d75;
+  --shadow: 0 18px 50px rgba(52, 40, 28, 0.22);
+  font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', system-ui, sans-serif;
+  color: var(--ink);
+  background: #211f22;
+  letter-spacing: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: var(--ink);
+  background: #fffaf0;
+  font: inherit;
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+.appShell {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(rgba(22, 20, 21, 0.56), rgba(22, 20, 21, 0.72)),
+    repeating-linear-gradient(90deg, #2a2626 0, #2a2626 18px, #312b2a 18px, #312b2a 36px);
+}
+
+.titleScreen,
+.readingScreen,
+.gameScreen {
+  width: min(100%, 1120px);
+  min-height: 100svh;
+  background: var(--paper);
+}
+
+.titleScreen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.titleBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(38, 31, 27, 0.08), rgba(38, 31, 27, 0.28)),
+    radial-gradient(circle at 50% 25%, rgba(255, 245, 218, 0.92), rgba(160, 121, 72, 0.28) 42%, rgba(43, 37, 34, 0.18) 72%),
+    linear-gradient(135deg, #efe4d0, #d7c1a4 42%, #697868);
+}
+
+.titleContent {
+  position: relative;
+  width: min(92%, 680px);
+  padding: 32px 18px;
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--gold);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 18px;
+  font-size: clamp(2rem, 8vw, 4.8rem);
+  line-height: 1.08;
+}
+
+h2 {
+  margin-bottom: 12px;
+  font-size: 1.7rem;
+}
+
+h3 {
+  margin-bottom: 8px;
+}
+
+.lead {
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.buttonRow,
+.areaNav,
+.inventoryGrid,
+.debugGroup > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.buttonRow {
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.secondary {
+  background: #eff3eb;
+}
+
+.ghost {
+  background: transparent;
+}
+
+.titleStats {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.readingScreen {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 10px;
+  padding: 28px;
+}
+
+.readingScreen > * {
+  max-width: 720px;
+}
+
+.ending {
+  justify-items: center;
+  text-align: center;
+}
+
+.gameScreen {
+  display: grid;
+  grid-template-rows: auto minmax(300px, 1fr) auto auto auto;
+  gap: 12px;
+  padding: 12px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.topBar h2 {
+  margin-bottom: 0;
+}
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage {
+  position: relative;
+  min-height: 48svh;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #cab489;
+}
+
+.stage.memory {
+  background: #9eb0a4;
+}
+
+.placeholderScene {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: #fffdf8;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.34);
+  background:
+    linear-gradient(160deg, rgba(64, 72, 84, 0.18), rgba(86, 61, 48, 0.24)),
+    repeating-linear-gradient(45deg, transparent 0, transparent 18px, rgba(255, 255, 255, 0.08) 18px, rgba(255, 255, 255, 0.08) 20px);
+}
+
+.placeholderScene span {
+  font-size: clamp(2rem, 10vw, 5rem);
+  font-weight: 700;
+}
+
+.hotspot {
+  position: absolute;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  color: transparent;
+}
+
+.hotspot.visible {
+  border: 2px dashed #d34848;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  text-shadow: 0 1px 6px #000;
+}
+
+.focusScene {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(28, 24, 23, 0.58);
+}
+
+.focusScene > div {
+  width: min(100%, 520px);
+  padding: 22px;
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.messageWindow {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffaf0;
+  box-shadow: var(--shadow);
+}
+
+.areaNav {
+  justify-content: center;
+}
+
+.inventory,
+.placeholderPuzzles {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.72);
+}
+
+.inventory h3,
+.placeholderPuzzles h3 {
+  margin-bottom: 6px;
+  font-size: 1rem;
+}
+
+.inventoryGrid button {
+  width: min(100%, 280px);
+  display: grid;
+  gap: 4px;
+  text-align: left;
+}
+
+.inventoryGrid .selected {
+  border-color: var(--rose);
+  box-shadow: inset 0 0 0 1px var(--rose);
+}
+
+.inventoryGrid small,
+.emptyText {
+  color: var(--muted);
+}
+
+.puzzleRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-top: 1px solid rgba(166, 120, 58, 0.25);
+}
+
+.clockWidget,
+.memoryMeter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.memoryMeter {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.memoryMeter strong {
+  color: var(--gold);
+  letter-spacing: 0.06em;
+}
+
+.clockFace {
+  position: relative;
+  width: 58px;
+  min-height: 58px;
+  border-radius: 50%;
+  padding: 0;
+  background: #f7efe2;
+}
+
+.clockFace.manual {
+  border-color: var(--rose);
+}
+
+.clockHand {
+  position: absolute;
+  left: calc(50% - 1px);
+  bottom: 50%;
+  width: 2px;
+  transform-origin: 50% 100%;
+  background: var(--ink);
+}
+
+.clockHand.hour {
+  height: 17px;
+}
+
+.clockHand.minute {
+  height: 23px;
+  background: var(--gold);
+}
+
+.timeInput {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.timeInput input {
+  width: 68px;
+  min-height: 36px;
+}
+
+.debugButton {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  z-index: 20;
+  background: #1f2937;
+  color: #fff;
+}
+
+.debugPanel {
+  position: fixed;
+  right: 10px;
+  bottom: 64px;
+  z-index: 19;
+  width: min(94vw, 460px);
+  max-height: 82svh;
+  overflow: auto;
+  padding: 12px;
+  border-radius: 8px;
+  color: #e5e7eb;
+  background: #111827;
+  box-shadow: var(--shadow);
+}
+
+.debugPanel header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.debugPanel button {
+  min-height: 34px;
+  padding: 6px 8px;
+  color: #111827;
+}
+
+.debugState {
+  overflow: auto;
+  padding: 8px;
+  border-radius: 6px;
+  color: #d1d5db;
+  background: #030712;
+  font-size: 0.72rem;
+}
+
+.debugGroup {
+  padding-top: 8px;
+  border-top: 1px solid #374151;
+}
+
+.debugGroup h4 {
+  margin-bottom: 6px;
+}
+
+@media (max-width: 720px) {
+  .gameScreen {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .topBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hud {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stage {
+    min-height: 46svh;
+  }
+
+  .puzzleRow {
+    grid-template-columns: 1fr;
+  }
+
+  .areaNav button,
+  .buttonRow button {
+    flex: 1 1 140px;
+  }
+}

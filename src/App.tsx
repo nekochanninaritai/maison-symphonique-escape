@@ -3,7 +3,8 @@ import './App.css'
 import { areas } from './game/data/areas'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
-import { getMemoryCount, getVisibleHotspots, normalizeTime, reducer } from './game/logic'
+import { timeFromClockPoint } from './game/clock'
+import { getMemoryCount, getVisibleHotspots, reducer } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
@@ -49,8 +50,8 @@ function App() {
           onAction={send}
         />
       )}
-      {state.screen === 'normalEnd' && <NormalEnd state={state} onContinue={() => send({ type: 'START_GAME' })} onTitle={() => send({ type: 'RESET_ALL' })} />}
-      {state.screen === 'trueEnd' && <TrueEnd state={state} onTitle={() => send({ type: 'RESET_ALL' })} />}
+      {state.screen === 'normalEnd' && <NormalEnd state={state} onContinue={() => send({ type: 'START_GAME' })} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
+      {state.screen === 'trueEnd' && <TrueEnd state={state} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
       {DEBUG_MODE && (
         <>
           <button className="debugButton" type="button" onClick={() => setDebugOpen((value) => !value)}>
@@ -207,19 +208,12 @@ function GameScreen({
 
 function ClockWidget({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
   const [dragging, setDragging] = useState(false)
-  const [dragStartX, setDragStartX] = useState(0)
-  const [dragStartMinutes, setDragStartMinutes] = useState(0)
   const [manualTime, setManualTime] = useState(state.clockState.currentTime)
   const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
   const minuteDeg = minute * 6
   const hourDeg = ((hour % 12) + minute / 60) * 30
 
   useEffect(() => setManualTime(state.clockState.currentTime), [state.clockState.currentTime])
-
-  const minutesFromTime = (time: string) => {
-    const [h, m] = time.split(':').map(Number)
-    return h * 60 + m
-  }
 
   return (
     <div className="clockWidget">
@@ -230,14 +224,15 @@ function ClockWidget({ state, onAction }: { state: GameState; onAction: (action:
         onPointerDown={(event) => {
           if (!state.clockState.canManualRotate) return
           setDragging(true)
-          setDragStartX(event.clientX)
-          setDragStartMinutes(minutesFromTime(state.clockState.currentTime))
           event.currentTarget.setPointerCapture(event.pointerId)
         }}
         onPointerMove={(event) => {
           if (!dragging || !state.clockState.canManualRotate) return
-          const delta = event.clientX - dragStartX
-          const nextTime = normalizeTime(dragStartMinutes - delta * 3)
+          const nextTime = timeFromClockPoint(
+            { x: event.clientX, y: event.clientY },
+            event.currentTarget.getBoundingClientRect(),
+            state.clockState.currentTime,
+          )
           onAction({ type: 'SET_CLOCK_TIME', time: nextTime })
         }}
         onPointerUp={() => setDragging(false)}
@@ -341,6 +336,7 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
   const areaIds = Object.keys(areas) as AreaId[]
   const memoryIds = Object.keys(state.memories)
   const puzzleIds = Object.keys(state.puzzles)
+  const [debugTime, setDebugTime] = useState(state.clockState.currentTime)
 
   return (
     <aside className="debugPanel">
@@ -364,6 +360,11 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
         <button type="button" onClick={() => onAction({ type: 'ADVANCE_CLOCK', time: '12:34' })}>自動進行テスト</button>
+        <label className="debugInput">
+          <span>Time</span>
+          <input value={debugTime} onChange={(event) => setDebugTime(event.target.value)} />
+          <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: debugTime })}>Set</button>
+        </label>
         <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_MANUAL', enabled: true })}>手動ON</button>
         <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_MANUAL', enabled: false })}>手動OFF</button>
         <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: '09:23' })}>09:23</button>

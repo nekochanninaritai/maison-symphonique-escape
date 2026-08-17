@@ -8,6 +8,7 @@ import {
   setClockTime,
   solvePuzzle,
 } from './logic'
+import { clockAngleFromPoint, minuteFromClockAngle, normalizeTime, timeFromClockPoint } from './clock'
 import { clearSave, loadGame, saveGame } from './save'
 
 describe('ClockState', () => {
@@ -36,6 +37,15 @@ describe('ClockState', () => {
     expect(isNearTrueRouteTime('09:21')).toBe(true)
     expect(isNearTrueRouteTime('09:25')).toBe(true)
     expect(isNearTrueRouteTime('09:26')).toBe(false)
+  })
+
+  it('converts circular pointer movement into clock time', () => {
+    const rect = { left: 0, top: 0, width: 100, height: 100 }
+
+    expect(clockAngleFromPoint({ x: 50, y: 0 }, rect)).toBe(0)
+    expect(minuteFromClockAngle(138)).toBe(23)
+    expect(timeFromClockPoint({ x: 83.5, y: 87.2 }, rect, '09:00')).toBe('09:23')
+    expect(normalizeTime(-1)).toBe('23:59')
   })
 })
 
@@ -79,8 +89,22 @@ describe('Ending flow', () => {
 
     expect(state.trueRouteUnlocked).toBe(true)
     expect(state.worldMode).toBe('memory')
-    expect(getMemoryCount(state)).toBe(1)
+    expect(getMemoryCount(state)).toBe(5)
     expect(state.memories.september23.unlocked).toBe(true)
+  })
+})
+
+describe('Inventory', () => {
+  it('obtains, selects, and consumes the clock hand on the grand clock', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
+
+    expect(state.clockState.handAttached).toBe(true)
+    expect(state.clockState.canManualRotate).toBe(false)
+    expect(state.inventory['clock-hand'].obtained).toBe(false)
+    expect(state.inventory['clock-hand'].consumed).toBe(true)
   })
 })
 

@@ -116,6 +116,7 @@ export type GameState = {
 export type GameAction =
   | { type: 'START_PROLOGUE' }
   | { type: 'START_GAME' }
+  | { type: 'SHOW_TITLE' }
   | { type: 'MOVE'; areaId: AreaId }
   | { type: 'EXAMINE'; hotspotId: string }
   | { type: 'SELECT_ITEM'; itemId: string | null }

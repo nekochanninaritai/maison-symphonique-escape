@@ -3,6 +3,7 @@ import { createItems } from './data/items'
 import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
 import { gameConfig } from './config'
+export { normalizeTime } from './clock'
 import type { AreaId, GameAction, GameState, Hotspot, Item, Puzzle } from './types'
 
 export const createInitialState = (): GameState => ({
@@ -40,14 +41,6 @@ export const isNearTrueRouteTime = (time: string): boolean => {
   const [hour, minute] = time.split(':').map(Number)
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false
   return hour === 9 && Math.abs(minute - 23) <= 2
-}
-
-export const normalizeTime = (totalMinutes: number): string => {
-  const dayMinutes = 24 * 60
-  const normalized = ((Math.round(totalMinutes) % dayMinutes) + dayMinutes) % dayMinutes
-  const hours = Math.floor(normalized / 60)
-  const minutes = normalized % 60
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
 }
 
 const cloneItem = (item: Item, patch: Partial<Item>): Item => ({ ...item, ...patch })
@@ -144,7 +137,7 @@ export const advanceClock = (state: GameState, targetTime: string): GameState =>
 })
 
 export const unlockTrueRoute = (state: GameState): GameState => {
-  let next = unlockMemory(state, 'september23')
+  let next = Object.keys(state.memories).reduce((current, memoryId) => unlockMemory(current, memoryId), state)
   next = {
     ...next,
     trueRouteUnlocked: true,
@@ -194,6 +187,8 @@ export const reducer = (state: GameState, action: GameAction): GameState => {
       return { ...state, screen: 'prologue', messageQueue: [] }
     case 'START_GAME':
       return { ...state, screen: 'game', currentArea: 'entrance', chapter: areas.entrance.chapter, messageQueue: [] }
+    case 'SHOW_TITLE':
+      return { ...state, screen: 'title', chapter: 'Title', messageQueue: [] }
     case 'MOVE':
       if (!canMoveToArea(state, action.areaId)) return withMessage(state, ['まだその場所へは進めない。'])
       return { ...state, screen: 'game', currentArea: action.areaId, chapter: areas[action.areaId].chapter, messageQueue: [] }

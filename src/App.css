@@ -399,6 +399,21 @@ h3 {
   color: #111827;
 }
 
+.debugInput {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 4px;
+  border: 1px solid #374151;
+  border-radius: 6px;
+}
+
+.debugInput input {
+  width: 72px;
+  min-height: 30px;
+}
+
 .debugState {
   overflow: auto;
   padding: 8px;

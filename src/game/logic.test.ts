@@ -5,6 +5,7 @@ import {
   createInitialState,
   getMemoryCount,
   isNearTrueRouteTime,
+  lightCeremonyCandle,
   moveTeaCup,
   reducer,
   setClockTime,
@@ -19,6 +20,7 @@ import {
   timeFromClockPoint,
   updateClockDragSessionFromAngle,
 } from './clock'
+import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
 import { clearSave, loadGame, saveGame } from './save'
 
 describe('ClockState', () => {
@@ -194,6 +196,34 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('09:23')
   })
 
+  it('correct P02 candle sequence solves the Ceremony puzzle', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    for (const candleId of correctCandleSequence) {
+      state = lightCeremonyCandle(state, candleId)
+    }
+
+    expect(state.puzzles.p02_ceremony.status).toBe('solved')
+    expect(state.ceremonyCandles.input).toEqual(correctCandleSequence)
+    expect(state.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
+    expect(state.flags.receptionUnlocked).toBe(true)
+  })
+
+  it('wrong P02 candle sequence resets input without solving', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    const wrongFirst = allCandleIds.find((id) => id !== correctCandleSequence[0])
+    expect(wrongFirst).toBeDefined()
+
+    state = lightCeremonyCandle(state, wrongFirst!)
+
+    expect(state.puzzles.p02_ceremony.status).toBe('available')
+    expect(state.ceremonyCandles.input).toEqual([])
+    expect(state.ceremonyCandles.lit).toEqual([])
+    expect(state.messageQueue).toEqual(['炎が、ふっと消えた。'])
+  })
+
   it('Clock Hand attached then P02 solved starts the Grand Clock', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
@@ -218,6 +248,19 @@ describe('PuzzleState', () => {
 
     expect(state.clockState.currentTime).toBe('12:00')
     expect(state.flags.grandClockStarted).toBe(true)
+  })
+
+  it('P02 solved keeps all candles lit on revisit', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    for (const candleId of correctCandleSequence) {
+      state = reducer(state, { type: 'LIGHT_CEREMONY_CANDLE', candleId })
+    }
+
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'altar' })
+
+    expect(state.puzzles.p02_ceremony.status).toBe('solved')
+    expect(state.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
   })
 
   it('Grand Clock start event fires only once', () => {
@@ -269,6 +312,7 @@ describe('PuzzleState', () => {
 
     expect(state.flags.pianoMechanismUnlocked).toBe(true)
     expect(state.flags.ceremonyLightVisible).toBe(true)
+    expect(lightEventVase?.isFutureLightEventAnchor).toBe(true)
   })
 
   it('examining the Ceremony light obtains the small key', () => {
@@ -394,10 +438,16 @@ describe('SaveState', () => {
 
     let state = reducer(createInitialState(), { type: 'MARK_NORMAL_END_CLEARED' })
     state = moveTeaCup(state, 'coffee', 'tiramisu')
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    for (const candleId of correctCandleSequence) {
+      state = lightCeremonyCandle(state, candleId)
+    }
     saveGame(state)
     const loaded = loadGame()
     expect(loaded.normalEndingCleared).toBe(true)
     expect(loaded.teaTime.cupSlots.tiramisu).toBe('coffee')
+    expect(loaded.puzzles.p02_ceremony.status).toBe('solved')
+    expect(loaded.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
     clearSave()
     expect(loadGame().normalEndingCleared).toBe(false)
     vi.unstubAllGlobals()

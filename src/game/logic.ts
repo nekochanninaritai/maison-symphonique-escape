@@ -2,6 +2,7 @@ import { areas } from './data/areas'
 import { createItems } from './data/items'
 import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
+import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { gameConfig } from './config'
 export { normalizeTime } from './clock'
@@ -22,6 +23,10 @@ export const createInitialState = (): GameState => ({
   flags: {},
   teaTime: {
     cupSlots: initialTeaTimeSlots,
+  },
+  ceremonyCandles: {
+    input: [],
+    lit: [],
   },
   clockState: {
     handObtained: false,
@@ -248,6 +253,9 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzleId === 'p01_waiting_room') {
     next = { ...next, teaTime: { cupSlots: correctTeaTimeSlots } }
   }
+  if (puzzleId === 'p02_ceremony') {
+    next = { ...next, ceremonyCandles: { input: correctCandleSequence, lit: allCandleIds } }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -282,14 +290,58 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
     puzzleId === 'p01_waiting_room'
       ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', '館のどこかで、扉の開く音がした。']
       : grandClockStart.started
-        ? ['時計の奥で、止まっていた歯車が静かに動き出した。']
+        ? puzzleId === 'p02_ceremony'
+          ? ['四つの灯が、静かに祭壇を照らした。', '――ゴーン。', '遠くで、時計の鐘が鳴った。']
+          : ['時計の奥で、止まっていた歯車が静かに動き出した。']
         : puzzleId === 'p02_ceremony'
-          ? ['時計の内部から、かすかに機構音が聞こえる。', 'しかし、長針がない。']
+          ? ['四つの灯が、静かに祭壇を照らした。']
           : puzzleId === 'p05_piano'
             ? ['カチッ。', 'ピアノの内部で、何かが動いたようだ。']
             : [`${puzzle.title} をSolvedにした。`]
   return withMessage(refreshPuzzleAvailability(next), messages)
 }
+
+export const lightCeremonyCandle = (state: GameState, candleId: string): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  if (current.puzzles.p02_ceremony?.status === 'solved') return current
+  if (current.puzzles.p02_ceremony?.status !== 'available') return current
+
+  const nextIndex = current.ceremonyCandles.input.length
+  if (correctCandleSequence[nextIndex] !== candleId) {
+    return withMessage(
+      {
+        ...current,
+        ceremonyCandles: { input: [], lit: [] },
+      },
+      ['炎が、ふっと消えた。'],
+    )
+  }
+
+  const input = [...current.ceremonyCandles.input, candleId]
+  const lit = Array.from(new Set([...current.ceremonyCandles.lit, candleId]))
+  const next = { ...current, ceremonyCandles: { input, lit } }
+  return input.length === correctCandleSequence.length ? solvePuzzle(next, 'p02_ceremony') : next
+}
+
+export const resetP02Candles = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    ceremonyCandles: { input: [], lit: [] },
+    flags: {
+      ...state.flags,
+      grandClockStarted: false,
+      receptionUnlocked: false,
+    },
+    puzzles: {
+      ...state.puzzles,
+      p02_ceremony: { ...state.puzzles.p02_ceremony, status: 'available' },
+    },
+    clockState: {
+      ...state.clockState,
+      currentTime: '09:23',
+    },
+    messageQueue: ['P02 Candle Puzzle をリセットした。'],
+  })
 
 export const moveTeaCup = (state: GameState, cupId: string, targetSweetId: string): GameState => {
   const current = refreshPuzzleAvailability(state)
@@ -431,6 +483,10 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return moveTeaCup(state, action.cupId, action.targetSweetId)
     case 'RESET_P01_TEA_TIME':
       return resetP01TeaTime(state)
+    case 'LIGHT_CEREMONY_CANDLE':
+      return lightCeremonyCandle(state, action.candleId)
+    case 'RESET_P02_CANDLES':
+      return resetP02Candles(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':

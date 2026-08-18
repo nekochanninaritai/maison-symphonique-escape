@@ -1,4 +1,5 @@
-import type { Area } from '../types'
+import { ceremonyVases, lightEventVase } from './ceremonyCandles'
+import type { Area, GameState } from '../types'
 
 export const areas: Record<string, Area> = {
   entrance: {
@@ -63,7 +64,7 @@ export const areas: Record<string, Area> = {
           title: 'Puzzle 01「ティータイム」',
           description: '四人分のティーセットが並んでいる。どうやら、カップの位置が入れ替わっているようだ。',
         },
-        message: (state) =>
+        message: (state: GameState) =>
           state.puzzles.p01_waiting_room?.status === 'solved'
             ? ['四つのティーセットは、静かに整っている。']
             : ['四人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
@@ -73,7 +74,7 @@ export const areas: Record<string, Area> = {
         label: '額装された楽譜',
         position: { x: 42, y: 20, width: 20, height: 22 },
         useTarget: 'framed-score',
-        message: (state) =>
+        message: (state: GameState) =>
           state.inventory['transparent-card']?.obtained && !state.clues.pianoSequence
             ? ['額装された古い楽譜だ。', '半透明カードを重ねられそうだ。']
             : ['額装された古い楽譜だ。'],
@@ -131,22 +132,39 @@ export const areas: Record<string, Area> = {
     unlockCondition: (state) => state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved',
     hotspots: [
       {
+        id: 'virgin-road',
+        label: 'バージンロード',
+        position: { x: 38, y: 46, width: 24, height: 42 },
+        message: ['祭壇へ向かって、まっすぐバージンロードが伸びている。'],
+      },
+      {
         id: 'altar',
         label: '祭壇',
         position: { x: 34, y: 18, width: 32, height: 30 },
         focusScene: {
           id: 'focus-altar',
           title: '祭壇',
-          description: '誓いの言葉を待つように、静かに光を受けている。',
+          description: '形の異なる四本のキャンドルが、まだ火を待っている。',
         },
         message: ['祭壇の前だけ、空気が少し澄んでいる。'],
       },
+      ...ceremonyVases.map((vase): Area['hotspots'][number] => ({
+        id: vase.id,
+        label: vase.name,
+        position: vase.position,
+        message: (state) =>
+          vase.isFutureLightEventAnchor && state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened
+            ? ['花器が、以前より強く光を返している。']
+            : [vase.description],
+      })),
       {
         id: 'ceremony-light',
         label: '淡い光',
-        position: { x: 60, y: 44, width: 16, height: 14 },
+        position: lightEventVase
+          ? { x: lightEventVase.position.x + 9, y: lightEventVase.position.y + 1, width: 5, height: 5 }
+          : { x: 60, y: 44, width: 16, height: 14 },
         visibilityCondition: (state) => state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened,
-        message: ['祭壇の近くで、何かが光を反射している。', '小さな鍵を手に入れた。'],
+        message: ['カットガラスの花器が、以前より強く光を返している。', '小さな鍵を手に入れた。'],
         itemReward: 'small-key',
         flagUpdate: { smallKeyObtained: true },
       },

@@ -12,11 +12,11 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
   },
   p02_ceremony: {
     puzzleId: 'p02_ceremony',
-    title: 'Puzzle 02 挙式会場の謎',
+    title: 'Puzzle 02 誓いの灯',
     areaId: 'ceremony',
     status: 'locked',
     prerequisites: ['p01_waiting_room'],
-    description: '正式問題は今後実装予定です。',
+    description: '祭壇の四本のキャンドルへ、順に火を灯す。',
     rewards: { memories: ['vow'], flags: { receptionUnlocked: true } },
   },
   p03_reception: {

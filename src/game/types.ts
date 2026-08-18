@@ -106,6 +106,11 @@ export type TeaTimeState = {
   cupSlots: Record<string, string>
 }
 
+export type CeremonyCandleState = {
+  input: string[]
+  lit: string[]
+}
+
 export type GameState = {
   saveVersion: number
   screen: Screen
@@ -120,6 +125,7 @@ export type GameState = {
   clues: Record<string, boolean>
   flags: Record<string, boolean>
   teaTime: TeaTimeState
+  ceremonyCandles: CeremonyCandleState
   clockState: ClockState
   normalEndingCleared: boolean
   trueRouteUnlocked: boolean
@@ -149,6 +155,8 @@ export type GameAction =
   | { type: 'SET_FLAG'; flagId: string; value: boolean }
   | { type: 'MOVE_TEA_CUP'; cupId: string; targetSweetId: string }
   | { type: 'RESET_P01_TEA_TIME' }
+  | { type: 'LIGHT_CEREMONY_CANDLE'; candleId: string }
+  | { type: 'RESET_P02_CANDLES' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

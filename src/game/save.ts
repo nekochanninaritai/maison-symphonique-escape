@@ -1,4 +1,5 @@
 import { gameConfig } from './config'
+import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { createInitialState, refreshPuzzleAvailability } from './logic'
 import type { GameState } from './types'
 
@@ -23,6 +24,7 @@ export const loadGame = (): GameState => {
       clues: { ...initial.clues, ...parsed.clues },
       flags: { ...initial.flags, ...parsed.flags },
       teaTime: { ...initial.teaTime, ...parsed.teaTime },
+      ceremonyCandles: { ...initial.ceremonyCandles, ...parsed.ceremonyCandles },
       clockState: { ...initial.clockState, ...parsed.clockState },
     }
     if (restored.puzzles.p01_waiting_room?.status === 'solved') {
@@ -30,6 +32,9 @@ export const loadGame = (): GameState => {
     }
     if (restored.clockState.handAttached && restored.puzzles.p02_ceremony?.status === 'solved') {
       restored.flags = { ...restored.flags, grandClockStarted: true }
+    }
+    if (restored.puzzles.p02_ceremony?.status === 'solved') {
+      restored.ceremonyCandles = { input: correctCandleSequence, lit: allCandleIds }
     }
     return refreshPuzzleAvailability(restored)
   } catch {

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
+import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
@@ -10,7 +11,7 @@ import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/type
 import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
-const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p05_piano', 'p06_grand_clock'])
+const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p05_piano', 'p06_grand_clock'])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -176,6 +177,7 @@ function GameScreen({
             <h3>{focusHotspot.focusScene.title}</h3>
             <p>{focusHotspot.focusScene.description}</p>
             {focusHotspot.id === 'tea-table' && <TeaTimeFocus state={state} onAction={onAction} />}
+            {focusHotspot.id === 'altar' && <CandleFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
@@ -298,6 +300,50 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
         <div className="teaDragGhost" style={{ left: dragging.x, top: dragging.y }} aria-hidden="true">
           {getTeaDrink(dragging.cupId)?.drinkName}
         </div>
+      )}
+    </div>
+  )
+}
+
+function CandleFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+  const puzzle = state.puzzles.p02_ceremony
+  const solved = puzzle?.status === 'solved'
+  const available = puzzle?.status === 'available'
+  const litIds = solved ? new Set(ceremonyCandles.map((candle) => candle.id)) : new Set(state.ceremonyCandles.lit)
+
+  return (
+    <div className="candlePuzzle">
+      <div className="candleHeader">
+        <span>{solved ? 'solved' : puzzle?.status ?? 'locked'}</span>
+        <p>{solved ? '四つの灯が、今も祭壇を照らしている。' : '会場で見た形を思い出しながら、順に火を灯す。'}</p>
+      </div>
+      <div className="candleGrid" aria-label="誓いの灯">
+        {ceremonyCandles.map((candle) => {
+          const lit = litIds.has(candle.id)
+          return (
+            <button
+              key={candle.id}
+              type="button"
+              className={`candleButton ${candle.shape} ${lit ? 'lit' : ''}`}
+              disabled={!available || solved || lit}
+              aria-pressed={lit}
+              aria-label={`${candle.name} ${lit ? '点灯' : '消灯'}`}
+              title={candle.description}
+              onClick={() => onAction({ type: 'LIGHT_CEREMONY_CANDLE', candleId: candle.id })}
+            >
+              <span className="flame" aria-hidden="true">{lit ? '火' : ''}</span>
+              <span className="candleShape" aria-hidden="true" />
+              <strong>{candle.name}</strong>
+            </button>
+          )
+        })}
+      </div>
+      {!solved && (
+        <ol className="candleInput" aria-label="入力済みの灯">
+          {correctCandleSequence.map((_, index) => (
+            <li key={index}>{state.ceremonyCandles.input[index] ? '灯' : '○'}</li>
+          ))}
+        </ol>
       )}
     </div>
   )
@@ -520,6 +566,8 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
               onClick={() =>
                 puzzleId === 'p01_waiting_room'
                   ? onAction({ type: 'RESET_P01_TEA_TIME' })
+                  : puzzleId === 'p02_ceremony'
+                    ? onAction({ type: 'RESET_P02_CANDLES' })
                   : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
               }
             >
@@ -600,7 +648,12 @@ function DebugState({ state }: { state: GameState }) {
       ceremonyUnlocked: state.flags.ceremonyUnlocked === true,
       p01Status: state.puzzles.p01_waiting_room?.status,
       p02Status: state.puzzles.p02_ceremony?.status,
+      p02CandleSequence: correctCandleSequence,
+      p02CurrentInput: state.ceremonyCandles.input,
+      p02LitCandles: state.ceremonyCandles.lit,
       grandClockStarted: state.flags.grandClockStarted === true,
+      ceremonyLightVisible: state.flags.ceremonyLightVisible === true,
+      smallKeyObtained: state.flags.smallKeyObtained === true,
       teaTimeSlots: state.teaTime.cupSlots,
       manualClockControl: state.clockState.canManualRotate,
       memoryCount: getMemoryCount(state),

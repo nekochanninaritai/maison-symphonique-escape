@@ -470,6 +470,117 @@ h3 {
   font-size: 0.84rem;
 }
 
+.candlePuzzle {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.candleHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.candleHeader span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fffaf0;
+  background: var(--blue);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.candleHeader p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.candleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.candleButton {
+  min-height: 142px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  touch-action: manipulation;
+}
+
+.candleButton.lit {
+  border-color: var(--gold);
+  background: #fff4cf;
+  box-shadow: 0 0 0 3px rgba(166, 120, 58, 0.14);
+}
+
+.candleButton:disabled:not(.lit) {
+  opacity: 0.58;
+}
+
+.flame {
+  min-height: 20px;
+  color: var(--rose);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.candleShape {
+  position: relative;
+  display: block;
+  width: 50px;
+  height: 54px;
+  border: 2px solid rgba(43, 37, 34, 0.42);
+  background: linear-gradient(135deg, #fffdfa, #e9d7be);
+}
+
+.candleButton.orb .candleShape {
+  border-radius: 50% 50% 42% 42%;
+}
+
+.candleButton.faceted .candleShape {
+  clip-path: polygon(50% 0, 92% 22%, 78% 100%, 22% 100%, 8% 22%);
+}
+
+.candleButton.cube .candleShape {
+  border-radius: 3px;
+}
+
+.candleButton.twist .candleShape {
+  border-radius: 22px 8px 22px 8px;
+  background:
+    repeating-linear-gradient(135deg, rgba(166, 120, 58, 0.28) 0 7px, transparent 7px 14px),
+    linear-gradient(135deg, #fffdfa, #e9d7be);
+}
+
+.candleButton strong {
+  font-size: 0.9rem;
+}
+
+.candleInput {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  list-style: none;
+}
+
+.candleInput li {
+  min-width: 34px;
+  padding: 5px 8px;
+  border: 1px solid rgba(166, 120, 58, 0.3);
+  border-radius: 999px;
+  text-align: center;
+}
+
 .clockWidget,
 .memoryMeter {
   display: flex;

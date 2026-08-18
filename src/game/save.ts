@@ -13,7 +13,7 @@ export const loadGame = (): GameState => {
     const parsed = JSON.parse(raw) as Partial<GameState>
     if (typeof parsed.saveVersion === 'number' && parsed.saveVersion > gameConfig.saveVersion) return createInitialState()
     const initial = createInitialState()
-    return refreshPuzzleAvailability({
+    const restored = {
       ...initial,
       ...parsed,
       saveVersion: gameConfig.saveVersion,
@@ -22,8 +22,16 @@ export const loadGame = (): GameState => {
       memories: { ...initial.memories, ...parsed.memories },
       clues: { ...initial.clues, ...parsed.clues },
       flags: { ...initial.flags, ...parsed.flags },
+      teaTime: { ...initial.teaTime, ...parsed.teaTime },
       clockState: { ...initial.clockState, ...parsed.clockState },
-    })
+    }
+    if (restored.puzzles.p01_waiting_room?.status === 'solved') {
+      restored.flags = { ...restored.flags, dressingRoomUnlocked: true, ceremonyUnlocked: true }
+    }
+    if (restored.clockState.handAttached && restored.puzzles.p02_ceremony?.status === 'solved') {
+      restored.flags = { ...restored.flags, grandClockStarted: true }
+    }
+    return refreshPuzzleAvailability(restored)
   } catch {
     return createInitialState()
   }

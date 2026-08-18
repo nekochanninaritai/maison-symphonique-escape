@@ -55,6 +55,20 @@ export const areas: Record<string, Area> = {
         message: ['誰かを待っていた温度だけが、布地に残っている。'],
       },
       {
+        id: 'tea-table',
+        label: 'ティーテーブル',
+        position: { x: 34, y: 52, width: 30, height: 24 },
+        focusScene: {
+          id: 'focus-tea-time',
+          title: 'Puzzle 01「ティータイム」',
+          description: '四人分のティーセットが並んでいる。どうやら、カップの位置が入れ替わっているようだ。',
+        },
+        message: (state) =>
+          state.puzzles.p01_waiting_room?.status === 'solved'
+            ? ['四つのティーセットは、静かに整っている。']
+            : ['四人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
+      },
+      {
         id: 'framed-score',
         label: '額装された楽譜',
         position: { x: 42, y: 20, width: 20, height: 22 },
@@ -69,15 +83,24 @@ export const areas: Record<string, Area> = {
         label: '控室の扉',
         position: { x: 70, y: 28, width: 18, height: 38 },
         message: (state) =>
-          state.puzzles.p01_waiting_room?.status === 'solved'
+          state.flags.dressingRoomUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved'
             ? ['控室へ続く扉が開いている。']
             : ['控室へ続く扉は、まだ静かに閉ざされている。'],
+      },
+      {
+        id: 'ceremony-door',
+        label: '挙式会場の扉',
+        position: { x: 86, y: 30, width: 12, height: 36 },
+        message: (state) =>
+          state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved'
+            ? ['挙式会場へ続く扉が、少し開いている。']
+            : ['挙式会場へ続く扉は、まだ開きそうにない。'],
       },
     ],
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
-      { to: 'dressing-room', label: '控室へ', unlockCondition: (state) => state.puzzles.p01_waiting_room?.status === 'solved' },
-      { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.clockState.handAttached },
+      { to: 'dressing-room', label: '控室へ', unlockCondition: (state) => state.flags.dressingRoomUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved' },
+      { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved' },
     ],
   },
   'dressing-room': {
@@ -86,7 +109,7 @@ export const areas: Record<string, Area> = {
     chapter: 'Waiting Room / Sub Area',
     emptyBackground: 'dressing-room',
     memoryBackground: 'dressing-room-memory',
-    unlockCondition: (state) => state.puzzles.p01_waiting_room?.status === 'solved',
+    unlockCondition: (state) => state.flags.dressingRoomUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved',
     hotspots: [
       {
         id: 'clock-hand-case',
@@ -105,6 +128,7 @@ export const areas: Record<string, Area> = {
     chapter: 'Ceremony',
     emptyBackground: 'ceremony',
     memoryBackground: 'ceremony-memory',
+    unlockCondition: (state) => state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved',
     hotspots: [
       {
         id: 'altar',

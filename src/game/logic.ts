@@ -2,6 +2,7 @@ import { areas } from './data/areas'
 import { createItems } from './data/items'
 import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
+import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { gameConfig } from './config'
 export { normalizeTime } from './clock'
 import type { AreaId, GameAction, GameState, Hotspot, Item, Puzzle } from './types'
@@ -19,6 +20,9 @@ export const createInitialState = (): GameState => ({
   memories: createMemories(),
   clues: {},
   flags: {},
+  teaTime: {
+    cupSlots: initialTeaTimeSlots,
+  },
   clockState: {
     handObtained: false,
     handAttached: false,
@@ -165,6 +169,13 @@ export const attachClockHand = (state: GameState): GameState => {
   )
 }
 
+const attachClockHandFromAction = (state: GameState): GameState => {
+  const attached = attachClockHand(state)
+  const next = startGrandClockIfReady(attached)
+  if (!next.started) return attached
+  return withMessage(next.state, ['カチャ。', '長針は元の場所に戻った。', '時計の奥で、止まっていた歯車が静かに動き出した。'])
+}
+
 export const setClockTime = (state: GameState, time: string): GameState => {
   if (isNearTrueRouteTime(time) && state.clockState.canManualRotate && !state.trueRouteUnlocked) {
     return unlockTrueRoute({
@@ -192,6 +203,23 @@ export const advanceClock = (state: GameState, targetTime: string): GameState =>
   },
 })
 
+const shouldStartGrandClock = (state: GameState): boolean =>
+  state.clockState.handAttached && state.puzzles.p02_ceremony?.status === 'solved' && state.flags.grandClockStarted !== true
+
+const startGrandClock = (state: GameState): GameState =>
+  advanceClock(
+    {
+      ...state,
+      flags: { ...state.flags, grandClockStarted: true },
+    },
+    '12:00',
+  )
+
+const startGrandClockIfReady = (state: GameState): { state: GameState; started: boolean } => {
+  if (!shouldStartGrandClock(state)) return { state, started: false }
+  return { state: startGrandClock(state), started: true }
+}
+
 export const unlockTrueRoute = (state: GameState): GameState => {
   let next = Object.keys(state.memories).reduce((current, memoryId) => unlockMemory(current, memoryId), state)
   next = {
@@ -217,6 +245,9 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   }
 
   let next = updatePuzzle(current, puzzleId, { status: 'solved' })
+  if (puzzleId === 'p01_waiting_room') {
+    next = { ...next, teaTime: { cupSlots: correctTeaTimeSlots } }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -235,6 +266,8 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzle.rewards.advanceClockTo) {
     next = advanceClock(next, puzzle.rewards.advanceClockTo)
   }
+  const grandClockStart = startGrandClockIfReady(next)
+  next = grandClockStart.state
   if (puzzle.rewards.goNormalEnd) {
     next = {
       ...next,
@@ -246,11 +279,58 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
     }
   }
   const messages =
-    puzzleId === 'p05_piano'
-      ? ['カチッ。', 'ピアノの内部で、何かが動いたようだ。']
-      : [`${puzzle.title} をSolvedにした。`]
+    puzzleId === 'p01_waiting_room'
+      ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', '館のどこかで、扉の開く音がした。']
+      : grandClockStart.started
+        ? ['時計の奥で、止まっていた歯車が静かに動き出した。']
+        : puzzleId === 'p02_ceremony'
+          ? ['時計の内部から、かすかに機構音が聞こえる。', 'しかし、長針がない。']
+          : puzzleId === 'p05_piano'
+            ? ['カチッ。', 'ピアノの内部で、何かが動いたようだ。']
+            : [`${puzzle.title} をSolvedにした。`]
   return withMessage(refreshPuzzleAvailability(next), messages)
 }
+
+export const moveTeaCup = (state: GameState, cupId: string, targetSweetId: string): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  if (current.puzzles.p01_waiting_room?.status !== 'available') return current
+
+  const sourceSweetId = Object.entries(current.teaTime.cupSlots).find(([, drinkId]) => drinkId === cupId)?.[0]
+  const targetCupId = current.teaTime.cupSlots[targetSweetId]
+  if (!sourceSweetId || !targetCupId || sourceSweetId === targetSweetId) return current
+
+  const cupSlots = {
+    ...current.teaTime.cupSlots,
+    [sourceSweetId]: targetCupId,
+    [targetSweetId]: cupId,
+  }
+  const next = { ...current, teaTime: { cupSlots } }
+  return isTeaTimeSolved(cupSlots) ? solvePuzzle(next, 'p01_waiting_room') : next
+}
+
+export const resetP01TeaTime = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    currentArea: state.currentArea === 'dressing-room' || state.currentArea === 'ceremony' ? 'waiting-room' : state.currentArea,
+    teaTime: { cupSlots: initialTeaTimeSlots },
+    flags: {
+      ...state.flags,
+      dressingRoomUnlocked: false,
+      ceremonyUnlocked: false,
+      grandClockStarted: false,
+      receptionUnlocked: false,
+    },
+    puzzles: {
+      ...state.puzzles,
+      p01_waiting_room: { ...state.puzzles.p01_waiting_room, status: 'available' },
+      p02_ceremony: { ...state.puzzles.p02_ceremony, status: 'locked' },
+    },
+    clockState: {
+      ...state.clockState,
+      currentTime: '09:23',
+    },
+    messageQueue: ['P01 Tea Time をリセットした。'],
+  })
 
 export const canMoveToArea = (state: GameState, areaId: AreaId): boolean => {
   const area = areas[areaId]
@@ -294,7 +374,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
     case 'SELECT_ITEM':
       return { ...state, selectedItemId: action.itemId }
     case 'USE_SELECTED_ITEM':
-      if (state.selectedItemId === 'clock-hand' && action.targetId === 'grand-clock') return attachClockHand(state)
+      if (state.selectedItemId === 'clock-hand' && action.targetId === 'grand-clock') return attachClockHandFromAction(state)
       if (state.selectedItemId === 'transparent-card' && action.targetId === 'framed-score') {
         const current = refreshPuzzleAvailability(state)
         if (current.puzzles.p04_sheet_overlay?.status !== 'available') {
@@ -347,16 +427,20 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return { ...state, clues: { ...state.clues, [action.clueId]: action.obtained } }
     case 'SET_FLAG':
       return { ...state, flags: { ...state.flags, [action.flagId]: action.value } }
+    case 'MOVE_TEA_CUP':
+      return moveTeaCup(state, action.cupId, action.targetSweetId)
+    case 'RESET_P01_TEA_TIME':
+      return resetP01TeaTime(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':
       return { ...state, inventory: createItems(), selectedItemId: null, clockState: { ...state.clockState, handObtained: false } }
     case 'ATTACH_CLOCK_HAND':
-      return {
+      return startGrandClockIfReady({
         ...state,
         inventory: { ...state.inventory, 'clock-hand': cloneItem(state.inventory['clock-hand'], { obtained: false, consumed: true }) },
         clockState: { ...state.clockState, handObtained: true, handAttached: true },
-      }
+      }).state
     case 'GO_NORMAL_END':
       return {
         ...state,

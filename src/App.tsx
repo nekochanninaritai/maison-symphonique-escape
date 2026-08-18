@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
+import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { createClockDragSession, updateClockDragSession } from './game/clock'
@@ -9,7 +10,7 @@ import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/type
 import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
-const focusOnlyPuzzleIds = new Set(['p05_piano', 'p06_grand_clock'])
+const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p05_piano', 'p06_grand_clock'])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -174,6 +175,7 @@ function GameScreen({
             <p className="eyebrow">Focus Scene</p>
             <h3>{focusHotspot.focusScene.title}</h3>
             <p>{focusHotspot.focusScene.description}</p>
+            {focusHotspot.id === 'tea-table' && <TeaTimeFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
@@ -218,6 +220,86 @@ function GameScreen({
         )}
       </section>
     </section>
+  )
+}
+
+type TeaDragState = {
+  cupId: string
+  pointerId: number
+  x: number
+  y: number
+}
+
+function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+  const [dragging, setDragging] = useState<TeaDragState | null>(null)
+  const puzzle = state.puzzles.p01_waiting_room
+  const solved = puzzle?.status === 'solved'
+
+  const finishDrag = (clientX: number, clientY: number) => {
+    if (!dragging) return
+    const target = document.elementFromPoint(clientX, clientY)?.closest<HTMLElement>('[data-sweet-id]')
+    const targetSweetId = target?.dataset.sweetId
+    if (targetSweetId) {
+      onAction({ type: 'MOVE_TEA_CUP', cupId: dragging.cupId, targetSweetId })
+    }
+    setDragging(null)
+  }
+
+  return (
+    <div className={`teaTimePuzzle ${dragging ? 'dragging' : ''}`}>
+      <div className="teaTimeHeader">
+        <span>{solved ? 'solved' : 'available'}</span>
+        <p>カップを別のお皿へ動かすと、位置が入れ替わります。</p>
+      </div>
+      <div className="teaTableGrid" aria-label="ティータイムの組み合わせ">
+        {teaTimePairs.map((pair) => {
+          const drink = getTeaDrink(state.teaTime.cupSlots[pair.sweetId])
+          return (
+            <div key={pair.sweetId} className="teaSlot" data-sweet-id={pair.sweetId}>
+              <div className="sweetPlate" title={pair.sweetName}>
+                <span className="sweetIcon" aria-hidden="true">{pair.sweetIcon}</span>
+                <strong>{pair.sweetName}</strong>
+              </div>
+              {drink && (
+                <button
+                  type="button"
+                  className={`teaCup ${dragging?.cupId === drink.drinkId ? 'isDragging' : ''}`}
+                  title={drink.description ?? drink.drinkName}
+                  aria-label={`${drink.drinkName} のカップ`}
+                  disabled={solved}
+                  onPointerDown={(event) => {
+                    if (solved) return
+                    event.preventDefault()
+                    event.currentTarget.setPointerCapture(event.pointerId)
+                    setDragging({ cupId: drink.drinkId, pointerId: event.pointerId, x: event.clientX, y: event.clientY })
+                  }}
+                  onPointerMove={(event) => {
+                    if (!dragging || dragging.pointerId !== event.pointerId) return
+                    event.preventDefault()
+                    setDragging({ cupId: dragging.cupId, pointerId: dragging.pointerId, x: event.clientX, y: event.clientY })
+                  }}
+                  onPointerUp={(event) => {
+                    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                      event.currentTarget.releasePointerCapture(event.pointerId)
+                    }
+                    finishDrag(event.clientX, event.clientY)
+                  }}
+                  onPointerCancel={() => setDragging(null)}
+                >
+                  <span className="cupIcon" aria-hidden="true">{drink.drinkIcon}</span>
+                  <span>{drink.drinkName}</span>
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {dragging && (
+        <div className="teaDragGhost" style={{ left: dragging.x, top: dragging.y }} aria-hidden="true">
+          {getTeaDrink(dragging.cupId)?.drinkName}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -433,7 +515,16 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
             <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })}>locked</button>
             <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'available' })}>available</button>
             <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId, force: true })}>Solve</button>
-            <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })}>Reset</button>
+            <button
+              type="button"
+              onClick={() =>
+                puzzleId === 'p01_waiting_room'
+                  ? onAction({ type: 'RESET_P01_TEA_TIME' })
+                  : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
+              }
+            >
+              Reset
+            </button>
           </div>
         ))}
         <button type="button" onClick={() => onAction({ type: 'RESET_PUZZLES' })}>Puzzleリセット</button>
@@ -505,6 +596,12 @@ function DebugState({ state }: { state: GameState }) {
       clockTime: state.clockState.currentTime,
       clockHandObtained: state.clockState.handObtained,
       clockHandAttached: state.clockState.handAttached,
+      dressingRoomUnlocked: state.flags.dressingRoomUnlocked === true,
+      ceremonyUnlocked: state.flags.ceremonyUnlocked === true,
+      p01Status: state.puzzles.p01_waiting_room?.status,
+      p02Status: state.puzzles.p02_ceremony?.status,
+      grandClockStarted: state.flags.grandClockStarted === true,
+      teaTimeSlots: state.teaTime.cupSlots,
       manualClockControl: state.clockState.canManualRotate,
       memoryCount: getMemoryCount(state),
       normalEndingCleared: state.normalEndingCleared,

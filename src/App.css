@@ -352,6 +352,124 @@ h3 {
   width: 100%;
 }
 
+.teaTimePuzzle {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.teaTimePuzzle.dragging {
+  user-select: none;
+}
+
+.teaTimeHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.teaTimeHeader span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fffaf0;
+  background: var(--green);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.teaTimeHeader p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.teaTableGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.teaSlot {
+  min-height: 150px;
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(166, 120, 58, 0.35);
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.sweetPlate {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-height: 64px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.sweetIcon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 34px;
+  border: 1px solid rgba(80, 107, 90, 0.35);
+  border-radius: 50%;
+  color: var(--green);
+  background: #f6f1e8;
+  font-weight: 700;
+}
+
+.teaCup {
+  width: 100%;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+  text-align: left;
+}
+
+.teaCup:disabled {
+  cursor: default;
+}
+
+.teaCup.isDragging {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--rose);
+  box-shadow: 0 10px 24px rgba(52, 40, 28, 0.2);
+}
+
+.cupIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  color: var(--blue);
+  background: #fff;
+  font-weight: 700;
+}
+
+.teaDragGhost {
+  position: fixed;
+  z-index: 12;
+  transform: translate(-50%, -120%);
+  pointer-events: none;
+  padding: 8px 12px;
+  border: 1px solid var(--rose);
+  border-radius: 999px;
+  color: var(--ink);
+  background: #fffaf0;
+  box-shadow: var(--shadow);
+  font-size: 0.84rem;
+}
+
 .clockWidget,
 .memoryMeter {
   display: flex;
@@ -597,6 +715,23 @@ h3 {
 
   .puzzleRow {
     grid-template-columns: 1fr;
+  }
+
+  .teaTableGrid {
+    gap: 8px;
+  }
+
+  .teaSlot {
+    min-height: 142px;
+    padding: 8px;
+  }
+
+  .teaCup {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    min-height: 70px;
+    padding: 8px;
+    text-align: center;
   }
 
   .areaNav button,

@@ -102,6 +102,10 @@ export type ClockState = {
   trueRouteUnlocked: boolean
 }
 
+export type TeaTimeState = {
+  cupSlots: Record<string, string>
+}
+
 export type GameState = {
   saveVersion: number
   screen: Screen
@@ -115,6 +119,7 @@ export type GameState = {
   memories: Record<string, Memory>
   clues: Record<string, boolean>
   flags: Record<string, boolean>
+  teaTime: TeaTimeState
   clockState: ClockState
   normalEndingCleared: boolean
   trueRouteUnlocked: boolean
@@ -142,6 +147,8 @@ export type GameAction =
   | { type: 'SET_MEMORY_COUNT'; count: number }
   | { type: 'SET_CLUE'; clueId: string; obtained: boolean }
   | { type: 'SET_FLAG'; flagId: string; value: boolean }
+  | { type: 'MOVE_TEA_CUP'; cupId: string; targetSweetId: string }
+  | { type: 'RESET_P01_TEA_TIME' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

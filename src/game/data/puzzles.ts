@@ -3,22 +3,21 @@ import type { Puzzle } from '../types'
 export const createPuzzles = (): Record<string, Puzzle> => ({
   p01_waiting_room: {
     puzzleId: 'p01_waiting_room',
-    title: 'Puzzle 01 待合室の謎',
+    title: 'Puzzle 01 ティータイム',
     areaId: 'waiting-room',
     status: 'available',
     prerequisites: [],
-    description: '正式問題は今後実装予定です。',
-    rewards: { flags: { dressingRoomUnlocked: true } },
+    description: '四人分のティーセットを整える。',
+    rewards: { flags: { dressingRoomUnlocked: true, ceremonyUnlocked: true } },
   },
   p02_ceremony: {
     puzzleId: 'p02_ceremony',
     title: 'Puzzle 02 挙式会場の謎',
     areaId: 'ceremony',
     status: 'locked',
-    prerequisites: [],
-    requiredClockHandAttached: true,
+    prerequisites: ['p01_waiting_room'],
     description: '正式問題は今後実装予定です。',
-    rewards: { memories: ['vow'], flags: { receptionUnlocked: true }, advanceClockTo: '12:00' },
+    rewards: { memories: ['vow'], flags: { receptionUnlocked: true } },
   },
   p03_reception: {
     puzzleId: 'p03_reception',

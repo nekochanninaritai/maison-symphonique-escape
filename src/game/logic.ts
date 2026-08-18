@@ -3,6 +3,7 @@ import { createItems } from './data/items'
 import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
+import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { gameConfig } from './config'
 export { normalizeTime } from './clock'
@@ -27,6 +28,11 @@ export const createInitialState = (): GameState => ({
   ceremonyCandles: {
     input: [],
     lit: [],
+  },
+  receptionTables: {
+    discoveredAnomalies: {},
+    lockInput: initialReceptionLockInput,
+    boxOpened: false,
   },
   clockState: {
     handObtained: false,
@@ -256,6 +262,16 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzleId === 'p02_ceremony') {
     next = { ...next, ceremonyCandles: { input: correctCandleSequence, lit: allCandleIds } }
   }
+  if (puzzleId === 'p03_reception') {
+    next = {
+      ...next,
+      receptionTables: {
+        ...next.receptionTables,
+        lockInput: getReceptionLockDigits(),
+        boxOpened: true,
+      },
+    }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -298,7 +314,11 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
           : puzzleId === 'p05_piano'
             ? ['カチッ。', 'ピアノの内部で、何かが動いたようだ。']
             : [`${puzzle.title} をSolvedにした。`]
-  return withMessage(refreshPuzzleAvailability(next), messages)
+  const finalMessages =
+    puzzleId === 'p03_reception'
+      ? ['――カチッ。', '箱の中に、半透明のカードが入っている。', 'その下には――古い写真の切れ端が一枚残されていた。', '遠くで、時計の鐘が鳴った。']
+      : messages
+  return withMessage(refreshPuzzleAvailability(next), finalMessages)
 }
 
 export const lightCeremonyCandle = (state: GameState, candleId: string): GameState => {
@@ -322,6 +342,88 @@ export const lightCeremonyCandle = (state: GameState, candleId: string): GameSta
   const next = { ...current, ceremonyCandles: { input, lit } }
   return input.length === correctCandleSequence.length ? solvePuzzle(next, 'p02_ceremony') : next
 }
+
+export const discoverReceptionAnomaly = (state: GameState, tableId: string, seatId: string): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  const table = getReceptionTable(tableId)
+  if (!table || current.puzzles.p03_reception?.status === 'locked') return current
+  if (table.targetSeatId !== seatId) {
+    return withMessage(current, ['特に変わったところはなさそうだ。'])
+  }
+  return withMessage(
+    {
+      ...current,
+      receptionTables: {
+        ...current.receptionTables,
+        discoveredAnomalies: {
+          ...current.receptionTables.discoveredAnomalies,
+          [tableId]: seatId,
+        },
+      },
+    },
+    [table.anomalyDescription],
+  )
+}
+
+export const setReceptionLockDigit = (state: GameState, index: number, value: number): GameState => {
+  if (index < 0 || index >= state.receptionTables.lockInput.length) return state
+  const lockInput = [...state.receptionTables.lockInput]
+  lockInput[index] = ((value % 10) + 10) % 10
+  return { ...state, receptionTables: { ...state.receptionTables, lockInput } }
+}
+
+export const setReceptionLockInput = (state: GameState, input: number[]): GameState => ({
+  ...state,
+  receptionTables: {
+    ...state.receptionTables,
+    lockInput: initialReceptionLockInput.map((fallback, index) => {
+      const value = input[index] ?? fallback
+      return ((value % 10) + 10) % 10
+    }),
+  },
+})
+
+export const openReceptionBox = (state: GameState): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  if (current.receptionTables.boxOpened || current.puzzles.p03_reception?.status === 'solved') {
+    return withMessage(current, ['箱は開いている。'])
+  }
+  if (current.puzzles.p03_reception?.status !== 'available') {
+    return withMessage(current, ['箱には、まだ手がかりの足りない気配がある。'])
+  }
+  if (!isReceptionLockSolved(current.receptionTables.lockInput)) {
+    return withMessage(current, ['カチ……', '鍵は開かない。'])
+  }
+  return solvePuzzle({ ...current, receptionTables: { ...current.receptionTables, boxOpened: true } }, 'p03_reception')
+}
+
+export const resetP03Reception = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    receptionTables: {
+      discoveredAnomalies: {},
+      lockInput: initialReceptionLockInput,
+      boxOpened: false,
+    },
+    puzzles: {
+      ...state.puzzles,
+      p03_reception: { ...state.puzzles.p03_reception, status: 'available' },
+      p04_sheet_overlay: { ...state.puzzles.p04_sheet_overlay, status: 'locked' },
+    },
+    inventory: {
+      ...state.inventory,
+      'transparent-card': cloneItem(state.inventory['transparent-card'], { obtained: false, consumed: false }),
+    },
+    memories: {
+      ...state.memories,
+      banquet: { ...state.memories.banquet, unlocked: false },
+    },
+    clockState: {
+      ...state.clockState,
+      currentTime: '12:00',
+    },
+    messageQueue: ['P03 Reception Puzzle をリセットした。'],
+  })
 
 export const resetP02Candles = (state: GameState): GameState =>
   refreshPuzzleAvailability({
@@ -487,6 +589,16 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return lightCeremonyCandle(state, action.candleId)
     case 'RESET_P02_CANDLES':
       return resetP02Candles(state)
+    case 'DISCOVER_RECEPTION_ANOMALY':
+      return discoverReceptionAnomaly(state, action.tableId, action.seatId)
+    case 'SET_P03_LOCK_DIGIT':
+      return setReceptionLockDigit(state, action.index, action.value)
+    case 'SET_P03_LOCK_INPUT':
+      return setReceptionLockInput(state, action.input)
+    case 'OPEN_P03_BOX':
+      return openReceptionBox(state)
+    case 'RESET_P03_RECEPTION':
+      return resetP03Reception(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':

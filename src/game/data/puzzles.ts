@@ -21,11 +21,12 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
   },
   p03_reception: {
     puzzleId: 'p03_reception',
-    title: 'Puzzle 03 披露宴会場の謎',
+    title: 'Puzzle 03 席次表の違和感',
     areaId: 'reception',
     status: 'locked',
     prerequisites: ['p02_ceremony'],
-    description: '正式問題は今後実装予定です。',
+    requiredFlags: { grandClockStarted: true },
+    description: '四つのテーブルの違和感を、席次表の数字と照合する。',
     rewards: { memories: ['banquet'], items: ['transparent-card'], advanceClockTo: '15:00' },
   },
   p04_sheet_overlay: {
@@ -55,7 +56,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'locked',
     prerequisites: ['p05_piano'],
     requiredItems: ['old-invitation'],
-    description: '正式問題は今後実装予定です。',
+    description: '正式な大時計Puzzleは今後実装予定です。',
     rewards: { memories: ['invitation'], flags: { gardenUnlocked: true }, unlockGarden: true, advanceClockTo: '18:00' },
   },
   p07_garden_final: {
@@ -65,7 +66,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'locked',
     prerequisites: ['p06_grand_clock'],
     requiredFlags: { gardenReached: true },
-    description: '正式問題は今後実装予定です。',
+    description: '正式な最終Puzzleは今後実装予定です。',
     rewards: { goNormalEnd: true },
   },
 })

@@ -1,5 +1,6 @@
 import { gameConfig } from './config'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
+import { getReceptionLockDigits } from './data/receptionTables'
 import { createInitialState, refreshPuzzleAvailability } from './logic'
 import type { GameState } from './types'
 
@@ -25,6 +26,7 @@ export const loadGame = (): GameState => {
       flags: { ...initial.flags, ...parsed.flags },
       teaTime: { ...initial.teaTime, ...parsed.teaTime },
       ceremonyCandles: { ...initial.ceremonyCandles, ...parsed.ceremonyCandles },
+      receptionTables: { ...initial.receptionTables, ...parsed.receptionTables },
       clockState: { ...initial.clockState, ...parsed.clockState },
     }
     if (restored.puzzles.p01_waiting_room?.status === 'solved') {
@@ -35,6 +37,21 @@ export const loadGame = (): GameState => {
     }
     if (restored.puzzles.p02_ceremony?.status === 'solved') {
       restored.ceremonyCandles = { input: correctCandleSequence, lit: allCandleIds }
+    }
+    if (restored.puzzles.p03_reception?.status === 'solved') {
+      restored.receptionTables = {
+        ...restored.receptionTables,
+        lockInput: getReceptionLockDigits(),
+        boxOpened: true,
+      }
+      restored.inventory = {
+        ...restored.inventory,
+        'transparent-card': { ...restored.inventory['transparent-card'], obtained: true, consumed: false },
+      }
+      restored.memories = {
+        ...restored.memories,
+        banquet: { ...restored.memories.banquet, unlocked: true },
+      }
     }
     return refreshPuzzleAvailability(restored)
   } catch {

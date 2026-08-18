@@ -3,11 +3,14 @@ import {
   attachClockHand,
   canMoveToArea,
   createInitialState,
+  discoverReceptionAnomaly,
   getMemoryCount,
   isNearTrueRouteTime,
   lightCeremonyCandle,
   moveTeaCup,
+  openReceptionBox,
   reducer,
+  setReceptionLockInput,
   setClockTime,
   solvePuzzle,
 } from './logic'
@@ -21,7 +24,14 @@ import {
   updateClockDragSessionFromAngle,
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
+import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { clearSave, loadGame, saveGame } from './save'
+
+const createP03ReadyState = () => {
+  let state = createInitialState()
+  state = solvePuzzle(state, 'p02_ceremony', true)
+  return reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+}
 
 describe('ClockState', () => {
   it('attaches the hand but does not start the clock', () => {
@@ -194,6 +204,7 @@ describe('PuzzleState', () => {
     expect(state.flags.receptionUnlocked).toBe(true)
     expect(state.flags.grandClockStarted).not.toBe(true)
     expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.puzzles.p03_reception.status).toBe('locked')
   })
 
   it('correct P02 candle sequence solves the Ceremony puzzle', () => {
@@ -278,19 +289,76 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('13:00')
   })
 
-  it('P03 solved obtains the transparent card', () => {
-    let state = createInitialState()
-    state = solvePuzzle(state, 'p02_ceremony', true)
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p03_reception' })
+  it('P02 solved makes P03 available in Reception', () => {
+    const state = createP03ReadyState()
 
+    expect(state.puzzles.p03_reception.status).toBe('available')
+    expect(canMoveToArea(state, 'reception')).toBe(true)
+    expect(state.clockState.currentTime).toBe('12:00')
+  })
+
+  it('discovers each P03 table anomaly from the correct seat', () => {
+    let state = createP03ReadyState()
+
+    for (const table of receptionTables) {
+      state = discoverReceptionAnomaly(state, table.id, table.targetSeatId)
+    }
+
+    expect(state.receptionTables.discoveredAnomalies).toEqual(
+      Object.fromEntries(receptionTables.map((table) => [table.id, table.targetSeatId])),
+    )
+  })
+
+  it('does not discover a P03 anomaly from the wrong seat', () => {
+    let state = createP03ReadyState()
+    const table = receptionTables[0]
+    const wrongSeat = table.seats.find((seat) => seat.id !== table.targetSeatId)
+    expect(wrongSeat).toBeDefined()
+
+    state = discoverReceptionAnomaly(state, table.id, wrongSeat!.id)
+
+    expect(state.receptionTables.discoveredAnomalies[table.id]).toBeUndefined()
+    expect(state.messageQueue).toEqual(['特に変わったところはなさそうだ。'])
+  })
+
+  it('wrong P03 lock code keeps the box closed', () => {
+    let state = createP03ReadyState()
+    state = setReceptionLockInput(state, [4, 7, 2, 8])
+    state = openReceptionBox(state)
+
+    expect(state.receptionTables.boxOpened).toBe(false)
+    expect(state.puzzles.p03_reception.status).toBe('available')
+    expect(state.messageQueue).toEqual(['カチ……', '鍵は開かない。'])
+  })
+
+  it('correct P03 lock code opens the box, rewards the card and memory, and advances the clock', () => {
+    let state = createP03ReadyState()
+    state = setReceptionLockInput(state, getReceptionLockDigits())
+    state = openReceptionBox(state)
+
+    expect(state.receptionTables.boxOpened).toBe(true)
     expect(state.puzzles.p03_reception.status).toBe('solved')
     expect(state.inventory['transparent-card'].obtained).toBe(true)
+    expect(state.memories.banquet.unlocked).toBe(true)
+    expect(state.clockState.currentTime).toBe('15:00')
+  })
+
+  it('P03 rewards do not duplicate after the box is reopened', () => {
+    let state = createP03ReadyState()
+    state = setReceptionLockInput(state, getReceptionLockDigits())
+    state = openReceptionBox(state)
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '16:00' })
+    state = openReceptionBox(state)
+
+    expect(state.inventory['transparent-card'].obtained).toBe(true)
+    expect(getMemoryCount(state)).toBe(2)
+    expect(state.clockState.currentTime).toBe('16:00')
   })
 
   it('transparent card on the Waiting Room score solves P04 and obtains the piano clue', () => {
-    let state = createInitialState()
-    state = solvePuzzle(state, 'p02_ceremony', true)
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p03_reception' })
+    let state = createP03ReadyState()
+    state = setReceptionLockInput(state, getReceptionLockDigits())
+    state = openReceptionBox(state)
     state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
     state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-score' })
 
@@ -450,6 +518,34 @@ describe('SaveState', () => {
     expect(loaded.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
     clearSave()
     expect(loadGame().normalEndingCleared).toBe(false)
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads P03 anomaly discoveries and opened box state', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP03ReadyState()
+    for (const table of receptionTables) {
+      state = discoverReceptionAnomaly(state, table.id, table.targetSeatId)
+    }
+    state = setReceptionLockInput(state, getReceptionLockDigits())
+    state = openReceptionBox(state)
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.receptionTables.discoveredAnomalies).toEqual(
+      Object.fromEntries(receptionTables.map((table) => [table.id, table.targetSeatId])),
+    )
+    expect(loaded.receptionTables.boxOpened).toBe(true)
+    expect(loaded.puzzles.p03_reception.status).toBe('solved')
+    expect(loaded.inventory['transparent-card'].obtained).toBe(true)
+    expect(loaded.memories.banquet.unlocked).toBe(true)
+    expect(loaded.clockState.currentTime).toBe('15:00')
     vi.unstubAllGlobals()
   })
 })

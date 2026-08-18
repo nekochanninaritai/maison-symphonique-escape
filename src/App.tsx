@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
+import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
@@ -11,7 +12,7 @@ import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/type
 import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
-const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p05_piano', 'p06_grand_clock'])
+const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p05_piano', 'p06_grand_clock'])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -178,6 +179,9 @@ function GameScreen({
             <p>{focusHotspot.focusScene.description}</p>
             {focusHotspot.id === 'tea-table' && <TeaTimeFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'altar' && <CandleFocus state={state} onAction={onAction} />}
+            {focusHotspot.id === 'seating-chart' && <SeatingChartFocus />}
+            {focusHotspot.id.startsWith('reception-table-') && <ReceptionTableFocus state={state} tableId={focusHotspot.id.replace('reception-table-', '')} onAction={onAction} />}
+            {focusHotspot.id === 'reception-box' && <ReceptionBoxFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
@@ -345,6 +349,124 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
           ))}
         </ol>
       )}
+    </div>
+  )
+}
+
+function SeatingChartFocus() {
+  return (
+    <div className="seatingChartPuzzle">
+      <div className="receptionHint">
+        <span>Seating Chart</span>
+        <p>テーブル名とモチーフ、席ごとの数字を確認できる。</p>
+      </div>
+      <div className="seatingChartGrid">
+        {receptionTables.map((table) => (
+          <section key={table.id} className="chartTable">
+            <header>
+              <strong>{table.name}</strong>
+              <span>{table.motif}</span>
+            </header>
+            <RoundSeatMap table={table} mode="chart" />
+          </section>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ReceptionTableFocus({ state, tableId, onAction }: { state: GameState; tableId: string; onAction: (action: GameAction) => void }) {
+  const table = getReceptionTable(tableId)
+  if (!table) return null
+  const discovered = state.receptionTables.discoveredAnomalies[table.id] === table.targetSeatId
+
+  return (
+    <div className="receptionTablePuzzle">
+      <div className="receptionHint">
+        <span>{discovered ? 'found' : 'inspect'}</span>
+        <p>{table.motif}をモチーフにした装花。ひとつだけ、他の席と違うところがある。</p>
+      </div>
+      <RoundSeatMap table={table} mode="inspect" discovered={discovered} onSeat={(seatId) => onAction({ type: 'DISCOVER_RECEPTION_ANOMALY', tableId: table.id, seatId })} />
+    </div>
+  )
+}
+
+function RoundSeatMap({
+  table,
+  mode,
+  discovered = false,
+  onSeat,
+}: {
+  table: (typeof receptionTables)[number]
+  mode: 'chart' | 'inspect'
+  discovered?: boolean
+  onSeat?: (seatId: string) => void
+}) {
+  return (
+    <div className={`roundSeatMap ${mode}`}>
+      <div className={`tableCenter ${table.id}`}>
+        <strong>{table.motifIcon}</strong>
+        <span>{table.name}</span>
+      </div>
+      {table.seats.map((seat) => {
+        const isAnomaly = seat.id === table.targetSeatId
+        const showAnomaly = mode === 'inspect' && isAnomaly
+        return (
+          <button
+            key={seat.id}
+            type="button"
+            className={`seatButton ${showAnomaly ? table.anomalyType : ''} ${discovered && isAnomaly ? 'discovered' : ''}`}
+            style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
+            disabled={mode === 'chart'}
+            aria-label={`${table.name} ${seat.label}${mode === 'chart' ? ` number ${seat.digit}` : ''}`}
+            onClick={() => onSeat?.(seat.id)}
+          >
+            <span className="seatLabel">{seat.label}</span>
+            {mode === 'chart' ? <strong>{seat.digit}</strong> : <SeatSetting anomalyType={showAnomaly ? table.anomalyType : undefined} />}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function SeatSetting({ anomalyType }: { anomalyType?: string }) {
+  return (
+    <span className={`seatSetting ${anomalyType ?? ''}`} aria-hidden="true">
+      <span className="plate" />
+      {anomalyType !== 'missing-glass' && <span className="glass" />}
+      <span className="napkin" />
+      <span className="chair" />
+      {anomalyType === 'petals' && <span className="petal" />}
+    </span>
+  )
+}
+
+function ReceptionBoxFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+  const solved = state.receptionTables.boxOpened || state.puzzles.p03_reception?.status === 'solved'
+  return (
+    <div className="lockBoxPuzzle">
+      <div className={`lockBox ${solved ? 'opened' : ''}`}>
+        <strong>{solved ? 'OPEN BOX' : 'LOCKED BOX'}</strong>
+        <div className="lockDialGrid">
+          {receptionLockTables.map((table, index) => (
+            <div key={table.id} className="lockDial">
+              <span>{table.motif}</span>
+              <button type="button" disabled={solved} aria-label={`${table.motif} digit up`} onClick={() => onAction({ type: 'SET_P03_LOCK_DIGIT', index, value: state.receptionTables.lockInput[index] + 1 })}>+</button>
+              <strong>{state.receptionTables.lockInput[index]}</strong>
+              <button type="button" disabled={solved} aria-label={`${table.motif} digit down`} onClick={() => onAction({ type: 'SET_P03_LOCK_DIGIT', index, value: state.receptionTables.lockInput[index] - 1 })}>-</button>
+            </div>
+          ))}
+        </div>
+        {solved ? (
+          <div className="boxContents">
+            <span>半透明カード</span>
+            <span>写真の切れ端</span>
+          </div>
+        ) : (
+          <button type="button" className="openBoxButton" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>OPEN</button>
+        )}
+      </div>
     </div>
   )
 }
@@ -568,6 +690,8 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
                   ? onAction({ type: 'RESET_P01_TEA_TIME' })
                   : puzzleId === 'p02_ceremony'
                     ? onAction({ type: 'RESET_P02_CANDLES' })
+                    : puzzleId === 'p03_reception'
+                      ? onAction({ type: 'RESET_P03_RECEPTION' })
                   : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
               }
             >
@@ -592,6 +716,12 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'ceremonyLightVisible', value: true })}>Ceremony light</button>
         <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'invitationObtained', value: true })}>Invitation flag</button>
         <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'gardenUnlocked', value: true })}>Garden unlock</button>
+      </DebugGroup>
+      <DebugGroup title="P03 Reception">
+        <button type="button" onClick={() => receptionTables.forEach((table) => onAction({ type: 'DISCOVER_RECEPTION_ANOMALY', tableId: table.id, seatId: table.targetSeatId }))}>Discover all anomalies</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_P03_LOCK_INPUT', input: getReceptionLockDigits() })}>Set lock {getReceptionLockCode()}</button>
+        <button type="button" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>Open / Solve P03</button>
+        <button type="button" onClick={() => onAction({ type: 'RESET_P03_RECEPTION' })}>Reset P03</button>
       </DebugGroup>
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
@@ -651,6 +781,13 @@ function DebugState({ state }: { state: GameState }) {
       p02CandleSequence: correctCandleSequence,
       p02CurrentInput: state.ceremonyCandles.input,
       p02LitCandles: state.ceremonyCandles.lit,
+      p03Status: state.puzzles.p03_reception?.status,
+      p03Anomalies: state.receptionTables.discoveredAnomalies,
+      p03LockInput: state.receptionTables.lockInput,
+      p03ExpectedCode: getReceptionLockCode(),
+      receptionBoxOpened: state.receptionTables.boxOpened,
+      transparentCard: state.inventory['transparent-card'],
+      p03Memory: state.memories.banquet,
       grandClockStarted: state.flags.grandClockStarted === true,
       ceremonyLightVisible: state.flags.ceremonyLightVisible === true,
       smallKeyObtained: state.flags.smallKeyObtained === true,

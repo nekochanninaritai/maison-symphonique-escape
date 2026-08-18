@@ -581,6 +581,253 @@ h3 {
   text-align: center;
 }
 
+.seatingChartPuzzle,
+.receptionTablePuzzle,
+.lockBoxPuzzle {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.receptionHint {
+  display: grid;
+  gap: 4px;
+}
+
+.receptionHint span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fffaf0;
+  background: var(--green);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.receptionHint p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.seatingChartGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.chartTable {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(166, 120, 58, 0.35);
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.chartTable header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.chartTable header strong {
+  color: var(--ink);
+  font-size: 0.92rem;
+}
+
+.roundSeatMap {
+  position: relative;
+  width: min(100%, 280px);
+  margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+.tableCenter {
+  position: absolute;
+  inset: 28%;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  border: 2px solid rgba(166, 120, 58, 0.36);
+  border-radius: 50%;
+  color: var(--muted);
+  background: #f6f1e8;
+  text-align: center;
+}
+
+.tableCenter strong {
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+
+.tableCenter span {
+  font-size: 0.72rem;
+}
+
+.seatButton {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 54px;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  gap: 1px;
+  padding: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #fffdfa;
+  touch-action: manipulation;
+}
+
+.seatButton:disabled {
+  opacity: 1;
+}
+
+.seatButton.discovered {
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(166, 95, 97, 0.14);
+}
+
+.seatLabel {
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.seatSetting {
+  position: relative;
+  width: 38px;
+  height: 30px;
+  display: block;
+}
+
+.plate {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  width: 18px;
+  height: 14px;
+  border: 1px solid rgba(43, 37, 34, 0.28);
+  border-radius: 50%;
+  background: #f8efe2;
+}
+
+.glass {
+  position: absolute;
+  right: 4px;
+  top: 2px;
+  width: 7px;
+  height: 15px;
+  border: 1px solid rgba(65, 93, 117, 0.6);
+  border-radius: 2px 2px 6px 6px;
+}
+
+.napkin {
+  position: absolute;
+  left: 4px;
+  bottom: 2px;
+  width: 12px;
+  height: 10px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: var(--green);
+}
+
+.chair {
+  position: absolute;
+  left: 13px;
+  bottom: 0;
+  width: 12px;
+  height: 5px;
+  border-radius: 2px;
+  background: rgba(43, 37, 34, 0.48);
+}
+
+.different-napkin .napkin {
+  width: 14px;
+  clip-path: polygon(0 0, 100% 16%, 72% 100%, 12% 86%);
+  background: var(--rose);
+}
+
+.pulled-chair .chair {
+  transform: translateY(5px);
+  background: var(--rose);
+}
+
+.petal {
+  position: absolute;
+  right: 2px;
+  bottom: 5px;
+  width: 8px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rose);
+  transform: rotate(-25deg);
+}
+
+.lockBox {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 2px solid rgba(43, 37, 34, 0.24);
+  border-radius: 8px;
+  background: #fffaf0;
+  text-align: center;
+}
+
+.lockBox.opened {
+  border-color: var(--green);
+  background: #f3f6ed;
+}
+
+.lockDialGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.lockDial {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.lockDial span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.lockDial strong {
+  padding: 8px 0;
+  border: 1px solid rgba(166, 120, 58, 0.35);
+  border-radius: 6px;
+  background: #fffdfa;
+  font-size: 1.4rem;
+}
+
+.lockDial button {
+  min-height: 40px;
+  padding: 6px;
+}
+
+.openBoxButton {
+  width: min(100%, 180px);
+  justify-self: center;
+  border-color: var(--gold);
+  background: #f8efe2;
+}
+
+.boxContents {
+  display: grid;
+  gap: 8px;
+  color: var(--green);
+}
+
 .clockWidget,
 .memoryMeter {
   display: flex;
@@ -843,6 +1090,50 @@ h3 {
     min-height: 70px;
     padding: 8px;
     text-align: center;
+  }
+
+  .focusScene {
+    padding: 10px;
+  }
+
+  .focusScene > div {
+    max-height: calc(100svh - 20px);
+    padding: 16px;
+  }
+
+  .seatingChartGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chartTable {
+    padding: 8px;
+  }
+
+  .roundSeatMap {
+    width: min(100%, 250px);
+  }
+
+  .seatButton {
+    width: 48px;
+    min-height: 48px;
+  }
+
+  .seatSetting {
+    width: 34px;
+    height: 27px;
+  }
+
+  .lockBox {
+    padding: 12px 8px;
+  }
+
+  .lockDialGrid {
+    gap: 6px;
+  }
+
+  .lockDial button {
+    min-height: 38px;
+    padding: 4px;
   }
 
   .areaNav button,

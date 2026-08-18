@@ -1,4 +1,5 @@
 import { ceremonyVases, lightEventVase } from './ceremonyCandles'
+import { receptionTables } from './receptionTables'
 import type { Area, GameState } from '../types'
 
 export const areas: Record<string, Area> = {
@@ -182,6 +183,42 @@ export const areas: Record<string, Area> = {
     memoryBackground: 'reception-memory',
     unlockCondition: (state) => state.flags.receptionUnlocked === true || state.worldMode === 'memory',
     hotspots: [
+      {
+        id: 'seating-chart',
+        label: '席次表',
+        position: { x: 6, y: 18, width: 18, height: 24 },
+        focusScene: {
+          id: 'focus-seating-chart',
+          title: '席次表',
+          description: '四つのゲストテーブルと、それぞれの席に振られた数字が記されている。',
+        },
+        message: ['入口の近くに、披露宴の席次表が立てられている。'],
+      },
+      ...receptionTables.map((table): Area['hotspots'][number] => ({
+        id: `reception-table-${table.id}`,
+        label: `${table.name} テーブル`,
+        position: table.position,
+        focusScene: {
+          id: `focus-reception-table-${table.id}`,
+          title: `${table.name} テーブル`,
+          description: `${table.decoration}が飾られたゲストテーブル。席ごとの小物を見比べられそうだ。`,
+        },
+        message: [`${table.motif}をモチーフにしたテーブル。ひとつずつ席を確かめられそうだ。`],
+      })),
+      {
+        id: 'reception-box',
+        label: 'ロック付きの箱',
+        position: { x: 42, y: 42, width: 16, height: 14 },
+        focusScene: {
+          id: 'focus-reception-box',
+          title: 'ロック付きの箱',
+          description: '四つのモチーフが並んだ、小さなダイヤルロックの箱。',
+        },
+        message: (state) =>
+          state.receptionTables.boxOpened || state.puzzles.p03_reception?.status === 'solved'
+            ? ['小さな箱は、すでに開いている。']
+            : ['小さな箱には、四桁のダイヤルロックが付いている。'],
+      },
       {
         id: 'piano',
         label: 'ピアノ',

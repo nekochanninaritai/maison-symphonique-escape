@@ -111,6 +111,12 @@ export type CeremonyCandleState = {
   lit: string[]
 }
 
+export type ReceptionTableState = {
+  discoveredAnomalies: Record<string, string>
+  lockInput: number[]
+  boxOpened: boolean
+}
+
 export type GameState = {
   saveVersion: number
   screen: Screen
@@ -126,6 +132,7 @@ export type GameState = {
   flags: Record<string, boolean>
   teaTime: TeaTimeState
   ceremonyCandles: CeremonyCandleState
+  receptionTables: ReceptionTableState
   clockState: ClockState
   normalEndingCleared: boolean
   trueRouteUnlocked: boolean
@@ -157,6 +164,11 @@ export type GameAction =
   | { type: 'RESET_P01_TEA_TIME' }
   | { type: 'LIGHT_CEREMONY_CANDLE'; candleId: string }
   | { type: 'RESET_P02_CANDLES' }
+  | { type: 'DISCOVER_RECEPTION_ANOMALY'; tableId: string; seatId: string }
+  | { type: 'SET_P03_LOCK_DIGIT'; index: number; value: number }
+  | { type: 'SET_P03_LOCK_INPUT'; input: number[] }
+  | { type: 'OPEN_P03_BOX' }
+  | { type: 'RESET_P03_RECEPTION' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

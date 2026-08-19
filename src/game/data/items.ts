@@ -24,7 +24,7 @@ export const createItems = (): Record<string, Item> => ({
     name: '小さな鍵',
     description: '小さな古びた鍵。',
     image: 'placeholder-item-small-key',
-    usableTargets: ['piano'],
+    usableTargets: ['piano-keyhole'],
     obtained: false,
     consumed: false,
   },

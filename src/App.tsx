@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
-import { getDerivedPianoSequence, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
+import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
+import { audioManager } from './game/audio'
 import { createClockDragSession, updateClockDragSession } from './game/clock'
 import { getMemoryCount, getPuzzleDependencyChecklist, getVisibleHotspots, reducer } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
@@ -613,12 +614,116 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
 
 function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
   const puzzle = state.puzzles.p05_piano
+  const solved = puzzle?.status === 'solved'
+  const available = puzzle?.status === 'available'
+  const [pressedKey, setPressedKey] = useState<number | null>(null)
+  const [phraseReset, setPhraseReset] = useState(false)
+  const [autoPlaying, setAutoPlaying] = useState(false)
+  const previousSolvedRef = useRef(solved)
+  const previousInputLengthRef = useRef(state.pianoPerformance.input.length)
+  const playableKeys = useMemo(() => getPlayablePianoKeys(), [])
+  const whiteKeys = playableKeys.filter((key) => key.kind === 'white')
+  const blackKeys = playableKeys.filter((key) => key.kind === 'black')
+  const correctSequence = useMemo(() => getDerivedPianoSequence(), [])
+
+  const playTone = useCallback((keyIndex: number) => {
+    const key = playableKeys.find((candidate) => candidate.keyIndex === keyIndex)
+    if (!key) return
+    audioManager.enable()
+    audioManager.playPianoTone(key.toneOffset)
+    setPressedKey(keyIndex)
+    window.setTimeout(() => setPressedKey((current) => (current === keyIndex ? null : current)), 140)
+  }, [playableKeys])
+
+  const playKey = (keyIndex: number) => {
+    if (autoPlaying) return
+    playTone(keyIndex)
+    onAction({ type: 'PLAY_PIANO_KEY', keyIndex })
+  }
+
+  useEffect(() => {
+    const phraseLength = getPhraseLength()
+    if (!solved && previousInputLengthRef.current === phraseLength - 1 && state.pianoPerformance.input.length === 0) {
+      setPhraseReset(true)
+      const timer = window.setTimeout(() => setPhraseReset(false), 360)
+      return () => window.clearTimeout(timer)
+    }
+    previousInputLengthRef.current = state.pianoPerformance.input.length
+    return undefined
+  }, [solved, state.pianoPerformance.input.length])
+
+  useEffect(() => {
+    if (!solved || previousSolvedRef.current) {
+      previousSolvedRef.current = solved
+      return undefined
+    }
+    previousSolvedRef.current = solved
+    setAutoPlaying(true)
+    const timers = correctSequence.map((keyIndex, index) =>
+      window.setTimeout(() => playTone(keyIndex), 260 + index * 360),
+    )
+    timers.push(window.setTimeout(() => {
+      audioManager.play('bell')
+      setAutoPlaying(false)
+    }, 260 + correctSequence.length * 360 + 160))
+    return () => timers.forEach((timer) => window.clearTimeout(timer))
+  }, [correctSequence, playTone, solved])
+
   return (
-    <div className="focusPuzzleStack">
-      {puzzle && (puzzle.status === 'available' || puzzle.status === 'solved') && (
-        <PuzzleRow state={state} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
-      )}
-      {state.flags.pianoMechanismUnlocked && !state.flags.pianoSecretOpened && <p className="clockHint">小さな鍵穴がある。</p>}
+    <div className={`pianoPuzzle ${phraseReset ? 'phraseReset' : ''}`}>
+      <div className="pianoCabinet">
+        <div className="pianoLid" aria-hidden="true" />
+        <div className="pianoKeyboard" aria-label="ピアノ鍵盤">
+          <div className="pianoWhiteKeys">
+            {whiteKeys.map((key) => (
+              <button
+                key={key.id}
+                type="button"
+                className={`pianoKey white ${pressedKey === key.keyIndex ? 'pressed' : ''}`}
+                aria-label={`白鍵 ${key.position + 1}`}
+                disabled={autoPlaying}
+                onPointerDown={(event) => {
+                  event.preventDefault()
+                  playKey(key.keyIndex)
+                }}
+              >
+                {key.position === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準の星">★</strong>}
+              </button>
+            ))}
+          </div>
+          <div className="pianoBlackKeys" aria-hidden="false">
+            {blackKeys.map((key) => (
+              <button
+                key={key.id}
+                type="button"
+                className={`pianoKey black ${pressedKey === key.keyIndex ? 'pressed' : ''}`}
+                style={{ left: `${((key.position + 1) / pianoOverlayPuzzleData.whiteKeyCount) * 100}%` }}
+                aria-label={`黒鍵 ${key.position + 1}`}
+                disabled={autoPlaying}
+                onPointerDown={(event) => {
+                  event.preventDefault()
+                  playKey(key.keyIndex)
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        <button
+          type="button"
+          className={`pianoKeyhole ${state.flags.pianoSecretOpened ? 'opened' : ''}`}
+          aria-label="小さな鍵穴"
+          onClick={() => {
+            if (state.selectedItemId === 'small-key') {
+              onAction({ type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
+              return
+            }
+            onAction({ type: 'EXAMINE_PIANO_KEYHOLE' })
+          }}
+        >
+          <span aria-hidden="true" />
+        </button>
+      </div>
+      {!available && !solved && <p className="clockHint">静かな鍵盤が、まだ音を待っている。</p>}
       {state.flags.pianoSecretOpened && <p className="clockHint">秘密収納は開いている。</p>}
     </div>
   )
@@ -751,7 +856,9 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
                       ? onAction({ type: 'RESET_P03_RECEPTION' })
                       : puzzleId === 'p04_sheet_overlay'
                         ? onAction({ type: 'RESET_P04_OVERLAY' })
-                  : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
+                        : puzzleId === 'p05_piano'
+                          ? onAction({ type: 'RESET_P05_PIANO' })
+                          : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
               }
             >
               Reset
@@ -788,6 +895,16 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'APPLY_P04_OVERLAY' })}>Apply Overlay</button>
         <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p04_sheet_overlay', force: true })}>Solve P04</button>
         <button type="button" onClick={() => onAction({ type: 'RESET_P04_OVERLAY' })}>Reset P04</button>
+      </DebugGroup>
+      <DebugGroup title="P05 Piano">
+        <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId: 'p05_piano', status: 'available' })}>Make P05 available</button>
+        <button type="button" onClick={() => getDerivedPianoSequence().forEach((keyIndex) => onAction({ type: 'PLAY_PIANO_KEY', keyIndex }))}>Input correct sequence</button>
+        <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p05_piano', force: true })}>Solve P05</button>
+        <button type="button" onClick={() => onAction({ type: 'RESET_P05_PIANO' })}>Reset P05</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'ceremonyLightVisible', value: true })}>Show Ceremony Light</button>
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'small-key' })}>Give Small Key</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'pianoSecretOpened', value: true })}>Open Piano Secret</button>
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'old-invitation' })}>Give Invitation</button>
       </DebugGroup>
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
@@ -859,9 +976,13 @@ function DebugState({ state }: { state: GameState }) {
       pianoClue: state.clues.pianoSequence,
       derivedPianoSequence: getDerivedPianoSequence(),
       p05Status: state.puzzles.p05_piano?.status,
+      p05CurrentInput: state.pianoPerformance.input,
+      p05PhraseLength: getPhraseLength(),
       grandClockStarted: state.flags.grandClockStarted === true,
       ceremonyLightVisible: state.flags.ceremonyLightVisible === true,
       smallKeyObtained: state.flags.smallKeyObtained === true,
+      pianoSecretOpened: state.flags.pianoSecretOpened === true,
+      invitationObtained: state.flags.invitationObtained === true,
       teaTimeSlots: state.teaTime.cupSlots,
       manualClockControl: state.clockState.canManualRotate,
       memoryCount: getMemoryCount(state),

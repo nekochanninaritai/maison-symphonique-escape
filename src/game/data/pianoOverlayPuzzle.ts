@@ -12,6 +12,14 @@ export type PianoOverlayPuzzleData = {
   symbols: PianoOverlaySymbol[]
 }
 
+export type PlayablePianoKey = {
+  id: string
+  keyIndex: number
+  kind: 'white' | 'black'
+  position: number
+  toneOffset: number
+}
+
 // TODO: Replace after Maison Symphonique picture and transparent sheet visuals are finalized.
 export const pianoOverlayPuzzleData: PianoOverlayPuzzleData = {
   whiteKeyCount: 8,
@@ -33,3 +41,25 @@ export const getOverlaySymbolSequence = (data = pianoOverlayPuzzleData): string[
 
 export const getDerivedPianoSequence = (data = pianoOverlayPuzzleData): number[] =>
   getOverlaySymbolOrder(data).map((symbol) => symbol.keyIndex)
+
+export const getPhraseLength = (data = pianoOverlayPuzzleData): number => getDerivedPianoSequence(data).length
+
+export const getPlayablePianoKeys = (data = pianoOverlayPuzzleData): PlayablePianoKey[] => [
+  ...Array.from({ length: data.whiteKeyCount }, (_, keyIndex) => ({
+    id: `white-${keyIndex}`,
+    keyIndex,
+    kind: 'white' as const,
+    position: keyIndex,
+    toneOffset: keyIndex * 2,
+  })),
+  ...data.blackKeyPositions.map((position) => ({
+    id: `black-${position}`,
+    keyIndex: 100 + position,
+    kind: 'black' as const,
+    position,
+    toneOffset: position * 2 + 1,
+  })),
+]
+
+export const isPlayablePianoKey = (keyIndex: number, data = pianoOverlayPuzzleData): boolean =>
+  getPlayablePianoKeys(data).some((key) => key.keyIndex === keyIndex)

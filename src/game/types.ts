@@ -121,6 +121,10 @@ export type PianoOverlayState = {
   overlayApplied: boolean
 }
 
+export type PianoPerformanceState = {
+  input: number[]
+}
+
 export type GameState = {
   saveVersion: number
   screen: Screen
@@ -138,6 +142,7 @@ export type GameState = {
   ceremonyCandles: CeremonyCandleState
   receptionTables: ReceptionTableState
   pianoOverlay: PianoOverlayState
+  pianoPerformance: PianoPerformanceState
   clockState: ClockState
   normalEndingCleared: boolean
   trueRouteUnlocked: boolean
@@ -176,6 +181,9 @@ export type GameAction =
   | { type: 'RESET_P03_RECEPTION' }
   | { type: 'APPLY_P04_OVERLAY' }
   | { type: 'RESET_P04_OVERLAY' }
+  | { type: 'PLAY_PIANO_KEY'; keyIndex: number }
+  | { type: 'RESET_P05_PIANO' }
+  | { type: 'EXAMINE_PIANO_KEYHOLE' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

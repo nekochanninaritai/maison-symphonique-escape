@@ -28,6 +28,7 @@ export const loadGame = (): GameState => {
       ceremonyCandles: { ...initial.ceremonyCandles, ...parsed.ceremonyCandles },
       receptionTables: { ...initial.receptionTables, ...parsed.receptionTables },
       pianoOverlay: { ...initial.pianoOverlay, ...parsed.pianoOverlay },
+      pianoPerformance: { ...initial.pianoPerformance, ...parsed.pianoPerformance },
       clockState: { ...initial.clockState, ...parsed.clockState },
     }
     const legacySheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-sheet']
@@ -70,6 +71,10 @@ export const loadGame = (): GameState => {
       restored.pianoOverlay = { overlayApplied: true }
       restored.clues = { ...restored.clues, pianoSequence: true }
       restored.flags = { ...restored.flags, pianoClueObtained: true }
+    }
+    if (restored.puzzles.p05_piano?.status === 'solved') {
+      restored.pianoPerformance = { input: [] }
+      restored.flags = { ...restored.flags, pianoMechanismUnlocked: true, ceremonyLightVisible: true }
     }
     return refreshPuzzleAvailability(restored)
   } catch {

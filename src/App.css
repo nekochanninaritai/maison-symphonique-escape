@@ -828,6 +828,150 @@ h3 {
   color: var(--green);
 }
 
+.pianoPuzzle {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.pianoCabinet {
+  position: relative;
+  display: grid;
+  align-content: end;
+  min-height: 260px;
+  padding: 28px 18px 26px;
+  border: 2px solid rgba(43, 37, 34, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(43, 37, 34, 0.12), transparent 45%),
+    #6b4532;
+  box-shadow: inset 0 -18px 0 rgba(43, 37, 34, 0.16);
+}
+
+.pianoLid {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  top: 28px;
+  height: 72px;
+  border: 1px solid rgba(255, 250, 240, 0.16);
+  border-radius: 8px 8px 3px 3px;
+  background: rgba(43, 37, 34, 0.24);
+}
+
+.pianoKeyboard {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  height: 150px;
+  justify-self: center;
+  touch-action: none;
+  user-select: none;
+}
+
+.pianoWhiteKeys {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  height: 100%;
+}
+
+.pianoKey {
+  appearance: none;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.pianoKey.white {
+  position: relative;
+  min-width: 0;
+  min-height: 150px;
+  padding: 0;
+  border: 1px solid rgba(43, 37, 34, 0.55);
+  border-radius: 0 0 6px 6px;
+  background: #fffdfa;
+  box-shadow: inset 0 -8px 0 rgba(166, 120, 58, 0.08);
+}
+
+.pianoKey.white strong {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  color: var(--gold);
+  font-size: 1.05rem;
+}
+
+.pianoBlackKeys {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pianoKey.black {
+  position: absolute;
+  top: 0;
+  width: 8.5%;
+  min-height: 88px;
+  padding: 0;
+  transform: translateX(-50%);
+  border: 1px solid rgba(43, 37, 34, 0.75);
+  border-radius: 0 0 5px 5px;
+  background: #211d1b;
+  box-shadow: inset 0 -8px 0 rgba(255, 255, 255, 0.08);
+  pointer-events: auto;
+}
+
+.pianoKey.pressed {
+  transform: translateY(4px);
+  filter: brightness(0.94);
+}
+
+.pianoKey.black.pressed {
+  transform: translate(-50%, 4px);
+}
+
+.pianoPuzzle.phraseReset .pianoKeyboard {
+  animation: pianoNeutral 360ms ease-out;
+}
+
+.pianoKeyhole {
+  position: absolute;
+  z-index: 3;
+  right: 24px;
+  top: 118px;
+  width: 52px;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border-color: rgba(255, 250, 240, 0.36);
+  background: rgba(43, 37, 34, 0.42);
+}
+
+.pianoKeyhole span {
+  width: 12px;
+  height: 24px;
+  border-radius: 7px 7px 3px 3px;
+  background: #120f0e;
+  box-shadow: 0 -8px 0 2px rgba(255, 250, 240, 0.14);
+}
+
+.pianoKeyhole.opened {
+  border-color: var(--gold);
+  background: rgba(166, 120, 58, 0.54);
+}
+
+@keyframes pianoNeutral {
+  0% {
+    filter: brightness(0.9);
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
 .pictureOverlayPuzzle {
   display: grid;
   gap: 14px;
@@ -1299,6 +1443,36 @@ h3 {
   .lockDial button {
     min-height: 38px;
     padding: 4px;
+  }
+
+  .pianoCabinet {
+    min-height: 232px;
+    padding: 24px 10px 20px;
+  }
+
+  .pianoLid {
+    left: 10%;
+    right: 24%;
+    height: 58px;
+  }
+
+  .pianoKeyboard {
+    height: 128px;
+  }
+
+  .pianoKey.white {
+    min-height: 128px;
+  }
+
+  .pianoKey.black {
+    min-height: 76px;
+  }
+
+  .pianoKeyhole {
+    right: 12px;
+    top: 94px;
+    width: 44px;
+    min-height: 44px;
   }
 
   .framedPicture {

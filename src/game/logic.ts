@@ -3,7 +3,7 @@ import { createItems } from './data/items'
 import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
-import { getDerivedPianoSequence } from './data/pianoOverlayPuzzle'
+import { getDerivedPianoSequence, getPhraseLength, isPlayablePianoKey } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { gameConfig } from './config'
@@ -37,6 +37,9 @@ export const createInitialState = (): GameState => ({
   },
   pianoOverlay: {
     overlayApplied: false,
+  },
+  pianoPerformance: {
+    input: [],
   },
   clockState: {
     handObtained: false,
@@ -279,6 +282,9 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzleId === 'p04_sheet_overlay') {
     next = { ...next, pianoOverlay: { overlayApplied: true } }
   }
+  if (puzzleId === 'p05_piano') {
+    next = { ...next, pianoPerformance: { input: [] } }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -319,7 +325,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
         : puzzleId === 'p02_ceremony'
           ? ['四つの灯が、静かに祭壇を照らした。']
           : puzzleId === 'p05_piano'
-            ? ['カチッ。', 'ピアノの内部で、何かが動いたようだ。']
+            ? ['最後の音が、静かな披露宴会場に響いた。', '――遠くで、小さな鐘が鳴った。']
             : [`${puzzle.title} をSolvedにした。`]
   const finalMessages =
     puzzleId === 'p03_reception'
@@ -459,6 +465,57 @@ export const resetP04Overlay = (state: GameState): GameState =>
 
 export const getPianoSequenceForP05 = (): number[] => getDerivedPianoSequence()
 
+export const playPianoKey = (state: GameState, keyIndex: number): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  if (!isPlayablePianoKey(keyIndex)) return current
+  if (current.puzzles.p05_piano?.status === 'solved') {
+    return { ...current, pianoPerformance: { input: [] }, messageQueue: [] }
+  }
+  if (current.puzzles.p05_piano?.status !== 'available') return current
+
+  const input = [...current.pianoPerformance.input, keyIndex]
+  const phraseLength = getPhraseLength()
+  if (input.length < phraseLength) {
+    return { ...current, pianoPerformance: { input }, messageQueue: [] }
+  }
+
+  const correct = getPianoSequenceForP05()
+  const solved = input.length === correct.length && input.every((value, index) => value === correct[index])
+  if (solved) {
+    return solvePuzzle({ ...current, pianoPerformance: { input } }, 'p05_piano')
+  }
+
+  return { ...current, pianoPerformance: { input: [] }, messageQueue: [] }
+}
+
+export const resetP05Piano = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    pianoPerformance: { input: [] },
+    flags: {
+      ...state.flags,
+      pianoMechanismUnlocked: false,
+      ceremonyLightVisible: false,
+      pianoSecretOpened: false,
+      invitationObtained: false,
+    },
+    puzzles: {
+      ...state.puzzles,
+      p05_piano: { ...state.puzzles.p05_piano, status: 'available' },
+      p06_grand_clock: { ...state.puzzles.p06_grand_clock, status: 'locked' },
+    },
+    inventory: {
+      ...state.inventory,
+      'old-invitation': cloneItem(state.inventory['old-invitation'], { obtained: false, consumed: false }),
+    },
+    messageQueue: ['P05 Piano Puzzle をリセットした。'],
+  })
+
+export const examinePianoKeyhole = (state: GameState): GameState =>
+  state.flags.pianoSecretOpened
+    ? withMessage(state, ['小さな収納が開いている。'])
+    : withMessage(state, ['小さな鍵穴がある。', '今は開けられそうにない。'])
+
 export const resetP02Candles = (state: GameState): GameState =>
   refreshPuzzleAvailability({
     ...state,
@@ -564,9 +621,9 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
     case 'USE_SELECTED_ITEM':
       if (state.selectedItemId === 'clock-hand' && action.targetId === 'grand-clock') return attachClockHandFromAction(state)
       if (state.selectedItemId === 'transparent-card' && action.targetId === 'framed-picture') return applyPianoOverlay(state)
-      if (state.selectedItemId === 'small-key' && action.targetId === 'piano') {
+      if (state.selectedItemId === 'small-key' && action.targetId === 'piano-keyhole') {
         if (!state.flags.pianoMechanismUnlocked) {
-          return withMessage(state, ['鍵は合いそうだが、まだ内部の仕掛けが動いていない。'])
+          return withMessage(state, ['小さな鍵穴がある。', '今は開けられそうにない。'])
         }
         if (state.flags.pianoSecretOpened) {
           return withMessage(state, ['秘密収納はすでに開いている。'])
@@ -576,7 +633,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
             ...obtainItem(consumeItem(state, 'small-key'), 'old-invitation'),
             flags: { ...state.flags, pianoSecretOpened: true, invitationObtained: true },
           }),
-          ['小さな鍵が回った。', 'ピアノの秘密収納から、古い招待状を手に入れた。'],
+          ['――カチ。', '小さな収納が開いた。', '古い招待状を手に入れた。'],
         )
       }
       return withMessage(state, ['今は使えないようだ。'])
@@ -631,6 +688,12 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return applyPianoOverlay(state)
     case 'RESET_P04_OVERLAY':
       return resetP04Overlay(state)
+    case 'PLAY_PIANO_KEY':
+      return playPianoKey(state, action.keyIndex)
+    case 'RESET_P05_PIANO':
+      return resetP05Piano(state)
+    case 'EXAMINE_PIANO_KEYHOLE':
+      return examinePianoKeyhole(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':

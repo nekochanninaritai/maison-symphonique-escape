@@ -26,7 +26,7 @@ import {
   updateClockDragSessionFromAngle,
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
-import { getDerivedPianoSequence, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
+import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { clearSave, loadGame, saveGame } from './save'
 
@@ -40,6 +40,12 @@ const createP04ReadyState = () => {
   let state = createP03ReadyState()
   state = setReceptionLockInput(state, getReceptionLockDigits())
   return openReceptionBox(state)
+}
+
+const createP05ReadyState = () => {
+  let state = createP04ReadyState()
+  state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+  return reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
 }
 
 describe('ClockState', () => {
@@ -439,6 +445,112 @@ describe('PuzzleState', () => {
     expect(getDerivedPianoSequence(changedData)).toEqual([6, 3, 4, 1])
   })
 
+  it('P04 unsolved keeps P05 locked', () => {
+    const state = createP04ReadyState()
+
+    expect(state.puzzles.p05_piano.status).toBe('locked')
+  })
+
+  it('P05 correct sequence is derived from P04 overlay data', () => {
+    expect(getPianoSequenceForP05()).toEqual([1, 3, 4, 6])
+    expect(getPianoSequenceForP05()).toEqual(getDerivedPianoSequence())
+    expect(getPhraseLength()).toBe(getDerivedPianoSequence().length)
+  })
+
+  it('P05 accepts every visible piano key', () => {
+    const playableKeys = getPlayablePianoKeys()
+    let state = createP05ReadyState()
+
+    for (const key of playableKeys) {
+      state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex: key.keyIndex })
+      expect(state.puzzles.p05_piano.status).not.toBe('locked')
+    }
+  })
+
+  it('P05 does not judge before the phrase length is reached', () => {
+    let state = createP05ReadyState()
+    const sequence = getPianoSequenceForP05()
+
+    for (const keyIndex of sequence.slice(0, getPhraseLength() - 1)) {
+      state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex })
+    }
+
+    expect(state.puzzles.p05_piano.status).toBe('available')
+    expect(state.pianoPerformance.input).toEqual(sequence.slice(0, getPhraseLength() - 1))
+  })
+
+  it('wrong P05 phrase resets input without error messaging', () => {
+    let state = createP05ReadyState()
+    const wrongSequence = [0, 0, 0, 0]
+
+    for (const keyIndex of wrongSequence) {
+      state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex })
+    }
+
+    expect(state.puzzles.p05_piano.status).toBe('available')
+    expect(state.pianoPerformance.input).toEqual([])
+    expect(state.messageQueue).toEqual([])
+  })
+
+  it('correct P05 phrase solves the puzzle and shows the bell event once', () => {
+    let state = createP05ReadyState()
+
+    for (const keyIndex of getPianoSequenceForP05()) {
+      state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex })
+    }
+    const solvedState = state
+    state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex: 0 })
+
+    expect(solvedState.puzzles.p05_piano.status).toBe('solved')
+    expect(solvedState.flags.ceremonyLightVisible).toBe(true)
+    expect(solvedState.flags.pianoMechanismUnlocked).toBe(true)
+    expect(solvedState.messageQueue).toEqual(['最後の音が、静かな披露宴会場に響いた。', '――遠くで、小さな鐘が鳴った。'])
+    expect(state.puzzles.p05_piano.status).toBe('solved')
+    expect(state.messageQueue).toEqual([])
+  })
+
+  it('P05 solved still allows free piano play', () => {
+    let state = createP05ReadyState()
+    state = solvePuzzle(state, 'p05_piano', true)
+    state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex: 100 })
+
+    expect(state.puzzles.p05_piano.status).toBe('solved')
+    expect(state.pianoPerformance.input).toEqual([])
+  })
+
+  it('Piano keyhole can be examined before P05 is solved', () => {
+    let state = createP05ReadyState()
+    state = reducer(state, { type: 'EXAMINE_PIANO_KEYHOLE' })
+
+    expect(state.flags.pianoSecretOpened).not.toBe(true)
+    expect(state.messageQueue).toEqual(['小さな鍵穴がある。', '今は開けられそうにない。'])
+  })
+
+  it('Small Key cannot open the keyhole before P05 is solved', () => {
+    let state = createP05ReadyState()
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
+
+    expect(state.flags.pianoSecretOpened).not.toBe(true)
+    expect(state.inventory['small-key'].obtained).toBe(true)
+    expect(state.messageQueue).toEqual(['小さな鍵穴がある。', '今は開けられそうにない。'])
+  })
+
+  it('Small Key opens the keyhole after P05 and obtains the invitation', () => {
+    let state = createP05ReadyState()
+    state = solvePuzzle(state, 'p05_piano', true)
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
+
+    expect(state.flags.pianoSecretOpened).toBe(true)
+    expect(state.flags.invitationObtained).toBe(true)
+    expect(state.inventory['small-key'].consumed).toBe(true)
+    expect(state.inventory['old-invitation'].obtained).toBe(true)
+    expect(state.puzzles.p06_grand_clock.status).toBe('available')
+  })
+
   it('P05 solved unlocks the piano mechanism and Ceremony light', () => {
     let state = createInitialState()
     state = solvePuzzle(state, 'p05_piano', true)
@@ -464,7 +576,7 @@ describe('PuzzleState', () => {
     state = reducer(state, { type: 'SET_FLAG', flagId: 'pianoMechanismUnlocked', value: true })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
     state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
-    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
 
     expect(state.flags.pianoSecretOpened).toBe(true)
     expect(state.inventory['small-key'].consumed).toBe(true)
@@ -632,6 +744,29 @@ describe('SaveState', () => {
     expect(loaded.puzzles.p04_sheet_overlay.status).toBe('solved')
     expect(loaded.clues.pianoSequence).toBe(true)
     expect(loaded.puzzles.p05_piano.status).toBe('available')
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads P05 solved without replaying the bell event', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP05ReadyState()
+    for (const keyIndex of getPianoSequenceForP05()) {
+      state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex })
+    }
+    saveGame({ ...state, messageQueue: [] })
+
+    const loaded = loadGame()
+    expect(loaded.puzzles.p05_piano.status).toBe('solved')
+    expect(loaded.flags.ceremonyLightVisible).toBe(true)
+    expect(loaded.flags.pianoMechanismUnlocked).toBe(true)
+    expect(loaded.pianoPerformance.input).toEqual([])
+    expect(loaded.messageQueue).toEqual([])
     vi.unstubAllGlobals()
   })
 

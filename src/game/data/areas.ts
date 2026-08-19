@@ -228,18 +228,17 @@ export const areas: Record<string, Area> = {
         id: 'piano',
         label: 'ピアノ',
         position: { x: 58, y: 40, width: 28, height: 20 },
-        useTarget: 'piano',
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',
-          description: '鍵盤に触れなくても、余韻の気配がかすかにある。',
+          description: '静かな披露宴会場に、古いピアノが置かれている。',
         },
         message: (state) => {
           if (state.flags.pianoSecretOpened) {
             return ['秘密の小箱はすでに開いている。']
           }
           if (state.flags.pianoMechanismUnlocked) {
-            return ['ピアノの奥で、何かが外れたようだ。', '小さな鍵穴がある。']
+            return ['ピアノの奥で、何かが外れたようだ。']
           }
           return ['閉じたピアノが、次の音を待っている。']
         },

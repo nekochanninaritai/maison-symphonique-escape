@@ -41,12 +41,12 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
   },
   p05_piano: {
     puzzleId: 'p05_piano',
-    title: 'Puzzle 05 披露宴会場のピアノ',
+    title: 'Puzzle 05 ピアノ演奏',
     areaId: 'reception',
     status: 'locked',
     prerequisites: ['p04_sheet_overlay'],
     requiredClues: ['pianoSequence'],
-    description: '正式な音列Puzzleは今後実装予定です。',
+    description: '完成した鍵盤図を手掛かりに、ピアノを演奏する。',
     rewards: { flags: { pianoMechanismUnlocked: true, ceremonyLightVisible: true }, advanceClockTo: '16:30' },
   },
   p06_grand_clock: {

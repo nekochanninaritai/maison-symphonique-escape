@@ -6,6 +6,7 @@ import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, isPlayablePianoKey } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
+import { p06TargetTime } from './data/weddingSchedule'
 import { gameConfig } from './config'
 export { normalizeTime } from './clock'
 import type { AreaId, GameAction, GameState, Hotspot, Item, Puzzle } from './types'
@@ -99,6 +100,9 @@ export const isNearTrueRouteTime = (time: string): boolean => {
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false
   return hour === 9 && Math.abs(minute - 23) <= 2
 }
+
+export const isP06ClockActive = (state: GameState): boolean =>
+  state.clockState.handAttached && state.puzzles.p06_grand_clock?.status === 'available' && isItemAvailable(state, 'old-invitation')
 
 const cloneItem = (item: Item, patch: Partial<Item>): Item => ({ ...item, ...patch })
 
@@ -204,6 +208,15 @@ export const setClockTime = (state: GameState, time: string): GameState => {
       },
     })
   }
+  if (isP06ClockActive(state) && time === p06TargetTime) {
+    return solvePuzzle({
+      ...state,
+      clockState: {
+        ...state.clockState,
+        currentTime: p06TargetTime,
+      },
+    }, 'p06_grand_clock')
+  }
   return {
     ...state,
     clockState: {
@@ -285,6 +298,12 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzleId === 'p05_piano') {
     next = { ...next, pianoPerformance: { input: [] } }
   }
+  if (puzzleId === 'p06_grand_clock') {
+    next = {
+      ...next,
+      clockState: { ...next.clockState, currentTime: p06TargetTime },
+    }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -326,6 +345,8 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
           ? ['四つの灯が、静かに祭壇を照らした。']
           : puzzleId === 'p05_piano'
             ? ['最後の音が、静かな披露宴会場に響いた。', '――遠くで、小さな鐘が鳴った。']
+            : puzzleId === 'p06_grand_clock'
+              ? ['――ゴーン。', '時計の奥で、古い歯車がゆっくりと動き始めた。', '……どこかで、重い扉の開く音がした。']
             : [`${puzzle.title} をSolvedにした。`]
   const finalMessages =
     puzzleId === 'p03_reception'
@@ -516,6 +537,29 @@ export const examinePianoKeyhole = (state: GameState): GameState =>
     ? withMessage(state, ['小さな収納が開いている。'])
     : withMessage(state, ['小さな鍵穴がある。', '今は開けられそうにない。'])
 
+export const resetP06Clock = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    flags: {
+      ...state.flags,
+      gardenUnlocked: false,
+    },
+    puzzles: {
+      ...state.puzzles,
+      p06_grand_clock: { ...state.puzzles.p06_grand_clock, status: 'available' },
+      p07_garden_final: { ...state.puzzles.p07_garden_final, status: 'locked' },
+    },
+    memories: {
+      ...state.memories,
+      invitation: { ...state.memories.invitation, unlocked: false },
+    },
+    clockState: {
+      ...state.clockState,
+      currentTime: '15:00',
+    },
+    messageQueue: ['P06 Grand Clock Puzzle をリセットした。'],
+  })
+
 export const resetP02Candles = (state: GameState): GameState =>
   refreshPuzzleAvailability({
     ...state,
@@ -694,6 +738,8 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return resetP05Piano(state)
     case 'EXAMINE_PIANO_KEYHOLE':
       return examinePianoKeyhole(state)
+    case 'RESET_P06_CLOCK':
+      return resetP06Clock(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':

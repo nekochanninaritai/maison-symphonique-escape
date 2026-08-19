@@ -7,6 +7,7 @@ import {
   discoverReceptionAnomaly,
   getMemoryCount,
   getPianoSequenceForP05,
+  isP06ClockActive,
   isNearTrueRouteTime,
   lightCeremonyCandle,
   moveTeaCup,
@@ -28,6 +29,7 @@ import {
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
+import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
 import { clearSave, loadGame, saveGame } from './save'
 
 const createP03ReadyState = () => {
@@ -46,6 +48,14 @@ const createP05ReadyState = () => {
   let state = createP04ReadyState()
   state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
   return reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+}
+
+const createP06ReadyState = () => {
+  let state = createP05ReadyState()
+  state = solvePuzzle(state, 'p05_piano', true)
+  state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'old-invitation' })
+  state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+  return reducer(state, { type: 'SET_CLOCK_TIME', time: '15:00' })
 }
 
 describe('ClockState', () => {
@@ -591,14 +601,66 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p06_grand_clock.status).toBe('available')
   })
 
-  it('P06 solved unlocks Garden', () => {
+  it('P06 clock operation is unavailable before the old invitation is obtained', () => {
     let state = createInitialState()
-    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = solvePuzzle(state, 'p05_piano', true)
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+
+    expect(state.puzzles.p06_grand_clock.status).toBe('locked')
+    expect(isP06ClockActive(state)).toBe(false)
+  })
+
+  it('old invitation schedule keeps Finale time missing in normal UI data', () => {
+    const finale = oldInvitationSchedule.find((entry) => entry.id === 'finale')
+
+    expect(finale?.time).toBeNull()
+    expect(JSON.stringify(oldInvitationSchedule)).not.toContain(p06TargetTime)
+  })
+
+  it('P06 target time is 15:30', () => {
+    expect(p06TargetTime).toBe('15:30')
+  })
+
+  it('15:29 and 15:31 do not solve P06', () => {
+    let state = createP06ReadyState()
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '15:29' })
+    expect(state.puzzles.p06_grand_clock.status).toBe('available')
+    expect(state.flags.gardenUnlocked).not.toBe(true)
+
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '15:31' })
+    expect(state.puzzles.p06_grand_clock.status).toBe('available')
+    expect(state.flags.gardenUnlocked).not.toBe(true)
+  })
+
+  it('15:30 solves P06, keeps the clock at 15:30, and unlocks Garden', () => {
+    let state = createP06ReadyState()
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: p06TargetTime })
 
     expect(state.puzzles.p06_grand_clock.status).toBe('solved')
     expect(state.flags.gardenUnlocked).toBe(true)
     expect(canMoveToArea(state, 'garden')).toBe(true)
-    expect(state.clockState.currentTime).toBe('18:00')
+    expect(state.clockState.currentTime).toBe(p06TargetTime)
+  })
+
+  it('P06 solved does not double solve or unlock the TRUE route', () => {
+    let state = createP06ReadyState()
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: p06TargetTime })
+    const solvedState = state
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: p06TargetTime })
+
+    expect(state.puzzles.p06_grand_clock.status).toBe('solved')
+    expect(state.messageQueue).toEqual(solvedState.messageQueue)
+    expect(state.trueRouteUnlocked).not.toBe(true)
+    expect(state.worldMode).toBe('empty')
+    expect(getMemoryCount(state)).toBe(4)
+  })
+
+  it('09:23 before NORMAL END does not unlock TRUE route', () => {
+    let state = createP06ReadyState()
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '09:23' })
+
+    expect(state.trueRouteUnlocked).not.toBe(true)
+    expect(state.worldMode).toBe('empty')
   })
 
   it('reaching Garden makes P07 available', () => {
@@ -789,6 +851,39 @@ describe('SaveState', () => {
     const loaded = loadGame()
     expect(loaded.inventory['transparent-card'].obtained).toBe(true)
     expect(loaded.inventory['transparent-card'].name).toBe('半透明の紙')
+    vi.unstubAllGlobals()
+  })
+
+  it('migrates legacy P06 saves from 18:00 to the 15:30 Garden unlock state', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    const legacy = {
+      ...createInitialState(),
+      saveVersion: 2,
+      puzzles: {
+        ...createInitialState().puzzles,
+        p06_grand_clock: { ...createInitialState().puzzles.p06_grand_clock, status: 'solved' },
+      },
+      flags: {
+        ...createInitialState().flags,
+        gardenUnlocked: false,
+      },
+      clockState: {
+        ...createInitialState().clockState,
+        currentTime: '18:00',
+      },
+    }
+    localStorage.setItem('maison-symphonique-escape-save', JSON.stringify(legacy))
+
+    const loaded = loadGame()
+    expect(loaded.puzzles.p06_grand_clock.status).toBe('solved')
+    expect(loaded.clockState.currentTime).toBe(p06TargetTime)
+    expect(loaded.flags.gardenUnlocked).toBe(true)
     vi.unstubAllGlobals()
   })
 })

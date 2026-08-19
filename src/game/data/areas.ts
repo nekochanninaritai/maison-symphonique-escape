@@ -25,7 +25,10 @@ export const areas: Record<string, Area> = {
             return ['時計は止まっている。', '長針に触れると、わずかに動いた。']
           }
           if (state.flags.invitationObtained && state.puzzles.p06_grand_clock?.status !== 'solved') {
-            return ['古い招待状の裏面を、大時計の盤面へ重ねられそうだ。', '※正式問題は今後実装予定']
+            return ['時計は静かに止まっている。', '長針に触れると、わずかに動いた。']
+          }
+          if (state.puzzles.p06_grand_clock?.status === 'solved') {
+            return ['大時計は15:30を指している。']
           }
           if (state.clockState.handAttached) {
             return ['長針は元の場所に戻っている。', 'しかし、時計は動かない。']

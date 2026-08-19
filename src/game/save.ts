@@ -1,6 +1,7 @@
 import { gameConfig } from './config'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { getReceptionLockDigits } from './data/receptionTables'
+import { p06TargetTime } from './data/weddingSchedule'
 import { createInitialState, refreshPuzzleAvailability } from './logic'
 import type { GameState } from './types'
 
@@ -75,6 +76,18 @@ export const loadGame = (): GameState => {
     if (restored.puzzles.p05_piano?.status === 'solved') {
       restored.pianoPerformance = { input: [] }
       restored.flags = { ...restored.flags, pianoMechanismUnlocked: true, ceremonyLightVisible: true }
+    }
+    if (restored.puzzles.p06_grand_clock?.status === 'solved') {
+      restored.flags = { ...restored.flags, gardenUnlocked: true }
+      if (
+        (parsed.saveVersion ?? 1) < 3 &&
+        restored.clockState.currentTime === '18:00' &&
+        !restored.normalEndingCleared &&
+        !restored.trueRouteUnlocked &&
+        !restored.trueEndingCleared
+      ) {
+        restored.clockState = { ...restored.clockState, currentTime: p06TargetTime }
+      }
     }
     return refreshPuzzleAvailability(restored)
   } catch {

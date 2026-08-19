@@ -33,7 +33,7 @@ export const createItems = (): Record<string, Item> => ({
     name: '古い招待状',
     description: 'Maison Symphoniqueの名前とSeptember 23が記された古い招待状。',
     image: 'placeholder-item-old-invitation',
-    usableTargets: ['grand-clock'],
+    usableTargets: [],
     obtained: false,
     consumed: false,
   },

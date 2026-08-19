@@ -184,6 +184,7 @@ export type GameAction =
   | { type: 'PLAY_PIANO_KEY'; keyIndex: number }
   | { type: 'RESET_P05_PIANO' }
   | { type: 'EXAMINE_PIANO_KEYHOLE' }
+  | { type: 'RESET_P06_CLOCK' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

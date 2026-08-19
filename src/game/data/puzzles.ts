@@ -51,13 +51,13 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
   },
   p06_grand_clock: {
     puzzleId: 'p06_grand_clock',
-    title: 'Puzzle 06 招待状と大時計',
+    title: 'Puzzle 06 古い招待状と大時計',
     areaId: 'entrance',
     status: 'locked',
     prerequisites: ['p05_piano'],
     requiredItems: ['old-invitation'],
-    description: '正式な大時計Puzzleは今後実装予定です。',
-    rewards: { memories: ['invitation'], flags: { gardenUnlocked: true }, unlockGarden: true, advanceClockTo: '18:00' },
+    description: '古い招待状を手掛かりに、大時計を動かす。',
+    rewards: { memories: ['invitation'], flags: { gardenUnlocked: true }, unlockGarden: true },
   },
   p07_garden_final: {
     puzzleId: 'p07_garden_final',

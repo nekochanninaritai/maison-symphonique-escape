@@ -5,11 +5,12 @@ import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCand
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
+import { oldInvitationSchedule, p06TargetTime } from './game/data/weddingSchedule'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
 import { createClockDragSession, updateClockDragSession } from './game/clock'
-import { getMemoryCount, getPuzzleDependencyChecklist, getVisibleHotspots, reducer } from './game/logic'
+import { getMemoryCount, getPuzzleDependencyChecklist, getVisibleHotspots, isP06ClockActive, reducer } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
 import type { ClockDragSession } from './game/clock'
 
@@ -21,6 +22,7 @@ function App() {
   const [debugOpen, setDebugOpen] = useState(false)
   const [showHotspots, setShowHotspots] = useState(false)
   const [activeFocus, setActiveFocus] = useState<string | null>(null)
+  const [activeItemFocus, setActiveItemFocus] = useState<string | null>(null)
 
   useEffect(() => {
     saveGame(state)
@@ -51,9 +53,11 @@ function App() {
           currentArea={currentArea}
           visibleHotspots={visibleHotspots}
           activeFocus={activeFocus}
+          activeItemFocus={activeItemFocus}
           showHotspots={DEBUG_MODE && showHotspots}
           selectedItemName={selectedItem?.name ?? null}
           onFocus={setActiveFocus}
+          onItemFocus={setActiveItemFocus}
           onAction={send}
         />
       )}
@@ -111,22 +115,27 @@ function GameScreen({
   currentArea,
   visibleHotspots,
   activeFocus,
+  activeItemFocus,
   showHotspots,
   selectedItemName,
   onFocus,
+  onItemFocus,
   onAction,
 }: {
   state: GameState
   currentArea: (typeof areas)[AreaId]
   visibleHotspots: Hotspot[]
   activeFocus: string | null
+  activeItemFocus: string | null
   showHotspots: boolean
   selectedItemName: string | null
   onFocus: (focusId: string | null) => void
+  onItemFocus: (itemId: string | null) => void
   onAction: (action: GameAction) => void
 }) {
   const focusHotspot = visibleHotspots.find((hotspot) => hotspot.focusScene?.id === activeFocus)
   const background = state.worldMode === 'memory' ? currentArea.memoryBackground : currentArea.emptyBackground
+  const selectedItem = state.selectedItemId ? state.inventory[state.selectedItemId] : null
 
   return (
     <section className="gameScreen">
@@ -159,7 +168,7 @@ function GameScreen({
             }}
             aria-label={hotspot.label}
             onClick={() => {
-              if (state.selectedItemId && hotspot.useTarget) {
+              if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {
                 onAction({ type: 'USE_SELECTED_ITEM', targetId: hotspot.useTarget })
                 if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
                 return
@@ -205,7 +214,19 @@ function GameScreen({
         </div>
       )}
 
-      {!activeFocus && <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />}
+      {activeItemFocus === 'old-invitation' && (
+        <div className="focusScene" role="dialog" aria-modal="true">
+          <div>
+            <p className="eyebrow">Item Focus</p>
+            <h3>古い招待状</h3>
+            <p>古い招待状だ。当日の流れが記されているが、最後の時刻だけ読み取れない。</p>
+            <OldInvitationFocus />
+            <button type="button" onClick={() => onItemFocus(null)}>閉じる</button>
+          </div>
+        </div>
+      )}
+
+      {!activeFocus && !activeItemFocus && <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />}
 
       <nav className="areaNav" aria-label="Area exits">
         {currentArea.exits.map((exit) => (
@@ -215,7 +236,7 @@ function GameScreen({
         ))}
       </nav>
 
-      <Inventory state={state} selectedItemName={selectedItemName} onAction={onAction} />
+      <Inventory state={state} selectedItemName={selectedItemName} onInspectItem={onItemFocus} onAction={onAction} />
 
       <section className="placeholderPuzzles">
         <h3>Placeholder Puzzle</h3>
@@ -529,6 +550,26 @@ function TransparentSheetLayer() {
   )
 }
 
+function OldInvitationFocus() {
+  return (
+    <div className="oldInvitationPaper">
+      <div className="invitationHeader">
+        <span>Maison Symphonique</span>
+        <strong>TODAY&apos;S SCHEDULE</strong>
+      </div>
+      <ol className="invitationSchedule" aria-label="Today's schedule on the old invitation">
+        {oldInvitationSchedule.map((entry) => (
+          <li key={entry.id} className={entry.time === null ? 'missingTime' : ''}>
+            <span className={`scheduleIcon ${entry.iconId}`} aria-hidden="true" />
+            <time aria-label={entry.time ?? 'time missing'}>{entry.time ?? '--:--'}</time>
+            <strong>{entry.label}</strong>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
 function ClockWidget({ state }: { state: GameState }) {
   const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
   const minuteDeg = minute * 6
@@ -554,7 +595,8 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
   const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
   const minuteDeg = minute * 6
   const hourDeg = ((hour % 12) + minute / 60) * 30
-  const canManipulate = state.clockState.canManualRotate && state.clockState.handAttached
+  const p06Active = isP06ClockActive(state)
+  const canManipulate = state.clockState.handAttached && (state.clockState.canManualRotate || p06Active)
 
   useEffect(() => {
     if (!canManipulate) dragSessionRef.current = null
@@ -604,10 +646,7 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
         {state.clockState.handAttached && <span className="clockHand minute large" style={{ transform: `rotate(${minuteDeg}deg)` }} />}
         {!state.clockState.handAttached && <span className="missingHand">長針なし</span>}
       </button>
-      {canManipulate && <p className="clockHint">長針を反時計回りへ戻せる。</p>}
-      {(state.puzzles.p06_grand_clock?.status === 'available' || state.puzzles.p06_grand_clock?.status === 'solved') && (
-        <PuzzleRow state={state} puzzle={state.puzzles.p06_grand_clock} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p06_grand_clock' })} />
-      )}
+      {canManipulate && <p className="clockHint">長針に触れると、静かに動く。</p>}
     </div>
   )
 }
@@ -752,7 +791,17 @@ function MessageWindow({ state, onClear }: { state: GameState; onClear: () => vo
   )
 }
 
-function Inventory({ state, selectedItemName, onAction }: { state: GameState; selectedItemName: string | null; onAction: (action: GameAction) => void }) {
+function Inventory({
+  state,
+  selectedItemName,
+  onInspectItem,
+  onAction,
+}: {
+  state: GameState
+  selectedItemName: string | null
+  onInspectItem: (itemId: string) => void
+  onAction: (action: GameAction) => void
+}) {
   const obtainedItems = Object.values(state.inventory).filter((item) => item.obtained && !item.consumed)
   return (
     <aside className="inventory">
@@ -761,10 +810,15 @@ function Inventory({ state, selectedItemName, onAction }: { state: GameState; se
       <div className="inventoryGrid">
         {obtainedItems.length === 0 && <span className="emptyText">空</span>}
         {obtainedItems.map((item) => (
-          <button key={item.itemId} type="button" className={state.selectedItemId === item.itemId ? 'selected' : ''} onClick={() => onAction({ type: 'SELECT_ITEM', itemId: state.selectedItemId === item.itemId ? null : item.itemId })}>
-            <span>{item.name}</span>
-            <small>{item.description}</small>
-          </button>
+          <div key={item.itemId} className="inventoryItem">
+            <button type="button" className={state.selectedItemId === item.itemId ? 'selected' : ''} onClick={() => onAction({ type: 'SELECT_ITEM', itemId: state.selectedItemId === item.itemId ? null : item.itemId })}>
+              <span>{item.name}</span>
+              <small>{item.description}</small>
+            </button>
+            {item.itemId === 'old-invitation' && (
+              <button type="button" className="inspectItemButton" onClick={() => onInspectItem(item.itemId)}>調べる</button>
+            )}
+          </div>
         ))}
       </div>
     </aside>
@@ -858,6 +912,8 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
                         ? onAction({ type: 'RESET_P04_OVERLAY' })
                         : puzzleId === 'p05_piano'
                           ? onAction({ type: 'RESET_P05_PIANO' })
+                          : puzzleId === 'p06_grand_clock'
+                            ? onAction({ type: 'RESET_P06_CLOCK' })
                           : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
               }
             >
@@ -905,6 +961,15 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'small-key' })}>Give Small Key</button>
         <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'pianoSecretOpened', value: true })}>Open Piano Secret</button>
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'old-invitation' })}>Give Invitation</button>
+      </DebugGroup>
+      <DebugGroup title="P06 Grand Clock">
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'old-invitation' })}>Give Old Invitation</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId: 'p06_grand_clock', status: 'available' })}>Make P06 available</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: '15:00' })}>Set Clock 15:00</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: p06TargetTime })}>Set Clock {p06TargetTime}</button>
+        <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p06_grand_clock', force: true })}>Solve P06</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'gardenUnlocked', value: true })}>Unlock Garden</button>
+        <button type="button" onClick={() => onAction({ type: 'RESET_P06_CLOCK' })}>Reset P06</button>
       </DebugGroup>
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
@@ -978,11 +1043,15 @@ function DebugState({ state }: { state: GameState }) {
       p05Status: state.puzzles.p05_piano?.status,
       p05CurrentInput: state.pianoPerformance.input,
       p05PhraseLength: getPhraseLength(),
+      p06Status: state.puzzles.p06_grand_clock?.status,
+      oldInvitation: state.inventory['old-invitation'],
+      p06Target: p06TargetTime,
       grandClockStarted: state.flags.grandClockStarted === true,
       ceremonyLightVisible: state.flags.ceremonyLightVisible === true,
       smallKeyObtained: state.flags.smallKeyObtained === true,
       pianoSecretOpened: state.flags.pianoSecretOpened === true,
       invitationObtained: state.flags.invitationObtained === true,
+      gardenUnlocked: state.flags.gardenUnlocked === true,
       teaTimeSlots: state.teaTime.cupSlots,
       manualClockControl: state.clockState.canManualRotate,
       memoryCount: getMemoryCount(state),

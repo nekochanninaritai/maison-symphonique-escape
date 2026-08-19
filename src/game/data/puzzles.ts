@@ -31,12 +31,12 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
   },
   p04_sheet_overlay: {
     puzzleId: 'p04_sheet_overlay',
-    title: 'Puzzle 04 額装された楽譜',
+    title: 'Puzzle 04 未完成の絵と半透明の紙',
     areaId: 'waiting-room',
     status: 'locked',
     prerequisites: ['p03_reception'],
     requiredItems: ['transparent-card'],
-    description: '正式な重ね合わせPuzzleは今後実装予定です。',
+    description: '未完成の絵に半透明の紙を重ねる。',
     rewards: { memories: ['music'], clues: ['pianoSequence'], flags: { pianoClueObtained: true } },
   },
   p05_piano: {

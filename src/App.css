@@ -828,6 +828,171 @@ h3 {
   color: var(--green);
 }
 
+.pictureOverlayPuzzle {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+}
+
+.pictureHint {
+  display: grid;
+  gap: 4px;
+}
+
+.pictureHint span {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #fffaf0;
+  background: var(--blue);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.pictureHint p {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.framedPicture {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: 14px;
+  min-height: 280px;
+  padding: 22px 18px;
+  border: 10px solid #8f6b42;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f9f3e8 0 62%, #efe2cf 63% 100%);
+  overflow: hidden;
+}
+
+.pictureSky {
+  position: absolute;
+  inset: 12px 18px auto;
+  height: 46%;
+  border-radius: 4px;
+  background:
+    linear-gradient(180deg, rgba(65, 93, 117, 0.1), rgba(166, 120, 58, 0.08)),
+    repeating-linear-gradient(90deg, rgba(80, 107, 90, 0.14) 0 8px, transparent 8px 18px);
+}
+
+.symbolOrder {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 1.25rem;
+}
+
+.symbolOrder span + span::before {
+  content: '→';
+  margin-right: 10px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.pictureKeyboard {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  width: min(100%, 390px);
+  height: 116px;
+  justify-self: center;
+}
+
+.whiteKeyOutline {
+  position: relative;
+  border: 1px solid rgba(43, 37, 34, 0.55);
+  background: rgba(255, 253, 250, 0.5);
+}
+
+.whiteKeyOutline strong {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  color: var(--gold);
+  font-size: 1rem;
+}
+
+.transparentSheetLayer {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 22px;
+  width: min(calc(100% - 36px), 390px);
+  height: 116px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.pictureOverlayPuzzle.justApplied .transparentSheetLayer {
+  animation: sheetSettle 780ms ease-out both;
+}
+
+.blackKeyLayer {
+  position: absolute;
+  inset: 0;
+}
+
+.blackKeyMark {
+  position: absolute;
+  top: 0;
+  width: 8.5%;
+  height: 58%;
+  transform: translateX(-50%);
+  border-radius: 0 0 4px 4px;
+  background: #2b2522;
+}
+
+.sheetSymbols {
+  position: absolute;
+  inset: auto 0 16px;
+}
+
+.sheetSymbols span {
+  position: absolute;
+  transform: translateX(-50%);
+  color: var(--rose);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.transparentSheetPreview {
+  position: relative;
+  height: 128px;
+  border: 1px dashed rgba(65, 93, 117, 0.38);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.transparentSheetPreview .transparentSheetLayer {
+  bottom: 6px;
+}
+
+@keyframes sheetSettle {
+  from {
+    opacity: 0.35;
+    transform: translate(-44%, -22px) rotate(-1.5deg);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pictureOverlayPuzzle.justApplied .transparentSheetLayer {
+    animation: none;
+  }
+}
+
 .clockWidget,
 .memoryMeter {
   display: flex;
@@ -1134,6 +1299,31 @@ h3 {
   .lockDial button {
     min-height: 38px;
     padding: 4px;
+  }
+
+  .framedPicture {
+    min-height: 240px;
+    padding: 18px 10px;
+    border-width: 8px;
+  }
+
+  .symbolOrder {
+    gap: 6px;
+    font-size: 1.05rem;
+  }
+
+  .symbolOrder span + span::before {
+    margin-right: 6px;
+  }
+
+  .pictureKeyboard,
+  .transparentSheetLayer {
+    height: 104px;
+  }
+
+  .transparentSheetLayer {
+    bottom: 18px;
+    width: min(calc(100% - 20px), 390px);
   }
 
   .areaNav button,

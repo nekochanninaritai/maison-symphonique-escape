@@ -28,7 +28,7 @@ export const areas: Record<string, Area> = {
             return ['古い招待状の裏面を、大時計の盤面へ重ねられそうだ。', '※正式問題は今後実装予定']
           }
           if (state.clockState.handAttached) {
-            return ['長針は元の場所に戻っている。', 'しかし、時計は止まったままだ。']
+            return ['長針は元の場所に戻っている。', 'しかし、時計は動かない。']
           }
           return ['時計は止まっている。', '長針がない。']
         },
@@ -37,7 +37,7 @@ export const areas: Record<string, Area> = {
         id: 'entrance-desk',
         label: '受付台',
         position: { x: 12, y: 58, width: 24, height: 18 },
-        message: ['受付台には、まだ名前のない記録帳が置かれている。'],
+        message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
       },
     ],
@@ -71,14 +71,19 @@ export const areas: Record<string, Area> = {
             : ['四人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
       },
       {
-        id: 'framed-score',
-        label: '額装された楽譜',
+        id: 'framed-picture',
+        label: '額装された未完成の絵',
         position: { x: 42, y: 20, width: 20, height: 22 },
-        useTarget: 'framed-score',
+        useTarget: 'framed-picture',
+        focusScene: {
+          id: 'focus-framed-picture',
+          title: '額装された未完成の絵',
+          description: '額に収められた古い絵。ピアノが描かれているが、どこか未完成に見える。',
+        },
         message: (state: GameState) =>
-          state.inventory['transparent-card']?.obtained && !state.clues.pianoSequence
-            ? ['額装された古い楽譜だ。', '半透明カードを重ねられそうだ。']
-            : ['額装された古い楽譜だ。'],
+          state.pianoOverlay.overlayApplied || state.puzzles.p04_sheet_overlay?.status === 'solved'
+            ? ['紙の模様が、絵の上にぴたりと重なっている。']
+            : ['額に収められた古い絵。', 'ピアノが描かれているが、どこか未完成に見える。'],
       },
       {
         id: 'dressing-door',
@@ -155,7 +160,7 @@ export const areas: Record<string, Area> = {
         position: vase.position,
         message: (state) =>
           vase.isFutureLightEventAnchor && state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened
-            ? ['花器が、以前より強く光を返している。']
+            ? ['花器が、以前より強い光を返している。']
             : [vase.description],
       })),
       {
@@ -165,7 +170,7 @@ export const areas: Record<string, Area> = {
           ? { x: lightEventVase.position.x + 9, y: lightEventVase.position.y + 1, width: 5, height: 5 }
           : { x: 60, y: 44, width: 16, height: 14 },
         visibilityCondition: (state) => state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened,
-        message: ['カットガラスの花器が、以前より強く光を返している。', '小さな鍵を手に入れた。'],
+        message: ['カットガラスの花器が、以前より強い光を返している。', '小さな鍵を手に入れた。'],
         itemReward: 'small-key',
         flagUpdate: { smallKeyObtained: true },
       },
@@ -227,11 +232,11 @@ export const areas: Record<string, Area> = {
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',
-          description: '鍵盤に触れなくても、音楽の気配がかすかにある。',
+          description: '鍵盤に触れなくても、余韻の気配がかすかにある。',
         },
         message: (state) => {
           if (state.flags.pianoSecretOpened) {
-            return ['秘密収納は開いている。']
+            return ['秘密の小箱はすでに開いている。']
           }
           if (state.flags.pianoMechanismUnlocked) {
             return ['ピアノの奥で、何かが外れたようだ。', '小さな鍵穴がある。']

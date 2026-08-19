@@ -3,6 +3,7 @@ import { createItems } from './data/items'
 import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
+import { getDerivedPianoSequence } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { gameConfig } from './config'
@@ -33,6 +34,9 @@ export const createInitialState = (): GameState => ({
     discoveredAnomalies: {},
     lockInput: initialReceptionLockInput,
     boxOpened: false,
+  },
+  pianoOverlay: {
+    overlayApplied: false,
   },
   clockState: {
     handObtained: false,
@@ -272,6 +276,9 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
       },
     }
   }
+  if (puzzleId === 'p04_sheet_overlay') {
+    next = { ...next, pianoOverlay: { overlayApplied: true } }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -425,6 +432,33 @@ export const resetP03Reception = (state: GameState): GameState =>
     messageQueue: ['P03 Reception Puzzle をリセットした。'],
   })
 
+export const applyPianoOverlay = (state: GameState): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  if (current.pianoOverlay.overlayApplied || current.puzzles.p04_sheet_overlay?.status === 'solved') {
+    return withMessage(current, ['紙の模様が、絵の上にぴたりと重なっている。'])
+  }
+  if (current.puzzles.p04_sheet_overlay?.status !== 'available') {
+    return withMessage(current, ['ここで使うものではなさそうだ。'])
+  }
+  return withMessage(solvePuzzle(current, 'p04_sheet_overlay'), ['紙の模様が、絵の上にぴたりと重なった。'])
+}
+
+export const resetP04Overlay = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    pianoOverlay: { overlayApplied: false },
+    clues: { ...state.clues, pianoSequence: false },
+    flags: { ...state.flags, pianoClueObtained: false },
+    puzzles: {
+      ...state.puzzles,
+      p04_sheet_overlay: { ...state.puzzles.p04_sheet_overlay, status: 'available' },
+      p05_piano: { ...state.puzzles.p05_piano, status: 'locked' },
+    },
+    messageQueue: ['P04 Overlay Puzzle をリセットした。'],
+  })
+
+export const getPianoSequenceForP05 = (): number[] => getDerivedPianoSequence()
+
 export const resetP02Candles = (state: GameState): GameState =>
   refreshPuzzleAvailability({
     ...state,
@@ -529,13 +563,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return { ...state, selectedItemId: action.itemId }
     case 'USE_SELECTED_ITEM':
       if (state.selectedItemId === 'clock-hand' && action.targetId === 'grand-clock') return attachClockHandFromAction(state)
-      if (state.selectedItemId === 'transparent-card' && action.targetId === 'framed-score') {
-        const current = refreshPuzzleAvailability(state)
-        if (current.puzzles.p04_sheet_overlay?.status !== 'available') {
-          return withMessage(current, ['カードを重ねても、まだ何も読み取れない。'])
-        }
-        return withMessage(solvePuzzle(current, 'p04_sheet_overlay'), ['いくつかの音が読み取れた。', '※正式な音列は今後実装予定'])
-      }
+      if (state.selectedItemId === 'transparent-card' && action.targetId === 'framed-picture') return applyPianoOverlay(state)
       if (state.selectedItemId === 'small-key' && action.targetId === 'piano') {
         if (!state.flags.pianoMechanismUnlocked) {
           return withMessage(state, ['鍵は合いそうだが、まだ内部の仕掛けが動いていない。'])
@@ -599,6 +627,10 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return openReceptionBox(state)
     case 'RESET_P03_RECEPTION':
       return resetP03Reception(state)
+    case 'APPLY_P04_OVERLAY':
+      return applyPianoOverlay(state)
+    case 'RESET_P04_OVERLAY':
+      return resetP04Overlay(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':

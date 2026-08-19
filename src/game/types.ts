@@ -117,6 +117,10 @@ export type ReceptionTableState = {
   boxOpened: boolean
 }
 
+export type PianoOverlayState = {
+  overlayApplied: boolean
+}
+
 export type GameState = {
   saveVersion: number
   screen: Screen
@@ -133,6 +137,7 @@ export type GameState = {
   teaTime: TeaTimeState
   ceremonyCandles: CeremonyCandleState
   receptionTables: ReceptionTableState
+  pianoOverlay: PianoOverlayState
   clockState: ClockState
   normalEndingCleared: boolean
   trueRouteUnlocked: boolean
@@ -169,6 +174,8 @@ export type GameAction =
   | { type: 'SET_P03_LOCK_INPUT'; input: number[] }
   | { type: 'OPEN_P03_BOX' }
   | { type: 'RESET_P03_RECEPTION' }
+  | { type: 'APPLY_P04_OVERLAY' }
+  | { type: 'RESET_P04_OVERLAY' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
+import { getDerivedPianoSequence, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { gameConfig, DEBUG_MODE } from './game/config'
@@ -12,7 +13,7 @@ import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/type
 import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
-const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p05_piano', 'p06_grand_clock'])
+const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock'])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -182,6 +183,7 @@ function GameScreen({
             {focusHotspot.id === 'seating-chart' && <SeatingChartFocus />}
             {focusHotspot.id.startsWith('reception-table-') && <ReceptionTableFocus state={state} tableId={focusHotspot.id.replace('reception-table-', '')} onAction={onAction} />}
             {focusHotspot.id === 'reception-box' && <ReceptionBoxFocus state={state} onAction={onAction} />}
+            {focusHotspot.id === 'framed-picture' && <FramedPictureFocus state={state} />}
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
@@ -460,12 +462,67 @@ function ReceptionBoxFocus({ state, onAction }: { state: GameState; onAction: (a
         </div>
         {solved ? (
           <div className="boxContents">
-            <span>半透明カード</span>
+            <span>半透明の紙</span>
             <span>写真の切れ端</span>
           </div>
         ) : (
           <button type="button" className="openBoxButton" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>OPEN</button>
         )}
+      </div>
+    </div>
+  )
+}
+
+function FramedPictureFocus({ state }: { state: GameState }) {
+  const completed = state.pianoOverlay.overlayApplied || state.puzzles.p04_sheet_overlay?.status === 'solved'
+  const justApplied = completed && state.messageQueue.includes('紙の模様が、絵の上にぴたりと重なった。')
+
+  return (
+    <div className={`pictureOverlayPuzzle ${completed ? 'completed' : ''} ${justApplied ? 'justApplied' : ''}`}>
+      <div className="pictureHint">
+        <span>{completed ? 'completed' : 'unfinished'}</span>
+        <p>{completed ? '紙の模様が、絵の上にぴたりと重なっている。' : '白い鍵盤の輪郭と、小さな記号の列が描かれている。'}</p>
+      </div>
+      <div className="framedPicture" aria-label={completed ? '完成したピアノの絵' : '未完成のピアノの絵'}>
+        <div className="pictureSky" aria-hidden="true" />
+        <div className="symbolOrder" aria-label="絵に描かれた記号の順番">
+          {getOverlaySymbolSequence().map((symbol, index) => (
+            <span key={`${symbol}-${index}`}>{symbol}</span>
+          ))}
+        </div>
+        <KeyboardBaseLayer />
+        {completed && <TransparentSheetLayer />}
+      </div>
+    </div>
+  )
+}
+
+function KeyboardBaseLayer() {
+  return (
+    <div className="pictureKeyboard base">
+      {Array.from({ length: pianoOverlayPuzzleData.whiteKeyCount }, (_, index) => (
+        <span key={index} className="whiteKeyOutline">
+          {index === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準の星">★</strong>}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function TransparentSheetLayer() {
+  return (
+    <div className="transparentSheetLayer">
+      <div className="blackKeyLayer" aria-hidden="true">
+        {pianoOverlayPuzzleData.blackKeyPositions.map((position) => (
+          <span key={position} className="blackKeyMark" style={{ left: `${((position + 1) / pianoOverlayPuzzleData.whiteKeyCount) * 100}%` }} />
+        ))}
+      </div>
+      <div className="sheetSymbols">
+        {pianoOverlayPuzzleData.symbols.map((symbol) => (
+          <span key={symbol.id} style={{ left: `${((symbol.keyIndex + 0.5) / pianoOverlayPuzzleData.whiteKeyCount) * 100}%` }}>
+            {symbol.symbol}
+          </span>
+        ))}
       </div>
     </div>
   )
@@ -692,6 +749,8 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
                     ? onAction({ type: 'RESET_P02_CANDLES' })
                     : puzzleId === 'p03_reception'
                       ? onAction({ type: 'RESET_P03_RECEPTION' })
+                      : puzzleId === 'p04_sheet_overlay'
+                        ? onAction({ type: 'RESET_P04_OVERLAY' })
                   : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
               }
             >
@@ -704,7 +763,7 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
       </DebugGroup>
       <DebugGroup title="Item">
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'clock-hand' })}>長針取得</button>
-        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'transparent-card' })}>半透明カード取得</button>
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'transparent-card' })}>半透明の紙取得</button>
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'small-key' })}>小さな鍵取得</button>
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'old-invitation' })}>古い招待状取得</button>
         <button type="button" onClick={() => onAction({ type: 'CLEAR_INVENTORY' })}>インベントリクリア</button>
@@ -722,6 +781,13 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SET_P03_LOCK_INPUT', input: getReceptionLockDigits() })}>Set lock {getReceptionLockCode()}</button>
         <button type="button" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>Open / Solve P03</button>
         <button type="button" onClick={() => onAction({ type: 'RESET_P03_RECEPTION' })}>Reset P03</button>
+      </DebugGroup>
+      <DebugGroup title="P04 Picture Overlay">
+        <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'transparent-card' })}>Give Transparent Sheet</button>
+        <button type="button" onClick={() => onAction({ type: 'SELECT_ITEM', itemId: 'transparent-card' })}>Select Transparent Sheet</button>
+        <button type="button" onClick={() => onAction({ type: 'APPLY_P04_OVERLAY' })}>Apply Overlay</button>
+        <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p04_sheet_overlay', force: true })}>Solve P04</button>
+        <button type="button" onClick={() => onAction({ type: 'RESET_P04_OVERLAY' })}>Reset P04</button>
       </DebugGroup>
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
@@ -786,8 +852,13 @@ function DebugState({ state }: { state: GameState }) {
       p03LockInput: state.receptionTables.lockInput,
       p03ExpectedCode: getReceptionLockCode(),
       receptionBoxOpened: state.receptionTables.boxOpened,
-      transparentCard: state.inventory['transparent-card'],
+      transparentSheet: state.inventory['transparent-card'],
       p03Memory: state.memories.banquet,
+      p04Status: state.puzzles.p04_sheet_overlay?.status,
+      overlayApplied: state.pianoOverlay.overlayApplied,
+      pianoClue: state.clues.pianoSequence,
+      derivedPianoSequence: getDerivedPianoSequence(),
+      p05Status: state.puzzles.p05_piano?.status,
       grandClockStarted: state.flags.grandClockStarted === true,
       ceremonyLightVisible: state.flags.ceremonyLightVisible === true,
       smallKeyObtained: state.flags.smallKeyObtained === true,

@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
+  applyPianoOverlay,
   attachClockHand,
   canMoveToArea,
   createInitialState,
   discoverReceptionAnomaly,
   getMemoryCount,
+  getPianoSequenceForP05,
   isNearTrueRouteTime,
   lightCeremonyCandle,
   moveTeaCup,
@@ -24,6 +26,7 @@ import {
   updateClockDragSessionFromAngle,
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
+import { getDerivedPianoSequence, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { clearSave, loadGame, saveGame } from './save'
 
@@ -31,6 +34,12 @@ const createP03ReadyState = () => {
   let state = createInitialState()
   state = solvePuzzle(state, 'p02_ceremony', true)
   return reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+}
+
+const createP04ReadyState = () => {
+  let state = createP03ReadyState()
+  state = setReceptionLockInput(state, getReceptionLockDigits())
+  return openReceptionBox(state)
 }
 
 describe('ClockState', () => {
@@ -355,23 +364,79 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('16:00')
   })
 
-  it('transparent card on the Waiting Room score solves P04 and obtains the piano clue', () => {
-    let state = createP03ReadyState()
-    state = setReceptionLockInput(state, getReceptionLockDigits())
-    state = openReceptionBox(state)
-    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
-    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-score' })
+  it('P03 unsolved keeps P04 locked', () => {
+    const state = createP03ReadyState()
 
+    expect(state.puzzles.p04_sheet_overlay.status).toBe('locked')
+  })
+
+  it('P03 solved obtains the transparent sheet and makes P04 available', () => {
+    const state = createP04ReadyState()
+
+    expect(state.inventory['transparent-card'].obtained).toBe(true)
+    expect(state.inventory['transparent-card'].name).toBe('半透明の紙')
+    expect(state.puzzles.p04_sheet_overlay.status).toBe('available')
+  })
+
+  it('examining the unfinished picture without selecting the sheet does not solve P04', () => {
+    let state = createP04ReadyState()
+    state = reducer(state, { type: 'MOVE', areaId: 'waiting-room' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'framed-picture' })
+
+    expect(state.puzzles.p04_sheet_overlay.status).toBe('available')
+    expect(state.pianoOverlay.overlayApplied).toBe(false)
+    expect(state.clues.pianoSequence).not.toBe(true)
+  })
+
+  it('selected transparent sheet on the unfinished picture applies the overlay and solves P04', () => {
+    let state = createP04ReadyState()
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+
+    expect(state.pianoOverlay.overlayApplied).toBe(true)
     expect(state.puzzles.p04_sheet_overlay.status).toBe('solved')
     expect(state.clues.pianoSequence).toBe(true)
     expect(state.flags.pianoClueObtained).toBe(true)
   })
 
-  it('P04 solved makes P05 available', () => {
-    let state = createInitialState()
-    state = solvePuzzle(state, 'p04_sheet_overlay', true)
+  it('P04 solved makes P05 available and preserves the completed picture state', () => {
+    let state = createP04ReadyState()
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
 
     expect(state.puzzles.p05_piano.status).toBe('available')
+    expect(state.pianoOverlay.overlayApplied).toBe(true)
+  })
+
+  it('P04 revisit does not solve or reward twice', () => {
+    let state = createP04ReadyState()
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+    const solvedState = state
+    state = applyPianoOverlay(state)
+
+    expect(state.puzzles.p04_sheet_overlay.status).toBe('solved')
+    expect(state.clues).toEqual(solvedState.clues)
+    expect(state.pianoOverlay.overlayApplied).toBe(true)
+  })
+
+  it('derives the P05 piano sequence from P04 overlay data', () => {
+    expect(getPianoSequenceForP05()).toEqual(getDerivedPianoSequence())
+  })
+
+  it('changing symbol order changes the derived piano sequence', () => {
+    const changedData = {
+      ...pianoOverlayPuzzleData,
+      symbols: pianoOverlayPuzzleData.symbols.map((symbol) =>
+        symbol.id === 'diamond'
+          ? { ...symbol, order: 4 }
+          : symbol.id === 'club'
+            ? { ...symbol, order: 1 }
+            : symbol,
+      ),
+    }
+
+    expect(getDerivedPianoSequence(changedData)).toEqual([6, 3, 4, 1])
   })
 
   it('P05 solved unlocks the piano mechanism and Ceremony light', () => {
@@ -546,6 +611,49 @@ describe('SaveState', () => {
     expect(loaded.inventory['transparent-card'].obtained).toBe(true)
     expect(loaded.memories.banquet.unlocked).toBe(true)
     expect(loaded.clockState.currentTime).toBe('15:00')
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads the completed P04 overlay state', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP04ReadyState()
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.pianoOverlay.overlayApplied).toBe(true)
+    expect(loaded.puzzles.p04_sheet_overlay.status).toBe('solved')
+    expect(loaded.clues.pianoSequence).toBe(true)
+    expect(loaded.puzzles.p05_piano.status).toBe('available')
+    vi.unstubAllGlobals()
+  })
+
+  it('migrates legacy transparent sheet inventory entries to the current item data', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    const legacy = {
+      ...createInitialState(),
+      inventory: {
+        'transparent-sheet': { itemId: 'transparent-sheet', name: 'old', description: 'old', obtained: true, consumed: false },
+      },
+    }
+    localStorage.setItem('maison-symphonique-escape-save', JSON.stringify(legacy))
+
+    const loaded = loadGame()
+    expect(loaded.inventory['transparent-card'].obtained).toBe(true)
+    expect(loaded.inventory['transparent-card'].name).toBe('半透明の紙')
     vi.unstubAllGlobals()
   })
 })

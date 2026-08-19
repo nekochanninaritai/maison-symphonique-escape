@@ -27,7 +27,20 @@ export const loadGame = (): GameState => {
       teaTime: { ...initial.teaTime, ...parsed.teaTime },
       ceremonyCandles: { ...initial.ceremonyCandles, ...parsed.ceremonyCandles },
       receptionTables: { ...initial.receptionTables, ...parsed.receptionTables },
+      pianoOverlay: { ...initial.pianoOverlay, ...parsed.pianoOverlay },
       clockState: { ...initial.clockState, ...parsed.clockState },
+    }
+    const legacySheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-sheet']
+    const savedSheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-card']
+    if (savedSheet || legacySheet) {
+      restored.inventory = {
+        ...restored.inventory,
+        'transparent-card': {
+          ...initial.inventory['transparent-card'],
+          obtained: Boolean(savedSheet?.obtained || legacySheet?.obtained),
+          consumed: Boolean(savedSheet?.consumed || legacySheet?.consumed),
+        },
+      }
     }
     if (restored.puzzles.p01_waiting_room?.status === 'solved') {
       restored.flags = { ...restored.flags, dressingRoomUnlocked: true, ceremonyUnlocked: true }
@@ -46,12 +59,17 @@ export const loadGame = (): GameState => {
       }
       restored.inventory = {
         ...restored.inventory,
-        'transparent-card': { ...restored.inventory['transparent-card'], obtained: true, consumed: false },
+        'transparent-card': { ...initial.inventory['transparent-card'], obtained: true, consumed: false },
       }
       restored.memories = {
         ...restored.memories,
         banquet: { ...restored.memories.banquet, unlocked: true },
       }
+    }
+    if (restored.puzzles.p04_sheet_overlay?.status === 'solved') {
+      restored.pianoOverlay = { overlayApplied: true }
+      restored.clues = { ...restored.clues, pianoSequence: true }
+      restored.flags = { ...restored.flags, pianoClueObtained: true }
     }
     return refreshPuzzleAvailability(restored)
   } catch {

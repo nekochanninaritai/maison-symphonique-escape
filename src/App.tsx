@@ -3,6 +3,7 @@ import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
+import { getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos } from './game/data/memoryPhotos'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { oldInvitationSchedule, p06TargetTime } from './game/data/weddingSchedule'
@@ -15,7 +16,7 @@ import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/type
 import type { ClockDragSession } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
-const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock'])
+const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -168,6 +169,10 @@ function GameScreen({
             }}
             aria-label={hotspot.label}
             onClick={() => {
+              if (hotspot.id === 'garden-gate' && (state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open')) {
+                onAction({ type: 'OPEN_GARDEN_GATE' })
+                return
+              }
               if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {
                 onAction({ type: 'USE_SELECTED_ITEM', targetId: hotspot.useTarget })
                 if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
@@ -196,6 +201,8 @@ function GameScreen({
             {focusHotspot.id === 'framed-picture' && <FramedPictureFocus state={state} />}
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
+            {focusHotspot.id.startsWith('garden-object-') && <GardenObjectFocus state={state} objectId={focusHotspot.id.replace('garden-object-', '')} onAction={onAction} />}
+            {focusHotspot.id === 'garden-gate' && <GardenGateFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
               <div className="focusMessage" aria-live="polite">
                 {state.messageQueue.map((message) => <p key={message}>{message}</p>)}
@@ -226,6 +233,16 @@ function GameScreen({
         </div>
       )}
 
+      {activeItemFocus?.startsWith('memory:') && (
+        <div className="focusScene" role="dialog" aria-modal="true">
+          <div>
+            <p className="eyebrow">Old Photograph</p>
+            <PhotoFocus memoryId={activeItemFocus.replace('memory:', '')} />
+            <button type="button" onClick={() => onItemFocus(null)}>閉じる</button>
+          </div>
+        </div>
+      )}
+
       {!activeFocus && !activeItemFocus && <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />}
 
       <nav className="areaNav" aria-label="Area exits">
@@ -237,6 +254,7 @@ function GameScreen({
       </nav>
 
       <Inventory state={state} selectedItemName={selectedItemName} onInspectItem={onItemFocus} onAction={onAction} />
+      <MemoryGallery state={state} onInspectMemory={(memoryId) => onItemFocus(`memory:${memoryId}`)} />
 
       <section className="placeholderPuzzles">
         <h3>Placeholder Puzzle</h3>
@@ -485,7 +503,7 @@ function ReceptionBoxFocus({ state, onAction }: { state: GameState; onAction: (a
         {solved ? (
           <div className="boxContents">
             <span>半透明の紙</span>
-            <span>写真の切れ端</span>
+            <span>古い写真「Banquet」</span>
           </div>
         ) : (
           <button type="button" className="openBoxButton" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>OPEN</button>
@@ -566,6 +584,86 @@ function OldInvitationFocus() {
           </li>
         ))}
       </ol>
+    </div>
+  )
+}
+
+function MemoryGallery({ state, onInspectMemory }: { state: GameState; onInspectMemory: (memoryId: string) => void }) {
+  const unlockedPhotos = memoryPhotos.filter((photo) => state.memories[photo.memoryId]?.unlocked)
+  if (unlockedPhotos.length === 0) return null
+  return (
+    <aside className="memoryGallery">
+      <h3>Old Photos</h3>
+      <div className="memoryPhotoGrid">
+        {unlockedPhotos.map((photo) => (
+          <button key={photo.id} type="button" onClick={() => onInspectMemory(photo.memoryId)}>
+            <span>{photo.title}</span>
+            <small>{state.memories[photo.memoryId].description}</small>
+          </button>
+        ))}
+      </div>
+    </aside>
+  )
+}
+
+function PhotoFocus({ memoryId }: { memoryId: string }) {
+  const photo = getMemoryPhotoByMemoryId(memoryId)
+  const object = photo ? getGardenPuzzleObject(photo.gardenObjectId) : undefined
+  if (!photo || !object) return <p>写真はまだ見つかっていない。</p>
+
+  return (
+    <div className="photoFocus">
+      <h3>{photo.title}</h3>
+      <div className={`oldPhotoComposition ${object.id}`}>
+        <div className="photoRoom">
+          {photo.sceneElements.map((element) => <span key={element}>{element}</span>)}
+        </div>
+        <div className="photoGardenObject">
+          <span>{object.name}</span>
+          <small>{object.photoFeature}</small>
+        </div>
+        <div className="photoClock" aria-label={`写真に写った時計 ${photo.clockTime}`}>
+          <span>{photo.clockTime}</span>
+        </div>
+      </div>
+      <p>{photo.sourceArea}で見つけた古い写真。庭のものらしい装飾と、小さな時計が写っている。</p>
+    </div>
+  )
+}
+
+function GardenObjectFocus({ state, objectId, onAction }: { state: GameState; objectId: string; onAction: (action: GameAction) => void }) {
+  const object = getGardenPuzzleObject(objectId)
+  if (!object) return null
+  const active = state.gardenFinal.switches[object.id] === true
+  const solved = state.puzzles.p07_garden_final?.status === 'solved'
+  const available = state.puzzles.p07_garden_final?.status === 'available'
+
+  return (
+    <div className={`gardenObjectPuzzle ${active ? 'active' : ''}`}>
+      <div className={`gardenObjectIllustration ${object.id}`} aria-hidden="true">
+        <span />
+      </div>
+      <p>{object.description}</p>
+      <p>台座の側面に、小さなスイッチがある。</p>
+      <button type="button" disabled={!available || solved || active} onClick={() => onAction({ type: 'ACTIVATE_GARDEN_SWITCH', objectId: object.id })}>
+        スイッチ
+      </button>
+      <span className="switchIndicator" aria-label={active ? '灯りがついている' : '灯りは消えている'} />
+    </div>
+  )
+}
+
+function GardenGateFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+  const open = state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open'
+  return (
+    <div className={`gardenGatePuzzle ${open ? 'open' : 'locked'}`}>
+      <div className="gateIllustration" aria-hidden="true">
+        <span className="gateLock" />
+        <span className="gatePanel left" />
+        <span className="gatePanel right" />
+      </div>
+      <p>{open ? '門が開いている。' : '重い鉄の門だ。固く閉ざされている。'}</p>
+      {open && <button type="button" onClick={() => onAction({ type: 'OPEN_GARDEN_GATE' })}>門をくぐる</button>}
     </div>
   )
 }
@@ -914,6 +1012,8 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
                           ? onAction({ type: 'RESET_P05_PIANO' })
                           : puzzleId === 'p06_grand_clock'
                             ? onAction({ type: 'RESET_P06_CLOCK' })
+                            : puzzleId === 'p07_garden_final'
+                              ? onAction({ type: 'RESET_P07_GARDEN' })
                           : onAction({ type: 'SET_PUZZLE_STATUS', puzzleId, status: 'locked' })
               }
             >
@@ -970,6 +1070,17 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p06_grand_clock', force: true })}>Solve P06</button>
         <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'gardenUnlocked', value: true })}>Unlock Garden</button>
         <button type="button" onClick={() => onAction({ type: 'RESET_P06_CLOCK' })}>Reset P06</button>
+      </DebugGroup>
+      <DebugGroup title="P07 Garden">
+        <button type="button" onClick={() => memoryPhotos.forEach((photo) => onAction({ type: 'UNLOCK_MEMORY', memoryId: photo.memoryId }))}>Give All NORMAL Photos</button>
+        {memoryPhotos.map((photo) => <button key={photo.id} type="button" onClick={() => onAction({ type: 'UNLOCK_MEMORY', memoryId: photo.memoryId })}>Give {photo.title}</button>)}
+        <button type="button" onClick={() => onAction({ type: 'SET_MEMORY_COUNT', count: 0 })}>Remove NORMAL Photos</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_PUZZLE_STATUS', puzzleId: 'p07_garden_final', status: 'available' })}>Make P07 available</button>
+        <button type="button" onClick={() => onAction({ type: 'ACTIVATE_GARDEN_SWITCH', objectId: getP07CorrectSequence()[state.gardenFinal.input.length] ?? getP07CorrectSequence()[0] })}>Activate correct next switch</button>
+        <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final', force: true })}>Solve P07</button>
+        <button type="button" onClick={() => onAction({ type: 'RESET_P07_GARDEN' })}>Reset P07</button>
+        <button type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final', force: true })}>Open Gate</button>
+        <button type="button" onClick={() => onAction({ type: 'OPEN_GARDEN_GATE' })}>Trigger NORMAL</button>
       </DebugGroup>
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
@@ -1052,6 +1163,14 @@ function DebugState({ state }: { state: GameState }) {
       pianoSecretOpened: state.flags.pianoSecretOpened === true,
       invitationObtained: state.flags.invitationObtained === true,
       gardenUnlocked: state.flags.gardenUnlocked === true,
+      p07Status: state.puzzles.p07_garden_final?.status,
+      p07ExpectedSequence: getP07CorrectSequence(),
+      p07CurrentSequence: state.gardenFinal.input,
+      p07Switches: state.gardenFinal.switches,
+      gardenGateState: state.gardenFinal.gateState,
+      gardenGateUnlocked: state.flags.gardenGateUnlocked === true,
+      normalPhotos: Object.fromEntries(memoryPhotos.map((photo) => [photo.title, state.memories[photo.memoryId]?.unlocked === true])),
+      memory5: state.memories.september23?.unlocked === true,
       teaTimeSlots: state.teaTime.cupSlots,
       manualClockControl: state.clockState.canManualRotate,
       memoryCount: getMemoryCount(state),

@@ -7,6 +7,7 @@ import { getDerivedPianoSequence, getPhraseLength, isPlayablePianoKey } from './
 import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { p06TargetTime } from './data/weddingSchedule'
+import { gardenPuzzleObjects, getP07CorrectSequence, normalMemoryIds } from './data/memoryPhotos'
 import { gameConfig } from './config'
 export { normalizeTime } from './clock'
 import type { AreaId, GameAction, GameState, Hotspot, Item, Puzzle } from './types'
@@ -41,6 +42,11 @@ export const createInitialState = (): GameState => ({
   },
   pianoPerformance: {
     input: [],
+  },
+  gardenFinal: {
+    input: [],
+    switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
+    gateState: 'locked',
   },
   clockState: {
     handObtained: false,
@@ -130,6 +136,15 @@ const unlockMemory = (state: GameState, memoryId: string): GameState => {
     },
   }
 }
+
+const unlockNormalMemories = (state: GameState): GameState =>
+  normalMemoryIds.reduce((current, memoryId) => unlockMemory(current, memoryId), {
+    ...state,
+    memories: {
+      ...state.memories,
+      september23: { ...state.memories.september23, unlocked: false },
+    },
+  } as GameState)
 
 export const obtainItem = (state: GameState, itemId: string): GameState => {
   const item = state.inventory[itemId]
@@ -304,6 +319,17 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
       clockState: { ...next.clockState, currentTime: p06TargetTime },
     }
   }
+  if (puzzleId === 'p07_garden_final') {
+    next = {
+      ...next,
+      gardenFinal: {
+        input: getP07CorrectSequence(),
+        switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, true])),
+        gateState: 'open',
+      },
+      flags: { ...next.flags, gardenGateUnlocked: true },
+    }
+  }
   puzzle.rewards.memories?.forEach((memoryId) => {
     next = unlockMemory(next, memoryId)
   })
@@ -350,8 +376,10 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
             : [`${puzzle.title} をSolvedにした。`]
   const finalMessages =
     puzzleId === 'p03_reception'
-      ? ['――カチッ。', '箱の中に、半透明のカードが入っている。', 'その下には――古い写真の切れ端が一枚残されていた。', '遠くで、時計の鐘が鳴った。']
-      : messages
+      ? ['――カチッ。', '箱の中に、半透明の紙が入っている。', 'その下には、古い写真「Banquet」が一枚残されていた。', '遠くで、時計の鐘が鳴った。']
+      : puzzleId === 'p07_garden_final'
+        ? ['――カチ。', '四つの小さな灯りが揃った。', 'Gardenの奥で、重い金属の動く音がした。', '門の錠が外れた。']
+        : messages
   return withMessage(refreshPuzzleAvailability(next), finalMessages)
 }
 
@@ -529,6 +557,10 @@ export const resetP05Piano = (state: GameState): GameState =>
       ...state.inventory,
       'old-invitation': cloneItem(state.inventory['old-invitation'], { obtained: false, consumed: false }),
     },
+    memories: {
+      ...state.memories,
+      melody: { ...state.memories.melody, unlocked: false },
+    },
     messageQueue: ['P05 Piano Puzzle をリセットした。'],
   })
 
@@ -543,15 +575,17 @@ export const resetP06Clock = (state: GameState): GameState =>
     flags: {
       ...state.flags,
       gardenUnlocked: false,
+      gardenGateUnlocked: false,
     },
     puzzles: {
       ...state.puzzles,
       p06_grand_clock: { ...state.puzzles.p06_grand_clock, status: 'available' },
       p07_garden_final: { ...state.puzzles.p07_garden_final, status: 'locked' },
     },
-    memories: {
-      ...state.memories,
-      invitation: { ...state.memories.invitation, unlocked: false },
+    gardenFinal: {
+      input: [],
+      switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
+      gateState: 'locked',
     },
     clockState: {
       ...state.clockState,
@@ -559,6 +593,67 @@ export const resetP06Clock = (state: GameState): GameState =>
     },
     messageQueue: ['P06 Grand Clock Puzzle をリセットした。'],
   })
+
+export const activateGardenSwitch = (state: GameState, objectId: string): GameState => {
+  const current = refreshPuzzleAvailability(state)
+  if (current.puzzles.p07_garden_final?.status === 'solved') return current
+  if (current.puzzles.p07_garden_final?.status !== 'available') return current
+  if (!gardenPuzzleObjects.some((object) => object.id === objectId)) return current
+
+  const correctSequence = getP07CorrectSequence()
+  const expected = correctSequence[current.gardenFinal.input.length]
+  if (objectId !== expected) {
+    return withMessage(
+      {
+        ...current,
+        gardenFinal: {
+          input: [],
+          switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
+          gateState: 'locked',
+        },
+      },
+      ['――カチ。', '……小さな灯りが消えた。'],
+    )
+  }
+
+  const input = [...current.gardenFinal.input, objectId]
+  const switches = { ...current.gardenFinal.switches, [objectId]: true }
+  const next = { ...current, gardenFinal: { ...current.gardenFinal, input, switches } }
+  return input.length === correctSequence.length ? solvePuzzle(next, 'p07_garden_final') : withMessage(next, ['――カチ。'])
+}
+
+export const resetP07Garden = (state: GameState): GameState =>
+  refreshPuzzleAvailability({
+    ...state,
+    flags: {
+      ...state.flags,
+      gardenGateUnlocked: false,
+    },
+    puzzles: {
+      ...state.puzzles,
+      p07_garden_final: { ...state.puzzles.p07_garden_final, status: 'available' },
+    },
+    gardenFinal: {
+      input: [],
+      switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
+      gateState: 'locked',
+    },
+    messageQueue: ['P07 Garden Puzzle をリセットした。'],
+  })
+
+export const openGardenGate = (state: GameState): GameState => {
+  if (state.puzzles.p07_garden_final?.status !== 'solved' && state.gardenFinal.gateState !== 'open' && state.flags.gardenGateUnlocked !== true) {
+    return withMessage(state, ['重い鉄の門だ。', '固く閉ざされている。'])
+  }
+  return withMessage(
+    {
+      ...unlockNormalMemories(state),
+      screen: 'normalEnd',
+      normalEndingCleared: true,
+    },
+    [],
+  )
+}
 
 export const resetP02Candles = (state: GameState): GameState =>
   refreshPuzzleAvailability({
@@ -572,6 +667,10 @@ export const resetP02Candles = (state: GameState): GameState =>
     puzzles: {
       ...state.puzzles,
       p02_ceremony: { ...state.puzzles.p02_ceremony, status: 'available' },
+    },
+    memories: {
+      ...state.memories,
+      vow: { ...state.memories.vow, unlocked: false },
     },
     clockState: {
       ...state.clockState,
@@ -613,6 +712,10 @@ export const resetP01TeaTime = (state: GameState): GameState =>
       ...state.puzzles,
       p01_waiting_room: { ...state.puzzles.p01_waiting_room, status: 'available' },
       p02_ceremony: { ...state.puzzles.p02_ceremony, status: 'locked' },
+    },
+    memories: {
+      ...state.memories,
+      tea: { ...state.memories.tea, unlocked: false },
     },
     clockState: {
       ...state.clockState,
@@ -674,7 +777,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
         }
         return withMessage(
           refreshPuzzleAvailability({
-            ...obtainItem(consumeItem(state, 'small-key'), 'old-invitation'),
+            ...unlockMemory(obtainItem(consumeItem(state, 'small-key'), 'old-invitation'), 'melody'),
             flags: { ...state.flags, pianoSecretOpened: true, invitationObtained: true },
           }),
           ['――カチ。', '小さな収納が開いた。', '古い招待状を手に入れた。'],
@@ -740,6 +843,12 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return examinePianoKeyhole(state)
     case 'RESET_P06_CLOCK':
       return resetP06Clock(state)
+    case 'ACTIVATE_GARDEN_SWITCH':
+      return activateGardenSwitch(state, action.objectId)
+    case 'RESET_P07_GARDEN':
+      return resetP07Garden(state)
+    case 'OPEN_GARDEN_GATE':
+      return openGardenGate(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
     case 'CLEAR_INVENTORY':
@@ -752,12 +861,9 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       }).state
     case 'GO_NORMAL_END':
       return {
-        ...state,
+        ...unlockNormalMemories(state),
         screen: 'normalEnd',
         normalEndingCleared: true,
-        memories: Object.fromEntries(
-          Object.entries(state.memories).map(([id, memory], index) => [id, { ...memory, unlocked: index < 4 }]),
-        ),
       }
     case 'MARK_NORMAL_END_CLEARED':
       return { ...state, normalEndingCleared: true }

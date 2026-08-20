@@ -125,6 +125,12 @@ export type PianoPerformanceState = {
   input: number[]
 }
 
+export type GardenFinalState = {
+  input: string[]
+  switches: Record<string, boolean>
+  gateState: 'locked' | 'open'
+}
+
 export type GameState = {
   saveVersion: number
   screen: Screen
@@ -143,6 +149,7 @@ export type GameState = {
   receptionTables: ReceptionTableState
   pianoOverlay: PianoOverlayState
   pianoPerformance: PianoPerformanceState
+  gardenFinal: GardenFinalState
   clockState: ClockState
   normalEndingCleared: boolean
   trueRouteUnlocked: boolean
@@ -185,6 +192,9 @@ export type GameAction =
   | { type: 'RESET_P05_PIANO' }
   | { type: 'EXAMINE_PIANO_KEYHOLE' }
   | { type: 'RESET_P06_CLOCK' }
+  | { type: 'ACTIVATE_GARDEN_SWITCH'; objectId: string }
+  | { type: 'RESET_P07_GARDEN' }
+  | { type: 'OPEN_GARDEN_GATE' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }

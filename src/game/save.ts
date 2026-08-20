@@ -2,6 +2,7 @@ import { gameConfig } from './config'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { getReceptionLockDigits } from './data/receptionTables'
 import { p06TargetTime } from './data/weddingSchedule'
+import { gardenPuzzleObjects } from './data/memoryPhotos'
 import { createInitialState, refreshPuzzleAvailability } from './logic'
 import type { GameState } from './types'
 
@@ -30,7 +31,23 @@ export const loadGame = (): GameState => {
       receptionTables: { ...initial.receptionTables, ...parsed.receptionTables },
       pianoOverlay: { ...initial.pianoOverlay, ...parsed.pianoOverlay },
       pianoPerformance: { ...initial.pianoPerformance, ...parsed.pianoPerformance },
+      gardenFinal: { ...initial.gardenFinal, ...parsed.gardenFinal },
       clockState: { ...initial.clockState, ...parsed.clockState },
+    }
+    restored.gardenFinal = {
+      ...restored.gardenFinal,
+      switches: {
+        ...Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
+        ...restored.gardenFinal.switches,
+      },
+    }
+    const parsedMemories = parsed.memories as Record<string, { unlocked?: boolean }> | undefined
+    restored.memories = {
+      tea: { ...initial.memories.tea, unlocked: Boolean(restored.memories.tea?.unlocked || parsedMemories?.invitation?.unlocked) },
+      vow: { ...initial.memories.vow, unlocked: Boolean(restored.memories.vow?.unlocked || parsedMemories?.vow?.unlocked) },
+      banquet: { ...initial.memories.banquet, unlocked: Boolean(restored.memories.banquet?.unlocked || parsedMemories?.banquet?.unlocked) },
+      melody: { ...initial.memories.melody, unlocked: Boolean(restored.memories.melody?.unlocked || parsedMemories?.music?.unlocked) },
+      september23: { ...initial.memories.september23, unlocked: Boolean(restored.memories.september23?.unlocked || parsedMemories?.september23?.unlocked) },
     }
     const legacySheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-sheet']
     const savedSheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-card']
@@ -87,6 +104,14 @@ export const loadGame = (): GameState => {
         !restored.trueEndingCleared
       ) {
         restored.clockState = { ...restored.clockState, currentTime: p06TargetTime }
+      }
+    }
+    if (restored.puzzles.p07_garden_final?.status === 'solved') {
+      restored.flags = { ...restored.flags, gardenGateUnlocked: true }
+      restored.gardenFinal = {
+        input: restored.gardenFinal.input,
+        switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, true])),
+        gateState: 'open',
       }
     }
     return refreshPuzzleAvailability(restored)

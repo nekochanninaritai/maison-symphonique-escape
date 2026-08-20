@@ -1,34 +1,34 @@
 import type { Memory } from '../types'
 
 export const createMemories = (): Record<string, Memory> => ({
-  invitation: {
-    id: 'invitation',
-    title: '招待の記憶',
-    description: 'まだ誰かの声が残っている。',
+  tea: {
+    id: 'tea',
+    title: 'Tea Room',
+    description: '待合室のティーセットと、白い鳥籠が写った古い写真。',
     unlocked: false,
   },
   vow: {
     id: 'vow',
-    title: '誓いの記憶',
-    description: '静かな拍手が、遠くで重なる。',
-    unlocked: false,
-  },
-  music: {
-    id: 'music',
-    title: '音楽の記憶',
-    description: '止まった空気の中で、旋律だけが続いている。',
+    title: 'Vows',
+    description: '祭壇の灯と、噴水が写った古い写真。',
     unlocked: false,
   },
   banquet: {
     id: 'banquet',
-    title: '祝宴の記憶',
-    description: '灯りの下に、温かな時間の輪郭がある。',
+    title: 'Banquet',
+    description: '披露宴のテーブルと、天使像が写った古い写真。',
+    unlocked: false,
+  },
+  melody: {
+    id: 'melody',
+    title: 'Melody',
+    description: 'ピアノと、ガーデンランプが写った古い写真。',
     unlocked: false,
   },
   september23: {
     id: 'september23',
     title: 'September 23',
-    description: '最後の記憶。まだここでは語られない。',
+    description: 'TRUE Route専用の五枚目の古い写真。正式内容は未実装。',
     unlocked: false,
   },
 })

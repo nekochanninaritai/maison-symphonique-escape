@@ -28,6 +28,7 @@ import {
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
+import { getP07CorrectSequence, memoryPhotos } from './data/memoryPhotos'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
 import { clearSave, loadGame, saveGame } from './save'
@@ -208,6 +209,18 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('09:23')
   })
 
+  it('P01 solved does not auto-obtain PHOTO A, but reveals it for pickup', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    expect(state.memories.tea.unlocked).toBe(false)
+
+    state = reducer(state, { type: 'MOVE', areaId: 'waiting-room' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'photo-tea-room' })
+
+    expect(state.memories.tea.unlocked).toBe(true)
+  })
+
   it('attaching the clock hand before P02 does not start the Grand Clock', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
@@ -244,6 +257,19 @@ describe('PuzzleState', () => {
     expect(state.ceremonyCandles.input).toEqual(correctCandleSequence)
     expect(state.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
     expect(state.flags.receptionUnlocked).toBe(true)
+  })
+
+  it('P02 solved reveals PHOTO B for pickup without auto-obtaining it', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
+
+    expect(state.memories.vow.unlocked).toBe(false)
+
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'photo-vows' })
+
+    expect(state.memories.vow.unlocked).toBe(true)
   })
 
   it('wrong P02 candle sequence resets input without solving', () => {
@@ -376,7 +402,7 @@ describe('PuzzleState', () => {
     state = openReceptionBox(state)
 
     expect(state.inventory['transparent-card'].obtained).toBe(true)
-    expect(getMemoryCount(state)).toBe(2)
+    expect(getMemoryCount(state)).toBe(1)
     expect(state.clockState.currentTime).toBe('16:00')
   })
 
@@ -591,6 +617,7 @@ describe('PuzzleState', () => {
     expect(state.flags.pianoSecretOpened).toBe(true)
     expect(state.inventory['small-key'].consumed).toBe(true)
     expect(state.inventory['old-invitation'].obtained).toBe(true)
+    expect(state.memories.melody.unlocked).toBe(true)
   })
 
   it('obtaining the invitation makes P06 available', () => {
@@ -652,7 +679,7 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(solvedState.messageQueue)
     expect(state.trueRouteUnlocked).not.toBe(true)
     expect(state.worldMode).toBe('empty')
-    expect(getMemoryCount(state)).toBe(4)
+    expect(getMemoryCount(state)).toBe(1)
   })
 
   it('09:23 before NORMAL END does not unlock TRUE route', () => {
@@ -672,11 +699,60 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p07_garden_final.status).toBe('available')
   })
 
-  it('P07 solved goes to NORMAL END with memory 4 / 5', () => {
+  it('P07 correct sequence is derived from photo clock times', () => {
+    expect(memoryPhotos.map((photo) => photo.clockTime)).toEqual(['10:40', '14:20', '16:50', '12:15'])
+    expect(getP07CorrectSequence()).toEqual(['birdcage', 'lamp', 'fountain', 'angel'])
+  })
+
+  it('P07 keeps correct partial sequence and resets on a quiet wrong sequence', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+
+    state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'birdcage' })
+    expect(state.gardenFinal.input).toEqual(['birdcage'])
+    expect(state.gardenFinal.switches.birdcage).toBe(true)
+
+    state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'fountain' })
+    expect(state.gardenFinal.input).toEqual([])
+    expect(Object.values(state.gardenFinal.switches).every((value) => value === false)).toBe(true)
+    expect(state.puzzles.p07_garden_final.status).toBe('available')
+    expect(state.messageQueue).toEqual(['――カチ。', '……小さな灯りが消えた。'])
+  })
+
+  it('P07 full correct switch sequence solves and opens the gate', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+
+    for (const objectId of getP07CorrectSequence()) {
+      state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId })
+    }
+
+    expect(state.puzzles.p07_garden_final.status).toBe('solved')
+    expect(state.gardenFinal.gateState).toBe('open')
+    expect(state.flags.gardenGateUnlocked).toBe(true)
+    expect(state.screen).toBe('game')
+  })
+
+  it('P07 solved opens the Garden gate without ending automatically', () => {
     let state = createInitialState()
     state = solvePuzzle(state, 'p06_grand_clock', true)
     state = reducer(state, { type: 'MOVE', areaId: 'garden' })
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final' })
+
+    expect(state.screen).toBe('game')
+    expect(state.normalEndingCleared).toBe(false)
+    expect(state.gardenFinal.gateState).toBe('open')
+    expect(state.flags.gardenGateUnlocked).toBe(true)
+  })
+
+  it('Garden gate tap goes to NORMAL END with memory 4 / 5', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final' })
+    state = reducer(state, { type: 'OPEN_GARDEN_GATE' })
 
     expect(state.screen).toBe('normalEnd')
     expect(state.normalEndingCleared).toBe(true)
@@ -832,6 +908,53 @@ describe('SaveState', () => {
     vi.unstubAllGlobals()
   })
 
+  it('saves and loads normal photo memories and P07 partial sequence', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'UNLOCK_MEMORY', memoryId: 'tea' })
+    state = reducer(state, { type: 'UNLOCK_MEMORY', memoryId: 'vow' })
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+    state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'birdcage' })
+    state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'lamp' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.memories.tea.unlocked).toBe(true)
+    expect(loaded.memories.vow.unlocked).toBe(true)
+    expect(loaded.gardenFinal.input).toEqual(['birdcage', 'lamp'])
+    expect(loaded.gardenFinal.switches.birdcage).toBe(true)
+    expect(loaded.gardenFinal.switches.lamp).toBe(true)
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads P07 solved gate open state', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p06_grand_clock', true)
+    state = reducer(state, { type: 'MOVE', areaId: 'garden' })
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.puzzles.p07_garden_final.status).toBe('solved')
+    expect(loaded.gardenFinal.gateState).toBe('open')
+    expect(loaded.flags.gardenGateUnlocked).toBe(true)
+    vi.unstubAllGlobals()
+  })
+
   it('migrates legacy transparent sheet inventory entries to the current item data', () => {
     const storage = new Map<string, string>()
     vi.stubGlobal('localStorage', {
@@ -884,6 +1007,36 @@ describe('SaveState', () => {
     expect(loaded.puzzles.p06_grand_clock.status).toBe('solved')
     expect(loaded.clockState.currentTime).toBe(p06TargetTime)
     expect(loaded.flags.gardenUnlocked).toBe(true)
+    vi.unstubAllGlobals()
+  })
+
+  it('migrates legacy memory flags into independent old photos', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    const legacy = {
+      ...createInitialState(),
+      saveVersion: 3,
+      memories: {
+        invitation: { id: 'invitation', title: 'old', description: 'old', unlocked: true },
+        vow: { id: 'vow', title: 'old', description: 'old', unlocked: true },
+        music: { id: 'music', title: 'old', description: 'old', unlocked: true },
+        banquet: { id: 'banquet', title: 'old', description: 'old', unlocked: true },
+        september23: { id: 'september23', title: 'old', description: 'old', unlocked: true },
+      },
+    }
+    localStorage.setItem('maison-symphonique-escape-save', JSON.stringify(legacy))
+
+    const loaded = loadGame()
+    expect(loaded.memories.tea.unlocked).toBe(true)
+    expect(loaded.memories.vow.unlocked).toBe(true)
+    expect(loaded.memories.banquet.unlocked).toBe(true)
+    expect(loaded.memories.melody.unlocked).toBe(true)
+    expect(loaded.memories.september23.unlocked).toBe(true)
     vi.unstubAllGlobals()
   })
 })

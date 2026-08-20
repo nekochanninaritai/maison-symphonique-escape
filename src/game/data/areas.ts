@@ -1,4 +1,5 @@
 import { ceremonyVases, lightEventVase } from './ceremonyCandles'
+import { gardenPuzzleObjects } from './memoryPhotos'
 import { receptionTables } from './receptionTables'
 import type { Area, GameState } from '../types'
 
@@ -72,6 +73,14 @@ export const areas: Record<string, Area> = {
           state.puzzles.p01_waiting_room?.status === 'solved'
             ? ['四つのティーセットは、静かに整っている。']
             : ['四人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
+      },
+      {
+        id: 'photo-tea-room',
+        label: '古い写真',
+        position: { x: 47, y: 66, width: 12, height: 10 },
+        visibilityCondition: (state) => state.puzzles.p01_waiting_room?.status === 'solved' && !state.memories.tea?.unlocked,
+        message: ['ティーセットの下から、一枚の古い写真が覗いている。', '古い写真「Tea Room」を手に入れた。'],
+        memoryReward: 'tea',
       },
       {
         id: 'framed-picture',
@@ -156,6 +165,14 @@ export const areas: Record<string, Area> = {
           description: '形の異なる四本のキャンドルが、まだ火を待っている。',
         },
         message: ['祭壇の前だけ、空気が少し澄んでいる。'],
+      },
+      {
+        id: 'photo-vows',
+        label: '祭壇脇の古い写真',
+        position: { x: 63, y: 24, width: 9, height: 12 },
+        visibilityCondition: (state) => state.puzzles.p02_ceremony?.status === 'solved' && !state.memories.vow?.unlocked,
+        message: ['四本の灯に照らされて、祭壇脇の写真が見える。', '古い写真「Vows」を手に入れた。'],
+        memoryReward: 'vow',
       },
       ...ceremonyVases.map((vase): Area['hotspots'][number] => ({
         id: vase.id,
@@ -262,6 +279,20 @@ export const areas: Record<string, Area> = {
     memoryBackground: 'garden-memory',
     unlockCondition: (state) => state.flags.gardenUnlocked === true || state.worldMode === 'memory',
     hotspots: [
+      ...gardenPuzzleObjects.map((object): Area['hotspots'][number] => ({
+        id: `garden-object-${object.id}`,
+        label: object.name,
+        position: object.position,
+        focusScene: {
+          id: `focus-garden-object-${object.id}`,
+          title: object.name,
+          description: object.description,
+        },
+        message: (state) =>
+          state.gardenFinal.switches[object.id]
+            ? [object.description, '台座の小さな灯りが、静かについている。']
+            : [object.description],
+      })),
       {
         id: 'garden-gate',
         label: '出口へ続く門',

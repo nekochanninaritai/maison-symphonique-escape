@@ -17,7 +17,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'locked',
     prerequisites: ['p01_waiting_room'],
     description: '祭壇の四本のキャンドルへ、順に火を灯す。',
-    rewards: { memories: ['vow'], flags: { receptionUnlocked: true } },
+    rewards: { flags: { receptionUnlocked: true } },
   },
   p03_reception: {
     puzzleId: 'p03_reception',
@@ -37,7 +37,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     prerequisites: ['p03_reception'],
     requiredItems: ['transparent-card'],
     description: '未完成の絵に半透明の紙を重ねる。',
-    rewards: { memories: ['music'], clues: ['pianoSequence'], flags: { pianoClueObtained: true } },
+    rewards: { clues: ['pianoSequence'], flags: { pianoClueObtained: true } },
   },
   p05_piano: {
     puzzleId: 'p05_piano',
@@ -57,7 +57,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     prerequisites: ['p05_piano'],
     requiredItems: ['old-invitation'],
     description: '古い招待状を手掛かりに、大時計を動かす。',
-    rewards: { memories: ['invitation'], flags: { gardenUnlocked: true }, unlockGarden: true },
+    rewards: { flags: { gardenUnlocked: true }, unlockGarden: true },
   },
   p07_garden_final: {
     puzzleId: 'p07_garden_final',
@@ -66,7 +66,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'locked',
     prerequisites: ['p06_grand_clock'],
     requiredFlags: { gardenReached: true },
-    description: '正式な最終Puzzleは今後実装予定です。',
-    rewards: { goNormalEnd: true },
+    description: '四枚の古い写真を手掛かりに、Gardenの装飾を時刻順に作動させる。',
+    rewards: { flags: { gardenGateUnlocked: true } },
   },
 })

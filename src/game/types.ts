@@ -178,8 +178,10 @@ export type GameAction =
   | { type: 'SET_CLUE'; clueId: string; obtained: boolean }
   | { type: 'SET_FLAG'; flagId: string; value: boolean }
   | { type: 'MOVE_TEA_CUP'; cupId: string; targetSweetId: string }
+  | { type: 'EXAMINE_TEA_DRAWER' }
   | { type: 'RESET_P01_TEA_TIME' }
   | { type: 'LIGHT_CEREMONY_CANDLE'; candleId: string }
+  | { type: 'EXAMINE_ALTAR_PHOTO' }
   | { type: 'RESET_P02_CANDLES' }
   | { type: 'DISCOVER_RECEPTION_ANOMALY'; tableId: string; seatId: string }
   | { type: 'SET_P03_LOCK_DIGIT'; index: number; value: number }

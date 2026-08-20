@@ -5,8 +5,10 @@ import {
   canMoveToArea,
   createInitialState,
   discoverReceptionAnomaly,
+  getAltarPhotoState,
   getMemoryCount,
   getPianoSequenceForP05,
+  getTeaDrawerState,
   isP06ClockActive,
   isNearTrueRouteTime,
   lightCeremonyCandle,
@@ -15,6 +17,7 @@ import {
   reducer,
   setReceptionLockInput,
   setClockTime,
+  shouldShowCeremonyNavCue,
   solvePuzzle,
 } from './logic'
 import {
@@ -211,16 +214,36 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('09:23')
   })
 
-  it('P01 solved does not auto-obtain PHOTO A, but reveals it for pickup', () => {
+  it('P01 drawer is locked before Tea Time is solved', () => {
+    const state = createInitialState()
+
+    expect(getTeaDrawerState(state)).toBe('locked')
+
+    const examined = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    expect(examined.memories.tea.unlocked).toBe(false)
+    expect(examined.messageQueue).toEqual(['小さな引き出しがある。', '鍵穴はないが、固く閉ざされている。'])
+  })
+
+  it('P01 solved opens the drawer but does not auto-obtain PHOTO A', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
 
     expect(state.memories.tea.unlocked).toBe(false)
+    expect(getTeaDrawerState(state)).toBe('open-with-photo')
+  })
 
-    state = reducer(state, { type: 'MOVE', areaId: 'waiting-room' })
-    state = reducer(state, { type: 'EXAMINE', hotspotId: 'photo-tea-room' })
+  it('open Tea Table drawer gives PHOTO A and then becomes empty', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
 
     expect(state.memories.tea.unlocked).toBe(true)
+    expect(getTeaDrawerState(state)).toBe('open-empty')
+
+    const afterRetap = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    expect(afterRetap.memories.tea.unlocked).toBe(true)
+    expect(afterRetap.messageQueue).toEqual(['開いた引き出しだ。', '中にはもう何もない。'])
   })
 
   it('attaching the clock hand before P02 does not start the Grand Clock', () => {
@@ -261,17 +284,34 @@ describe('PuzzleState', () => {
     expect(state.flags.receptionUnlocked).toBe(true)
   })
 
+  it('altar-side object is dark before P02 is solved', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    expect(getAltarPhotoState(state)).toBe('dark-object')
+
+    const examined = reducer(state, { type: 'EXAMINE_ALTAR_PHOTO' })
+    expect(examined.memories.vow.unlocked).toBe(false)
+    expect(examined.messageQueue).toEqual(['祭壇の脇に、何かが置かれている。', 'ここからでは暗くてよく見えない。'])
+  })
+
   it('P02 solved reveals PHOTO B for pickup without auto-obtaining it', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
 
     expect(state.memories.vow.unlocked).toBe(false)
+    expect(getAltarPhotoState(state)).toBe('revealed-photo')
 
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
-    state = reducer(state, { type: 'EXAMINE', hotspotId: 'photo-vows' })
+    state = reducer(state, { type: 'EXAMINE_ALTAR_PHOTO' })
 
     expect(state.memories.vow.unlocked).toBe(true)
+    expect(getAltarPhotoState(state)).toBe('empty')
+
+    const afterRetap = reducer(state, { type: 'EXAMINE_ALTAR_PHOTO' })
+    expect(afterRetap.memories.vow.unlocked).toBe(true)
+    expect(afterRetap.messageQueue).toEqual(['祭壇脇は、静かに灯りを受けている。'])
   })
 
   it('wrong P02 candle sequence resets input without solving', () => {
@@ -533,6 +573,8 @@ describe('PuzzleState', () => {
   it('correct P05 phrase solves the puzzle and shows the bell event once', () => {
     let state = createP05ReadyState()
 
+    expect(shouldShowCeremonyNavCue(state)).toBe(false)
+
     for (const keyIndex of getPianoSequenceForP05()) {
       state = reducer(state, { type: 'PLAY_PIANO_KEY', keyIndex })
     }
@@ -541,6 +583,7 @@ describe('PuzzleState', () => {
 
     expect(solvedState.puzzles.p05_piano.status).toBe('solved')
     expect(solvedState.flags.ceremonyLightVisible).toBe(true)
+    expect(shouldShowCeremonyNavCue(solvedState)).toBe(true)
     expect(solvedState.flags.pianoMechanismUnlocked).toBe(true)
     expect(solvedState.messageQueue).toEqual(['最後の音が、静かな披露宴会場に響いた。', '――遠くで、小さな鐘が鳴った。'])
     expect(state.puzzles.p05_piano.status).toBe('solved')
@@ -587,6 +630,23 @@ describe('PuzzleState', () => {
     expect(state.inventory['small-key'].consumed).toBe(true)
     expect(state.inventory['old-invitation'].obtained).toBe(true)
     expect(state.puzzles.p06_grand_clock.status).toBe('available')
+    expect(shouldShowCeremonyNavCue(state)).toBe(false)
+  })
+
+  it('P05 ceremony cue does not force movement and exposes the existing light event', () => {
+    let state = createP05ReadyState()
+    state = solvePuzzle(state, 'p05_piano', true)
+
+    expect(state.currentArea).not.toBe('ceremony')
+    expect(shouldShowCeremonyNavCue(state)).toBe(true)
+
+    state = reducer({ ...state, currentArea: 'waiting-room', flags: { ...state.flags, ceremonyUnlocked: true } }, { type: 'MOVE', areaId: 'ceremony' })
+    expect(state.currentArea).toBe('ceremony')
+
+    const lightState = reducer(state, { type: 'EXAMINE', hotspotId: 'ceremony-light' })
+    expect(lightState.inventory['small-key'].obtained).toBe(true)
+    expect(lightState.flags.smallKeyObtained).toBe(true)
+    expect(shouldShowCeremonyNavCue(lightState)).toBe(false)
   })
 
   it('P05 solved unlocks the piano mechanism and Ceremony light', () => {
@@ -885,6 +945,55 @@ describe('SaveState', () => {
     vi.unstubAllGlobals()
   })
 
+  it('derives PHOTO A drawer state from old saves without a drawer flag', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    saveGame(state)
+
+    let loaded = loadGame()
+    expect(loaded.memories.tea.unlocked).toBe(false)
+    expect(getTeaDrawerState(loaded)).toBe('open-with-photo')
+
+    loaded = reducer(loaded, { type: 'EXAMINE_TEA_DRAWER' })
+    saveGame(loaded)
+    const reloaded = loadGame()
+    expect(reloaded.memories.tea.unlocked).toBe(true)
+    expect(getTeaDrawerState(reloaded)).toBe('open-empty')
+    vi.unstubAllGlobals()
+  })
+
+  it('derives PHOTO B altar reveal state from old saves without a photo reveal flag', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
+    saveGame(state)
+
+    let loaded = loadGame()
+    expect(loaded.memories.vow.unlocked).toBe(false)
+    expect(getAltarPhotoState(loaded)).toBe('revealed-photo')
+
+    loaded = reducer(loaded, { type: 'EXAMINE_ALTAR_PHOTO' })
+    saveGame(loaded)
+    const reloaded = loadGame()
+    expect(reloaded.memories.vow.unlocked).toBe(true)
+    expect(getAltarPhotoState(reloaded)).toBe('empty')
+    vi.unstubAllGlobals()
+  })
+
   it('saves and loads P03 anomaly discoveries and opened box state', () => {
     const storage = new Map<string, string>()
     vi.stubGlobal('localStorage', {
@@ -952,8 +1061,30 @@ describe('SaveState', () => {
     expect(loaded.puzzles.p05_piano.status).toBe('solved')
     expect(loaded.flags.ceremonyLightVisible).toBe(true)
     expect(loaded.flags.pianoMechanismUnlocked).toBe(true)
+    expect(shouldShowCeremonyNavCue(loaded)).toBe(true)
     expect(loaded.pianoPerformance.input).toEqual([])
     expect(loaded.messageQueue).toEqual([])
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads Ceremony navigation cue removal after the small key is obtained', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP05ReadyState()
+    state = solvePuzzle(state, 'p05_piano', true)
+    state = reducer({ ...state, currentArea: 'waiting-room', flags: { ...state.flags, ceremonyUnlocked: true } }, { type: 'MOVE', areaId: 'ceremony' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'ceremony-light' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.inventory['small-key'].obtained).toBe(true)
+    expect(loaded.flags.smallKeyObtained).toBe(true)
+    expect(shouldShowCeremonyNavCue(loaded)).toBe(false)
     vi.unstubAllGlobals()
   })
 

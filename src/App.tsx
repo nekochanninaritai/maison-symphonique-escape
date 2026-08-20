@@ -13,7 +13,7 @@ import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
 import { createClockDragSession, updateClockDragSession } from './game/clock'
-import { getMemoryCount, getPuzzleDependencyChecklist, getVisibleHotspots, isP06ClockActive, reducer } from './game/logic'
+import { getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, isP06ClockActive, reducer, shouldShowCeremonyNavCue } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
 import type { ClockDragSession } from './game/clock'
 
@@ -249,11 +249,20 @@ function GameScreen({
       {!activeFocus && !activeItemFocus && <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />}
 
       <nav className="areaNav" aria-label="Area exits">
-        {currentArea.exits.map((exit) => (
-          <button key={exit.to} type="button" disabled={Boolean(exit.unlockCondition && !exit.unlockCondition(state))} onClick={() => onAction({ type: 'MOVE', areaId: exit.to })}>
-            {exit.label}
-          </button>
-        ))}
+        {currentArea.exits.map((exit) => {
+          const ceremonyCue = exit.to === 'ceremony' && shouldShowCeremonyNavCue(state)
+          return (
+            <button
+              key={exit.to}
+              type="button"
+              className={ceremonyCue ? 'ceremonyCue' : undefined}
+              disabled={Boolean(exit.unlockCondition && !exit.unlockCondition(state))}
+              onClick={() => onAction({ type: 'MOVE', areaId: exit.to })}
+            >
+              {exit.label}
+            </button>
+          )
+        })}
       </nav>
 
       <Inventory state={state} selectedItemName={selectedItemName} onInspectItem={onItemFocus} onAction={onAction} />
@@ -285,6 +294,7 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
   const [dragging, setDragging] = useState<TeaDragState | null>(null)
   const puzzle = state.puzzles.p01_waiting_room
   const solved = puzzle?.status === 'solved'
+  const drawerState = getTeaDrawerState(state)
 
   const finishDrag = (clientX: number, clientY: number) => {
     if (!dragging) return
@@ -350,6 +360,20 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
           {getTeaDrink(dragging.cupId)?.drinkName}
         </div>
       )}
+      <button
+        type="button"
+        className={`teaDrawer ${drawerState}`}
+        aria-label="ティーテーブルの引き出し"
+        onClick={() => onAction({ type: 'EXAMINE_TEA_DRAWER' })}
+      >
+        <span className="drawerFace" aria-hidden="true">
+          <span className="drawerKnob" />
+        </span>
+        <span>
+          <strong>小さな引き出し</strong>
+          <small>{drawerState === 'locked' ? '閉じている' : drawerState === 'open-with-photo' ? '古い写真が見える' : '空になっている'}</small>
+        </span>
+      </button>
     </div>
   )
 }
@@ -359,6 +383,7 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
   const solved = puzzle?.status === 'solved'
   const available = puzzle?.status === 'available'
   const litIds = solved ? new Set(ceremonyCandles.map((candle) => candle.id)) : new Set(state.ceremonyCandles.lit)
+  const altarPhotoState = getAltarPhotoState(state)
 
   return (
     <div className="candlePuzzle">
@@ -394,6 +419,15 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
           ))}
         </ol>
       )}
+      <button
+        type="button"
+        className={`altarPhotoObject ${altarPhotoState}`}
+        aria-label={altarPhotoState === 'revealed-photo' ? '祭壇脇の古い写真' : '祭壇脇に置かれたもの'}
+        onClick={() => onAction({ type: 'EXAMINE_ALTAR_PHOTO' })}
+      >
+        <span className="altarPhotoVisual" aria-hidden="true" />
+        <span>{altarPhotoState === 'dark-object' ? '祭壇脇の影' : altarPhotoState === 'revealed-photo' ? '古い写真' : '写真のあった場所'}</span>
+      </button>
     </div>
   )
 }
@@ -1205,6 +1239,7 @@ function DebugState({ state }: { state: GameState }) {
       p06Target: p06TargetTime,
       grandClockStarted: state.flags.grandClockStarted === true,
       ceremonyLightVisible: state.flags.ceremonyLightVisible === true,
+      ceremonyNavCue: shouldShowCeremonyNavCue(state),
       smallKeyObtained: state.flags.smallKeyObtained === true,
       pianoSecretOpened: state.flags.pianoSecretOpened === true,
       invitationObtained: state.flags.invitationObtained === true,

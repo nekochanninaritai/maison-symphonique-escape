@@ -118,6 +118,28 @@ export const canTriggerTrueRoute = (state: GameState, time = state.clockState.cu
 export const isP06ClockActive = (state: GameState): boolean =>
   state.clockState.handAttached && state.puzzles.p06_grand_clock?.status === 'available' && isItemAvailable(state, 'old-invitation')
 
+export type TeaDrawerState = 'locked' | 'open-with-photo' | 'open-empty'
+
+export const getTeaDrawerState = (state: GameState): TeaDrawerState => {
+  if (state.memories.tea?.unlocked) return 'open-empty'
+  if (state.puzzles.p01_waiting_room?.status === 'solved') return 'open-with-photo'
+  return 'locked'
+}
+
+export type AltarPhotoState = 'dark-object' | 'revealed-photo' | 'empty'
+
+export const getAltarPhotoState = (state: GameState): AltarPhotoState => {
+  if (state.memories.vow?.unlocked) return 'empty'
+  if (state.puzzles.p02_ceremony?.status === 'solved') return 'revealed-photo'
+  return 'dark-object'
+}
+
+export const shouldShowCeremonyNavCue = (state: GameState): boolean =>
+  state.flags.ceremonyLightVisible === true &&
+  state.inventory['small-key']?.obtained !== true &&
+  state.inventory['small-key']?.consumed !== true &&
+  state.flags.smallKeyObtained !== true
+
 const cloneItem = (item: Item, patch: Partial<Item>): Item => ({ ...item, ...patch })
 
 const withMessage = (state: GameState, messageQueue: string[]): GameState => ({
@@ -371,7 +393,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   }
   const messages =
     puzzleId === 'p01_waiting_room'
-      ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', '館のどこかで、扉の開く音がした。']
+      ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', 'ティーテーブルの引き出しが、ゆっくりと開いた。', 'そして館のどこかからも、扉の開く音がした。']
       : grandClockStart.started
         ? puzzleId === 'p02_ceremony'
           ? ['四つの灯が、静かに祭壇を照らした。', '――ゴーン。', '遠くで、時計の鐘が鳴った。']
@@ -705,6 +727,17 @@ export const moveTeaCup = (state: GameState, cupId: string, targetSweetId: strin
   return isTeaTimeSolved(cupSlots) ? solvePuzzle(next, 'p01_waiting_room') : next
 }
 
+export const examineTeaDrawer = (state: GameState): GameState => {
+  const drawerState = getTeaDrawerState(state)
+  if (drawerState === 'locked') {
+    return withMessage(state, ['小さな引き出しがある。', '鍵穴はないが、固く閉ざされている。'])
+  }
+  if (drawerState === 'open-empty') {
+    return withMessage(state, ['開いた引き出しだ。', '中にはもう何もない。'])
+  }
+  return withMessage(unlockMemory(state, 'tea'), ['開いた引き出しの中に、一枚の古い写真が入っている。', '古い写真「Tea Room」を手に入れた。'])
+}
+
 export const resetP01TeaTime = (state: GameState): GameState =>
   refreshPuzzleAvailability({
     ...state,
@@ -733,6 +766,17 @@ export const resetP01TeaTime = (state: GameState): GameState =>
     messageQueue: ['P01 Tea Time をリセットした。'],
   })
 
+export const examineAltarPhoto = (state: GameState): GameState => {
+  const photoState = getAltarPhotoState(state)
+  if (photoState === 'dark-object') {
+    return withMessage(state, ['祭壇の脇に、何かが置かれている。', 'ここからでは暗くてよく見えない。'])
+  }
+  if (photoState === 'empty') {
+    return withMessage(state, ['祭壇脇は、静かに灯りを受けている。'])
+  }
+  return withMessage(unlockMemory(state, 'vow'), ['四本の灯に照らされて、祭壇脇の古い写真が見える。', '古い写真「Vows」を手に入れた。'])
+}
+
 export const canMoveToArea = (state: GameState, areaId: AreaId): boolean => {
   const area = areas[areaId]
   return Boolean(area) && (!area.unlockCondition || area.unlockCondition(state))
@@ -759,6 +803,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
     case 'EXAMINE': {
       const hotspot = getVisibleHotspots(state).find((candidate) => candidate.id === action.hotspotId)
       if (!hotspot) return state
+      if (hotspot.id === 'photo-vows') return examineAltarPhoto(state)
       let next = {
         ...state,
         examinedHotspots: { ...state.examinedHotspots, [`${state.currentArea}:${hotspot.id}`]: true },
@@ -824,10 +869,14 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return { ...state, flags: { ...state.flags, [action.flagId]: action.value } }
     case 'MOVE_TEA_CUP':
       return moveTeaCup(state, action.cupId, action.targetSweetId)
+    case 'EXAMINE_TEA_DRAWER':
+      return examineTeaDrawer(state)
     case 'RESET_P01_TEA_TIME':
       return resetP01TeaTime(state)
     case 'LIGHT_CEREMONY_CANDLE':
       return lightCeremonyCandle(state, action.candleId)
+    case 'EXAMINE_ALTAR_PHOTO':
+      return examineAltarPhoto(state)
     case 'RESET_P02_CANDLES':
       return resetP02Candles(state)
     case 'DISCOVER_RECEPTION_ANOMALY':

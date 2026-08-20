@@ -79,14 +79,6 @@ export const areas: Record<string, Area> = {
             : ['四人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
       },
       {
-        id: 'photo-tea-room',
-        label: '古い写真',
-        position: { x: 47, y: 66, width: 12, height: 10 },
-        visibilityCondition: (state) => state.puzzles.p01_waiting_room?.status === 'solved' && !state.memories.tea?.unlocked,
-        message: ['ティーセットの下から、一枚の古い写真が覗いている。', '古い写真「Tea Room」を手に入れた。'],
-        memoryReward: 'tea',
-      },
-      {
         id: 'framed-picture',
         label: '額装された未完成の絵',
         position: { x: 42, y: 20, width: 20, height: 22 },
@@ -172,11 +164,13 @@ export const areas: Record<string, Area> = {
       },
       {
         id: 'photo-vows',
-        label: '祭壇脇の古い写真',
+        label: '祭壇脇',
         position: { x: 63, y: 24, width: 9, height: 12 },
-        visibilityCondition: (state) => state.puzzles.p02_ceremony?.status === 'solved' && !state.memories.vow?.unlocked,
-        message: ['四本の灯に照らされて、祭壇脇の写真が見える。', '古い写真「Vows」を手に入れた。'],
-        memoryReward: 'vow',
+        visibilityCondition: (state) => !state.memories.vow?.unlocked,
+        message: (state) =>
+          state.puzzles.p02_ceremony?.status === 'solved'
+            ? ['四本の灯に照らされて、祭壇脇の古い写真が見える。']
+            : ['祭壇の脇に、何かが置かれている。', 'ここからでは暗くてよく見えない。'],
       },
       ...ceremonyVases.map((vase): Area['hotspots'][number] => ({
         id: vase.id,

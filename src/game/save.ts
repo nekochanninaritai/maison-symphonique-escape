@@ -47,7 +47,10 @@ export const loadGame = (): GameState => {
       vow: { ...initial.memories.vow, unlocked: Boolean(restored.memories.vow?.unlocked || parsedMemories?.vow?.unlocked) },
       banquet: { ...initial.memories.banquet, unlocked: Boolean(restored.memories.banquet?.unlocked || parsedMemories?.banquet?.unlocked) },
       melody: { ...initial.memories.melody, unlocked: Boolean(restored.memories.melody?.unlocked || parsedMemories?.music?.unlocked) },
-      september23: { ...initial.memories.september23, unlocked: Boolean(restored.memories.september23?.unlocked || parsedMemories?.september23?.unlocked) },
+      september23: {
+        ...initial.memories.september23,
+        unlocked: Boolean(restored.memories.september23?.unlocked || parsedMemories?.september23?.unlocked || parsed.trueRouteUnlocked || parsed.trueEndingCleared),
+      },
     }
     const legacySheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-sheet']
     const savedSheet = (parsed.inventory as Record<string, { obtained?: boolean; consumed?: boolean }> | undefined)?.['transparent-card']
@@ -113,6 +116,15 @@ export const loadGame = (): GameState => {
         switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, true])),
         gateState: 'open',
       }
+    }
+    if (restored.memories.september23?.unlocked || restored.trueEndingCleared) {
+      restored.memories = {
+        ...restored.memories,
+        september23: { ...restored.memories.september23, unlocked: true },
+      }
+      restored.trueRouteUnlocked = true
+      restored.clockState = { ...restored.clockState, trueRouteUnlocked: true }
+      restored.worldMode = restored.trueEndingCleared ? 'memory' : restored.worldMode
     }
     return refreshPuzzleAvailability(restored)
   } catch {

@@ -6,6 +6,7 @@ import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, isPlayablePianoKey } from './data/pianoOverlayPuzzle'
 import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
+import { trueClockTarget } from './data/trueRoute'
 import { p06TargetTime } from './data/weddingSchedule'
 import { gardenPuzzleObjects, getP07CorrectSequence, normalMemoryIds } from './data/memoryPhotos'
 import { gameConfig } from './config'
@@ -104,8 +105,15 @@ export const getPuzzleDependencyChecklist = (state: GameState, puzzle: Puzzle): 
 export const isNearTrueRouteTime = (time: string): boolean => {
   const [hour, minute] = time.split(':').map(Number)
   if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false
-  return hour === 9 && Math.abs(minute - 23) <= 2
+  return hour === 9 && minute === 23
 }
+
+export const canTriggerTrueRoute = (state: GameState, time = state.clockState.currentTime): boolean =>
+  state.normalEndingCleared === true &&
+  state.clockState.canManualRotate === true &&
+  state.memories.september23?.unlocked !== true &&
+  state.trueRouteUnlocked !== true &&
+  time === trueClockTarget
 
 export const isP06ClockActive = (state: GameState): boolean =>
   state.clockState.handAttached && state.puzzles.p06_grand_clock?.status === 'available' && isItemAvailable(state, 'old-invitation')
@@ -214,12 +222,12 @@ const attachClockHandFromAction = (state: GameState): GameState => {
 }
 
 export const setClockTime = (state: GameState, time: string): GameState => {
-  if (isNearTrueRouteTime(time) && state.clockState.canManualRotate && !state.trueRouteUnlocked) {
+  if (canTriggerTrueRoute(state, time)) {
     return unlockTrueRoute({
       ...state,
       clockState: {
         ...state.clockState,
-        currentTime: '09:23',
+        currentTime: trueClockTarget,
       },
     })
   }
@@ -267,14 +275,15 @@ const startGrandClockIfReady = (state: GameState): { state: GameState; started: 
 }
 
 export const unlockTrueRoute = (state: GameState): GameState => {
-  let next = Object.keys(state.memories).reduce((current, memoryId) => unlockMemory(current, memoryId), state)
+  let next = unlockMemory(state, 'september23')
   next = {
     ...next,
+    screen: 'photoE',
     trueRouteUnlocked: true,
     worldMode: 'memory',
     clockState: {
       ...next.clockState,
-      currentTime: '09:23',
+      currentTime: trueClockTarget,
       trueRouteUnlocked: true,
       canManualRotate: false,
     },
@@ -870,7 +879,24 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
     case 'UNLOCK_TRUE_ROUTE':
       return unlockTrueRoute(state)
     case 'GO_TRUE_END':
-      return { ...state, screen: 'trueEnd', trueEndingCleared: true, worldMode: 'memory' }
+      return { ...unlockMemory(state, 'september23'), screen: 'trueEnd', trueRouteUnlocked: true, trueEndingCleared: true, worldMode: 'memory' }
+    case 'RESET_TRUE_ROUTE':
+      return {
+        ...state,
+        screen: state.screen === 'photoE' || state.screen === 'trueEnd' ? 'game' : state.screen,
+        trueRouteUnlocked: false,
+        trueEndingCleared: false,
+        worldMode: 'empty',
+        memories: {
+          ...state.memories,
+          september23: { ...state.memories.september23, unlocked: false },
+        },
+        clockState: {
+          ...state.clockState,
+          trueRouteUnlocked: false,
+          canManualRotate: state.normalEndingCleared,
+        },
+      }
     case 'CLEAR_MESSAGES':
       return { ...state, messageQueue: [] }
     case 'RESET_ALL':

@@ -1104,6 +1104,72 @@ h3 {
   font-weight: 700;
 }
 
+.oldPhotoComposition.september23 {
+  background:
+    linear-gradient(180deg, rgba(238, 157, 112, 0.4), rgba(50, 61, 78, 0.42)),
+    linear-gradient(120deg, rgba(32, 44, 38, 0.9), rgba(86, 75, 60, 0.75));
+}
+
+.oldPhotoComposition.september23 .photoRoom {
+  min-height: 190px;
+  max-width: 100%;
+  align-content: end;
+  background:
+    linear-gradient(90deg, transparent 0 18%, rgba(24, 24, 24, 0.44) 18% 20%, transparent 20% 80%, rgba(24, 24, 24, 0.44) 80% 82%, transparent 82%),
+    radial-gradient(circle at 52% 44%, rgba(255, 224, 168, 0.5), transparent 16%),
+    linear-gradient(180deg, rgba(63, 70, 76, 0.4), rgba(34, 45, 39, 0.68));
+}
+
+.photoInscription {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  transform: rotate(-4deg);
+  color: #4c382c;
+  font-family: "Times New Roman", serif;
+  font-size: 1.25rem;
+  background: rgba(250, 244, 226, 0.84);
+  border: 1px solid rgba(93, 70, 49, 0.26);
+  padding: 6px 12px;
+}
+
+.trueMemoryPhoto .oldPhotoComposition::before {
+  content: "";
+  position: absolute;
+  left: 34%;
+  bottom: 26px;
+  width: 34%;
+  height: 42px;
+  background:
+    linear-gradient(65deg, transparent 0 30%, rgba(32, 28, 25, 0.46) 30% 46%, transparent 46%),
+    linear-gradient(115deg, transparent 0 48%, rgba(32, 28, 25, 0.4) 48% 64%, transparent 64%);
+  opacity: 0.8;
+}
+
+.endingCouple,
+.endingDate {
+  margin: 4px 0;
+  font-family: "Times New Roman", serif;
+  letter-spacing: 0;
+}
+
+.endingDate {
+  font-size: 1.25rem;
+}
+
+.photoEReveal {
+  animation: endingFadeIn 700ms ease both;
+}
+
+@keyframes endingFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .gardenObjectIllustration {
   position: relative;
   display: grid;

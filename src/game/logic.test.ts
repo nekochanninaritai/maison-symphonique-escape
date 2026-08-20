@@ -28,7 +28,9 @@ import {
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
-import { getP07CorrectSequence, memoryPhotos } from './data/memoryPhotos'
+import { allMemoryPhotos, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './data/memoryPhotos'
+import { weddingDateDisplay } from './data/endingText'
+import { trueClockTarget } from './data/trueRoute'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
 import { clearSave, loadGame, saveGame } from './save'
@@ -71,20 +73,20 @@ describe('ClockState', () => {
     expect(state.inventory['clock-hand'].obtained).toBe(false)
   })
 
-  it('snaps near 09:23 only when manual control is enabled', () => {
+  it('does not unlock TRUE at 09:23 before NORMAL END', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SET_CLOCK_MANUAL', enabled: true })
-    state = setClockTime(state, '09:24')
+    state = setClockTime(state, '09:23')
 
     expect(state.clockState.currentTime).toBe('09:23')
-    expect(state.trueRouteUnlocked).toBe(true)
-    expect(state.worldMode).toBe('memory')
+    expect(state.trueRouteUnlocked).toBe(false)
+    expect(state.memories.september23.unlocked).toBe(false)
   })
 
-  it('detects the 09:23 tolerance window', () => {
-    expect(isNearTrueRouteTime('09:21')).toBe(true)
-    expect(isNearTrueRouteTime('09:25')).toBe(true)
-    expect(isNearTrueRouteTime('09:26')).toBe(false)
+  it('detects only the exact 09:23 TRUE target', () => {
+    expect(isNearTrueRouteTime('09:22')).toBe(false)
+    expect(isNearTrueRouteTime('09:23')).toBe(true)
+    expect(isNearTrueRouteTime('09:24')).toBe(false)
   })
 
   it('converts circular pointer movement into clock time', () => {
@@ -759,22 +761,40 @@ describe('PuzzleState', () => {
     expect(getMemoryCount(state)).toBe(4)
   })
 
-  it('09:23 after NORMAL END still unlocks TRUE route and memory 5 / 5', () => {
+  it('09:23 after NORMAL END opens PHOTO E and memory 5 / 5', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
     state = reducer(state, { type: 'GO_NORMAL_END' })
     state = reducer(state, { type: 'START_GAME' })
     state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
-    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '09:24' })
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '09:23' })
 
     expect(state.clockState.currentTime).toBe('09:23')
     expect(state.trueRouteUnlocked).toBe(true)
     expect(state.worldMode).toBe('memory')
+    expect(state.screen).toBe('photoE')
     expect(getMemoryCount(state)).toBe(5)
+  })
+
+  it('NORMAL after non-target times does not unlock PHOTO E', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    state = reducer(state, { type: 'START_GAME' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+
+    expect(reducer(state, { type: 'SET_CLOCK_TIME', time: '15:30' }).memories.september23.unlocked).toBe(false)
+    expect(reducer(state, { type: 'SET_CLOCK_TIME', time: '09:22' }).memories.september23.unlocked).toBe(false)
+    expect(reducer(state, { type: 'SET_CLOCK_TIME', time: '09:24' }).memories.september23.unlocked).toBe(false)
   })
 })
 
 describe('Ending flow', () => {
+  it('normal ending date data is available without exposing 09:23', () => {
+    expect(weddingDateDisplay).toBe('2026.09.23')
+    expect(weddingDateDisplay).not.toBe(trueClockTarget)
+  })
+
   it('normal ending always leaves memory at 4 / 5', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 5 })
@@ -785,14 +805,43 @@ describe('Ending flow', () => {
     expect(getMemoryCount(state)).toBe(4)
   })
 
-  it('true route unlocks memory world and the fifth memory', () => {
+  it('true route unlocks memory world and PHOTO E only', () => {
     let state = createInitialState()
+    state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 4 })
     state = reducer(state, { type: 'UNLOCK_TRUE_ROUTE' })
 
     expect(state.trueRouteUnlocked).toBe(true)
     expect(state.worldMode).toBe('memory')
+    expect(state.screen).toBe('photoE')
     expect(getMemoryCount(state)).toBe(5)
     expect(state.memories.september23.unlocked).toBe(true)
+  })
+
+  it('PHOTO E can transition to TRUE END and stays unlocked', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 4 })
+    state = reducer(state, { type: 'UNLOCK_TRUE_ROUTE' })
+    state = reducer(state, { type: 'GO_TRUE_END' })
+
+    expect(state.screen).toBe('trueEnd')
+    expect(state.trueEndingCleared).toBe(true)
+    expect(getMemoryCount(state)).toBe(5)
+    expect(state.memories.september23.unlocked).toBe(true)
+  })
+
+  it('PHOTO E data includes September 23 and appears as the fifth gallery photo', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 4 })
+    state = reducer(state, { type: 'UNLOCK_MEMORY', memoryId: trueMemoryPhoto.memoryId })
+
+    expect(trueMemoryPhoto.inscription).toBe('September 23')
+    expect(allMemoryPhotos.filter((photo) => state.memories[photo.memoryId]?.unlocked).length).toBe(5)
+  })
+
+  it('PHOTO E does not affect the P07 Garden sequence', () => {
+    const before = getP07CorrectSequence()
+    expect(trueMemoryPhoto.memoryId).toBe('september23')
+    expect(before).toEqual(['birdcage', 'lamp', 'fountain', 'angel'])
   })
 })
 
@@ -955,6 +1004,90 @@ describe('SaveState', () => {
     vi.unstubAllGlobals()
   })
 
+  it('saves and loads NORMAL with memory 4 / 5', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.normalEndingCleared).toBe(true)
+    expect(getMemoryCount(loaded)).toBe(4)
+    expect(loaded.memories.september23.unlocked).toBe(false)
+    vi.unstubAllGlobals()
+  })
+
+  it('saves NORMAL at 09:20 and can still trigger PHOTO E after load', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    state = reducer(state, { type: 'START_GAME' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '09:20' })
+    saveGame(state)
+
+    let loaded = loadGame()
+    loaded = reducer(loaded, { type: 'SET_CLOCK_TIME', time: trueClockTarget })
+    expect(loaded.screen).toBe('photoE')
+    expect(loaded.memories.september23.unlocked).toBe(true)
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads PHOTO E without re-triggering the reveal', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 4 })
+    state = reducer(state, { type: 'UNLOCK_TRUE_ROUTE' })
+    saveGame({ ...state, messageQueue: [] })
+
+    let loaded = loadGame()
+    expect(loaded.memories.september23.unlocked).toBe(true)
+    expect(getMemoryCount(loaded)).toBe(5)
+    loaded = reducer(loaded, { type: 'SET_CLOCK_TIME', time: trueClockTarget })
+    expect(loaded.screen).toBe('photoE')
+    expect(getMemoryCount(loaded)).toBe(5)
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads TRUE END state with PHOTO E', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 4 })
+    state = reducer(state, { type: 'GO_TRUE_END' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.trueEndingCleared).toBe(true)
+    expect(loaded.memories.september23.unlocked).toBe(true)
+    expect(getMemoryCount(loaded)).toBe(5)
+    vi.unstubAllGlobals()
+  })
+
   it('migrates legacy transparent sheet inventory entries to the current item data', () => {
     const storage = new Map<string, string>()
     vi.stubGlobal('localStorage', {
@@ -1037,6 +1170,36 @@ describe('SaveState', () => {
     expect(loaded.memories.banquet.unlocked).toBe(true)
     expect(loaded.memories.melody.unlocked).toBe(true)
     expect(loaded.memories.september23.unlocked).toBe(true)
+    vi.unstubAllGlobals()
+  })
+
+  it('migrates legacy TRUE saves into PHOTO E obtained state', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    const legacy = {
+      ...createInitialState(),
+      saveVersion: 3,
+      trueRouteUnlocked: true,
+      trueEndingCleared: true,
+      memories: {
+        tea: { id: 'tea', title: 'old', description: 'old', unlocked: true },
+        vow: { id: 'vow', title: 'old', description: 'old', unlocked: true },
+        banquet: { id: 'banquet', title: 'old', description: 'old', unlocked: true },
+        melody: { id: 'melody', title: 'old', description: 'old', unlocked: true },
+      },
+    }
+    localStorage.setItem('maison-symphonique-escape-save', JSON.stringify(legacy))
+
+    const loaded = loadGame()
+    expect(loaded.trueEndingCleared).toBe(true)
+    expect(loaded.trueRouteUnlocked).toBe(true)
+    expect(loaded.memories.september23.unlocked).toBe(true)
+    expect(getMemoryCount(loaded)).toBe(5)
     vi.unstubAllGlobals()
   })
 })

@@ -5,9 +5,11 @@ export type MemoryPhoto = {
   memoryId: string
   title: string
   sourceArea: string
-  gardenObjectId: GardenObjectId
-  clockTime: string
+  gardenObjectId?: GardenObjectId
+  clockTime?: string
   sceneElements: string[]
+  inscription?: string
+  isTrueMemory?: boolean
 }
 
 export type GardenPuzzleObject = {
@@ -59,6 +61,17 @@ export const memoryPhotos: MemoryPhoto[] = [
   },
 ]
 
+// TODO: Replace PHOTO E composition after the final TRUE ending image direction is approved.
+export const trueMemoryPhoto: MemoryPhoto = {
+  id: 'photo-september-23',
+  memoryId: 'september23',
+  title: 'September 23',
+  sourceArea: 'Garden Gate',
+  sceneElements: ['夕暮れのGarden', '開いたGate', 'Maison Symphonique', '窓の暖かな光', '石畳', '二人分の影'],
+  inscription: 'September 23',
+  isTrueMemory: true,
+}
+
 export const gardenPuzzleObjects: GardenPuzzleObject[] = [
   {
     id: 'birdcage',
@@ -95,14 +108,16 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
 ]
 
 export const normalMemoryIds = memoryPhotos.map((photo) => photo.memoryId)
+export const allMemoryPhotos = [...memoryPhotos, trueMemoryPhoto]
 
 export const getP07CorrectSequence = (): GardenObjectId[] =>
   [...memoryPhotos]
-    .sort((a, b) => a.clockTime.localeCompare(b.clockTime))
+    .sort((a, b) => (a.clockTime ?? '').localeCompare(b.clockTime ?? ''))
     .map((photo) => photo.gardenObjectId)
+    .filter((objectId): objectId is GardenObjectId => Boolean(objectId))
 
 export const getMemoryPhotoByMemoryId = (memoryId: string): MemoryPhoto | undefined =>
-  memoryPhotos.find((photo) => photo.memoryId === memoryId)
+  allMemoryPhotos.find((photo) => photo.memoryId === memoryId)
 
 export const getGardenPuzzleObject = (objectId: string): GardenPuzzleObject | undefined =>
   gardenPuzzleObjects.find((object) => object.id === objectId)

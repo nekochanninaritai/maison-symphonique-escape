@@ -1,6 +1,7 @@
 import { ceremonyVases, lightEventVase } from './ceremonyCandles'
 import { gardenPuzzleObjects } from './memoryPhotos'
 import { receptionTables } from './receptionTables'
+import { trueClockMessages } from './trueRoute'
 import type { Area, GameState } from '../types'
 
 export const areas: Record<string, Area> = {
@@ -22,6 +23,9 @@ export const areas: Record<string, Area> = {
           description: 'Maison Symphoniqueの入口にある大時計。長針だけが欠けている。',
         },
         message: (state) => {
+          if (state.normalEndingCleared && state.clockState.handAttached && !state.trueRouteUnlocked && !state.memories.september23?.unlocked) {
+            return trueClockMessages.clockHint
+          }
           if (state.normalEndingCleared && state.clockState.handAttached && !state.trueRouteUnlocked) {
             return ['時計は止まっている。', '長針に触れると、わずかに動いた。']
           }

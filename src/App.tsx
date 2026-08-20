@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
+import { coupleDisplayName, normalEndingText, trueEndingText, weddingDateDisplay } from './game/data/endingText'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
-import { getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos } from './game/data/memoryPhotos'
+import { allMemoryPhotos, getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './game/data/memoryPhotos'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
+import { trueClockTarget } from './game/data/trueRoute'
 import { oldInvitationSchedule, p06TargetTime } from './game/data/weddingSchedule'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
@@ -63,6 +65,7 @@ function App() {
         />
       )}
       {state.screen === 'normalEnd' && <NormalEnd state={state} onContinue={() => send({ type: 'START_GAME' })} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
+      {state.screen === 'photoE' && <PhotoEReveal state={state} onContinue={() => send({ type: 'GO_TRUE_END' })} />}
       {state.screen === 'trueEnd' && <TrueEnd state={state} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
       {DEBUG_MODE && (
         <>
@@ -589,7 +592,7 @@ function OldInvitationFocus() {
 }
 
 function MemoryGallery({ state, onInspectMemory }: { state: GameState; onInspectMemory: (memoryId: string) => void }) {
-  const unlockedPhotos = memoryPhotos.filter((photo) => state.memories[photo.memoryId]?.unlocked)
+  const unlockedPhotos = allMemoryPhotos.filter((photo) => state.memories[photo.memoryId]?.unlocked)
   if (unlockedPhotos.length === 0) return null
   return (
     <aside className="memoryGallery">
@@ -608,7 +611,21 @@ function MemoryGallery({ state, onInspectMemory }: { state: GameState; onInspect
 
 function PhotoFocus({ memoryId }: { memoryId: string }) {
   const photo = getMemoryPhotoByMemoryId(memoryId)
-  const object = photo ? getGardenPuzzleObject(photo.gardenObjectId) : undefined
+  if (photo?.isTrueMemory) {
+    return (
+      <div className="photoFocus trueMemoryPhoto">
+        <h3>{photo.title}</h3>
+        <div className="oldPhotoComposition september23">
+          <div className="photoRoom">
+            {photo.sceneElements.map((element) => <span key={element}>{element}</span>)}
+          </div>
+          <div className="photoInscription">{photo.inscription}</div>
+        </div>
+        <p>開いた門の外から、Maison Symphoniqueを振り返った古い写真。</p>
+      </div>
+    )
+  }
+  const object = photo?.gardenObjectId ? getGardenPuzzleObject(photo.gardenObjectId) : undefined
   if (!photo || !object) return <p>写真はまだ見つかっていない。</p>
 
   return (
@@ -947,15 +964,30 @@ function NormalEnd({ state, onContinue, onTitle }: { state: GameState; onContinu
   return (
     <section className="readingScreen ending">
       <p className="eyebrow">NORMAL END</p>
+      <h2>{normalEndingText.title}</h2>
+      <p className="endingCouple">{coupleDisplayName}</p>
+      <p className="endingDate">{weddingDateDisplay}</p>
+      {normalEndingText.body.map((line) => <p key={line}>{line}</p>)}
       <h2>閉宴</h2>
       <p>2026年9月23日。</p>
       <p>長い一日は、こうして終わった。</p>
       <MemoryMeter state={state} />
       <p>まだ何か残っている。</p>
       <div className="buttonRow">
-        <button type="button" onClick={onContinue}>Continue</button>
+        <button type="button" onClick={onContinue}>{normalEndingText.returnLabel}</button>
         <button type="button" className="secondary" onClick={onTitle}>タイトルへ</button>
       </div>
+    </section>
+  )
+}
+
+function PhotoEReveal({ state, onContinue }: { state: GameState; onContinue: () => void }) {
+  return (
+    <section className="readingScreen ending photoEReveal">
+      <p className="eyebrow">Old Photograph</p>
+      <PhotoFocus memoryId={trueMemoryPhoto.memoryId} />
+      <MemoryMeter state={state} />
+      <button type="button" onClick={onContinue}>写真をしまう</button>
     </section>
   )
 }
@@ -964,6 +996,10 @@ function TrueEnd({ state, onTitle }: { state: GameState; onTitle: () => void }) 
   return (
     <section className="readingScreen ending">
       <p className="eyebrow">TRUE END</p>
+      {trueEndingText.body.map((line) => <p key={line}>{line}</p>)}
+      <h2>TRUE END</h2>
+      <p className="endingCouple">{coupleDisplayName}</p>
+      <p className="endingDate">{weddingDateDisplay}</p>
       <h2>September 23</h2>
       <p>最後の演出は、Phase 2以降で結婚式当日の写真とともに実装します。</p>
       <MemoryMeter state={state} />
@@ -1100,6 +1136,16 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SET_MEMORY_COUNT', count: 5 })}>5 / 5</button>
         <button type="button" onClick={() => onAction({ type: 'SET_MEMORY_COUNT', count: 0 })}>全リセット</button>
       </DebugGroup>
+      <DebugGroup title="TRUE Route">
+        <button type="button" onClick={() => onAction({ type: 'GO_NORMAL_END' })}>Trigger NORMAL</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_MEMORY_COUNT', count: 4 })}>Set Memory 4/5</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: p06TargetTime })}>Set Clock 15:30</button>
+        <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: trueClockTarget })}>Set Clock 09:23</button>
+        <button type="button" onClick={() => onAction({ type: 'UNLOCK_MEMORY', memoryId: trueMemoryPhoto.memoryId })}>Give PHOTO E</button>
+        <button type="button" onClick={() => onAction({ type: 'RESET_TRUE_ROUTE' })}>Remove PHOTO E / Reset TRUE</button>
+        <button type="button" onClick={() => onAction({ type: 'UNLOCK_TRUE_ROUTE' })}>Trigger TRUE Route</button>
+        <button type="button" onClick={() => onAction({ type: 'GO_TRUE_END' })}>Trigger TRUE END</button>
+      </DebugGroup>
       <DebugGroup title="Ending / World / Save">
         <button type="button" onClick={() => onAction({ type: 'GO_NORMAL_END' })}>NORMAL END</button>
         <button type="button" onClick={() => onAction({ type: 'MARK_NORMAL_END_CLEARED' })}>Normal済み</button>
@@ -1170,7 +1216,9 @@ function DebugState({ state }: { state: GameState }) {
       gardenGateState: state.gardenFinal.gateState,
       gardenGateUnlocked: state.flags.gardenGateUnlocked === true,
       normalPhotos: Object.fromEntries(memoryPhotos.map((photo) => [photo.title, state.memories[photo.memoryId]?.unlocked === true])),
-      memory5: state.memories.september23?.unlocked === true,
+      photoE: state.memories.september23?.unlocked === true,
+      trueTarget: trueClockTarget,
+      trueAvailable: state.normalEndingCleared && state.clockState.canManualRotate && !state.memories.september23?.unlocked,
       teaTimeSlots: state.teaTime.cupSlots,
       manualClockControl: state.clockState.canManualRotate,
       memoryCount: getMemoryCount(state),

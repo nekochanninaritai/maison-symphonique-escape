@@ -220,42 +220,42 @@ h3 {
 .stage.scene-entrance-memory {
   background-image:
     linear-gradient(rgba(43, 37, 34, 0.04), rgba(43, 37, 34, 0.16)),
-    url('./assets/environments/bg-01-entrance.png');
+    url('./assets/environments/bg-01-entrance.jpg');
 }
 
 .stage.scene-waiting-room,
 .stage.scene-waiting-room-memory {
   background-image:
     linear-gradient(rgba(43, 37, 34, 0.03), rgba(43, 37, 34, 0.14)),
-    url('./assets/environments/bg-02-waiting-room.png');
+    url('./assets/environments/bg-02-waiting-room.jpg');
 }
 
 .stage.scene-dressing-room,
 .stage.scene-dressing-room-memory {
   background-image:
     linear-gradient(rgba(43, 37, 34, 0.03), rgba(43, 37, 34, 0.14)),
-    url('./assets/environments/bg-03-dressing-room.png');
+    url('./assets/environments/bg-03-dressing-room.jpg');
 }
 
 .stage.scene-ceremony,
 .stage.scene-ceremony-memory {
   background-image:
     linear-gradient(rgba(43, 37, 34, 0.02), rgba(43, 37, 34, 0.12)),
-    url('./assets/environments/bg-04-ceremony.png');
+    url('./assets/environments/bg-04-ceremony.jpg');
 }
 
 .stage.scene-reception,
 .stage.scene-reception-memory {
   background-image:
     linear-gradient(rgba(43, 37, 34, 0.04), rgba(43, 37, 34, 0.18)),
-    url('./assets/environments/bg-05-reception.png');
+    url('./assets/environments/bg-05-reception.jpg');
 }
 
 .stage.scene-garden,
 .stage.scene-garden-memory {
   background-image:
     linear-gradient(rgba(20, 32, 24, 0.02), rgba(20, 32, 24, 0.18)),
-    url('./assets/environments/bg-06-garden.png');
+    url('./assets/environments/bg-06-garden.jpg');
 }
 
 .placeholderScene {
@@ -1797,7 +1797,7 @@ h3 {
 .clockCabinetAsset {
   width: min(42vw, 170px);
   aspect-ratio: 2 / 3;
-  background: url('./assets/environments/clock-01-grand-clock.png') center / contain no-repeat;
+  background: url('./assets/environments/clock-01-grand-clock.jpg') center / contain no-repeat;
   filter: drop-shadow(0 12px 22px rgba(43, 37, 34, 0.22));
 }
 

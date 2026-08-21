@@ -15,7 +15,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'grand-clock',
         label: '古い大時計',
-        position: { x: 40, y: 12, width: 20, height: 36 },
+        position: { x: 55, y: 22, width: 16, height: 48 },
         useTarget: 'grand-clock',
         focusScene: {
           id: 'focus-grand-clock',
@@ -67,7 +67,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'tea-table',
         label: 'ティーテーブル',
-        position: { x: 34, y: 52, width: 30, height: 24 },
+        position: { x: 36, y: 64, width: 30, height: 26 },
         focusScene: {
           id: 'focus-tea-time',
           title: 'Puzzle 01「ティータイム」',
@@ -81,7 +81,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'framed-picture',
         label: '額装された未完成の絵',
-        position: { x: 42, y: 20, width: 20, height: 22 },
+        position: { x: 39, y: 10, width: 30, height: 30 },
         useTarget: 'framed-picture',
         focusScene: {
           id: 'focus-framed-picture',
@@ -129,7 +129,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'clock-hand-case',
         label: '小さなケース',
-        position: { x: 52, y: 48, width: 24, height: 18 },
+        position: { x: 62, y: 48, width: 20, height: 18 },
         visibilityCondition: (state) => !state.inventory['clock-hand'].obtained && !state.clockState.handAttached,
         message: ['小さなケースの中に、細い金色の針が入っていた。', '古い時計の長針を手に入れた。'],
         itemReward: 'clock-hand',
@@ -154,7 +154,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'altar',
         label: '祭壇',
-        position: { x: 34, y: 18, width: 32, height: 30 },
+        position: { x: 34, y: 24, width: 32, height: 30 },
         focusScene: {
           id: 'focus-altar',
           title: '祭壇',
@@ -165,7 +165,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'photo-vows',
         label: '祭壇脇',
-        position: { x: 63, y: 24, width: 9, height: 12 },
+        position: { x: 66, y: 28, width: 12, height: 14 },
         visibilityCondition: (state) => !state.memories.vow?.unlocked,
         message: (state) =>
           state.puzzles.p02_ceremony?.status === 'solved'
@@ -209,7 +209,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'seating-chart',
         label: '席次表',
-        position: { x: 6, y: 18, width: 18, height: 24 },
+        position: { x: 2, y: 34, width: 18, height: 30 },
         focusScene: {
           id: 'focus-seating-chart',
           title: '席次表',
@@ -231,7 +231,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'reception-box',
         label: 'ロック付きの箱',
-        position: { x: 42, y: 42, width: 16, height: 14 },
+        position: { x: 35, y: 42, width: 14, height: 14 },
         focusScene: {
           id: 'focus-reception-box',
           title: 'ロック付きの箱',
@@ -245,7 +245,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'piano',
         label: 'ピアノ',
-        position: { x: 58, y: 40, width: 28, height: 20 },
+        position: { x: 72, y: 24, width: 24, height: 28 },
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',

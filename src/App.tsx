@@ -154,7 +154,7 @@ function GameScreen({
         </div>
       </header>
 
-      <div className={`stage ${state.worldMode}`} aria-label={`${currentArea.name} ${background}`}>
+      <div className={`stage ${state.worldMode} scene-${background}`} aria-label={`${currentArea.name} ${background}`}>
         <div className="placeholderScene">
           <span>{background}</span>
           <small>{state.worldMode === 'memory' ? 'Memory World placeholder' : 'Empty World placeholder'}</small>
@@ -753,6 +753,7 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
 
   return (
     <div className="grandClockFocus">
+      <div className="clockCabinetAsset" aria-hidden="true" />
       <div className="clockReadout">
         <span>TIME</span>
         <strong>{state.clockState.currentTime}</strong>

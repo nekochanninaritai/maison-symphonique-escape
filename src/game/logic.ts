@@ -407,7 +407,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
             : [`${puzzle.title} をSolvedにした。`]
   const finalMessages =
     puzzleId === 'p03_reception'
-      ? ['――カチッ。', '箱の中に、半透明の紙が入っている。', 'その下には、古い写真「Banquet」が一枚残されていた。', '遠くで、時計の鐘が鳴った。']
+      ? ['――カチッ。', '箱の中に、半透明の紙が入っている。', 'その下には、古い写真「PHOTO C」が一枚残されていた。', '遠くで、時計の鐘が鳴った。']
       : puzzleId === 'p07_garden_final'
         ? ['――カチ。', '四つの小さな灯りが揃った。', 'Gardenの奥で、重い金属の動く音がした。', '門の錠が外れた。']
         : messages
@@ -735,7 +735,7 @@ export const examineTeaDrawer = (state: GameState): GameState => {
   if (drawerState === 'open-empty') {
     return withMessage(state, ['開いた引き出しだ。', '中にはもう何もない。'])
   }
-  return withMessage(unlockMemory(state, 'tea'), ['開いた引き出しの中に、一枚の古い写真が入っている。', '古い写真「Tea Room」を手に入れた。'])
+  return withMessage(unlockMemory(state, 'tea'), ['開いた引き出しの中に、一枚の古い写真が入っている。', '古い写真「PHOTO A」を手に入れた。'])
 }
 
 export const resetP01TeaTime = (state: GameState): GameState =>
@@ -774,7 +774,7 @@ export const examineAltarPhoto = (state: GameState): GameState => {
   if (photoState === 'empty') {
     return withMessage(state, ['祭壇脇は、静かに灯りを受けている。'])
   }
-  return withMessage(unlockMemory(state, 'vow'), ['四本の灯に照らされて、祭壇脇の古い写真が見える。', '古い写真「Vows」を手に入れた。'])
+  return withMessage(unlockMemory(state, 'vow'), ['四本の灯に照らされて、祭壇脇の古い写真が見える。', '古い写真「PHOTO B」を手に入れた。'])
 }
 
 export const canMoveToArea = (state: GameState, areaId: AreaId): boolean => {

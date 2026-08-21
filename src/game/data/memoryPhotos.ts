@@ -21,43 +21,43 @@ export type GardenPuzzleObject = {
   position: { x: number; y: number; width: number; height: number }
 }
 
-// TODO: Replace placeholder photo compositions and times after final Garden visuals are produced.
+// TODO: Replace photo compositions after Maison Symphonique photo direction is finalized.
 export const memoryPhotos: MemoryPhoto[] = [
   {
     id: 'photo-tea-room',
     memoryId: 'tea',
-    title: 'Tea Room',
+    title: 'PHOTO A',
     sourceArea: 'Waiting Room',
     gardenObjectId: 'birdcage',
     clockTime: '10:40',
-    sceneElements: ['ティーセット', 'カップ', 'お菓子', '白い鳥籠', 'アンティーク置時計'],
+    sceneElements: ['ティーテーブル', 'カップ', '焼き菓子', '窓辺の花', '小さな置時計'],
   },
   {
     id: 'photo-vows',
     memoryId: 'vow',
-    title: 'Vows',
+    title: 'PHOTO B',
     sourceArea: 'Ceremony',
     gardenObjectId: 'fountain',
     clockTime: '14:20',
-    sceneElements: ['祭壇', '四本のキャンドル', '花器', '噴水', '柱の時計'],
+    sceneElements: ['祭壇', '四本のキャンドル', '花器', '白い布', '柱の時計'],
   },
   {
     id: 'photo-banquet',
     memoryId: 'banquet',
-    title: 'Banquet',
+    title: 'PHOTO C',
     sourceArea: 'Reception',
     gardenObjectId: 'angel',
     clockTime: '16:50',
-    sceneElements: ['披露宴のテーブル', 'グラス', '席札', '天使像', '壁時計'],
+    sceneElements: ['披露宴のテーブル', 'グラス', '席札', '花びら', '壁時計'],
   },
   {
     id: 'photo-melody',
     memoryId: 'melody',
-    title: 'Melody',
+    title: 'PHOTO D',
     sourceArea: 'Reception / Piano',
     gardenObjectId: 'lamp',
     clockTime: '12:15',
-    sceneElements: ['ピアノ', '星印の鍵盤', 'ガーデンランプ', '小さな置時計'],
+    sceneElements: ['ピアノ', '●のある鍵盤', '楽譜', 'カーテン', '小さな時計'],
   },
 ]
 
@@ -65,9 +65,9 @@ export const memoryPhotos: MemoryPhoto[] = [
 export const trueMemoryPhoto: MemoryPhoto = {
   id: 'photo-september-23',
   memoryId: 'september23',
-  title: 'September 23',
+  title: 'PHOTO E',
   sourceArea: 'Garden Gate',
-  sceneElements: ['夕暮れのGarden', '開いたGate', 'Maison Symphonique', '窓の暖かな光', '石畳', '二人分の影'],
+  sceneElements: ['夕暮れの庭', '開いた門', 'Maison Symphonique', '窓の暖かな光', '石畳', '二人分の影'],
   inscription: 'September 23',
   isTrueMemory: true,
 }
@@ -77,23 +77,23 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
     id: 'birdcage',
     name: '白い鳥籠',
     shortName: 'Birdcage',
-    description: '白い鳥籠だ。ドーム型の上部に、小さな蝶の飾りがついている。',
-    photoFeature: '写真の中にも、同じ蝶飾りの鳥籠が写っている。',
-    position: { x: 5, y: 38, width: 20, height: 34 },
+    description: '白い鳥籠だ。ドーム型の上部に、小さな植物の飾りがついている。',
+    photoFeature: '写真の中にも、同じドーム型の鳥籠が写っている。',
+    position: { x: 8, y: 42, width: 18, height: 30 },
   },
   {
     id: 'lamp',
     name: 'ガーデンランプ',
     shortName: 'Lamp',
     description: '細い黒いフレームのランプだ。灯部は六角形をしている。',
-    photoFeature: '写真の片隅にも、同じ形のランプが立っている。',
-    position: { x: 28, y: 42, width: 10, height: 28 },
+    photoFeature: '写真の窓辺にも、同じ形のランプが立っている。',
+    position: { x: 31, y: 46, width: 11, height: 26 },
   },
   {
     id: 'fountain',
     name: '噴水',
     shortName: 'Fountain',
-    description: '円形の水盤を持つ噴水だ。中央から細く水が上がっている。',
+    description: '円形の水盤を持つ小さな噴水だ。中央から細く水が上がっている。',
     photoFeature: '写真の奥にも、同じ円形の噴水が見える。',
     position: { x: 64, y: 48, width: 22, height: 22 },
   },
@@ -103,7 +103,7 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
     shortName: 'Angel',
     description: '小さな天使像だ。片翼を少し上げ、花束を抱えている。',
     photoFeature: '写真にも、同じ姿勢の天使像が写っている。',
-    position: { x: 82, y: 32, width: 12, height: 24 },
+    position: { x: 80, y: 34, width: 14, height: 24 },
   },
 ]
 

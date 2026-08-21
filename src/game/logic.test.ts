@@ -804,6 +804,19 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(['――カチ。', '……小さな灯りが消えた。'])
   })
 
+  it('P07 photo data keeps the Phase 3A temporary formal object and clock mapping', () => {
+    expect(memoryPhotos.map((photo) => ({
+      title: photo.title,
+      object: photo.gardenObjectId,
+      time: photo.clockTime,
+    }))).toEqual([
+      { title: 'PHOTO A', object: 'birdcage', time: '10:40' },
+      { title: 'PHOTO B', object: 'fountain', time: '14:20' },
+      { title: 'PHOTO C', object: 'angel', time: '16:50' },
+      { title: 'PHOTO D', object: 'lamp', time: '12:15' },
+    ])
+  })
+
   it('P07 full correct switch sequence solves and opens the gate', () => {
     let state = createInitialState()
     state = solvePuzzle(state, 'p06_grand_clock', true)

@@ -4,7 +4,7 @@ import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
 import { coupleDisplayName, normalEndingText, trueEndingText, weddingDateDisplay } from './game/data/endingText'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData, pianoReferenceMark } from './game/data/pianoOverlayPuzzle'
-import { allMemoryPhotos, getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './game/data/memoryPhotos'
+import { allMemoryPhotos, gardenPuzzleObjects, getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './game/data/memoryPhotos'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { trueClockTarget } from './game/data/trueRoute'
@@ -159,6 +159,7 @@ function GameScreen({
           <span>{background}</span>
           <small>{state.worldMode === 'memory' ? 'Memory World placeholder' : 'Empty World placeholder'}</small>
         </div>
+        {currentArea.areaId === 'garden' && <GardenStageLayer state={state} />}
         {visibleHotspots.map((hotspot) => (
           <button
             key={hotspot.id}
@@ -280,6 +281,27 @@ function GameScreen({
         )}
       </section>
     </section>
+  )
+}
+
+function GardenStageLayer({ state }: { state: GameState }) {
+  const gateOpen = state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open'
+  return (
+    <div className="gardenStageLayer" aria-hidden="true">
+      {gardenPuzzleObjects.map((object) => (
+        <span
+          key={object.id}
+          className={`gardenStageObject ${object.id} ${state.gardenFinal.switches[object.id] ? 'active' : ''}`}
+          style={{
+            left: `${object.position.x}%`,
+            top: `${object.position.y}%`,
+            width: `${object.position.width}%`,
+            height: `${object.position.height}%`,
+          }}
+        />
+      ))}
+      <span className={`gardenStageGate ${gateOpen ? 'open' : 'locked'}`} />
+    </div>
   )
 }
 
@@ -540,7 +562,7 @@ function ReceptionBoxFocus({ state, onAction }: { state: GameState; onAction: (a
         {solved ? (
           <div className="boxContents">
             <span>半透明の紙</span>
-            <span>古い写真「Banquet」</span>
+            <span>古い写真「PHOTO C」</span>
           </div>
         ) : (
           <button type="button" className="openBoxButton" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>OPEN</button>
@@ -665,19 +687,34 @@ function PhotoFocus({ memoryId }: { memoryId: string }) {
   return (
     <div className="photoFocus">
       <h3>{photo.title}</h3>
-      <div className={`oldPhotoComposition ${object.id}`}>
+      <div className={`oldPhotoComposition ${object.id} ${photo.id}`}>
         <div className="photoRoom">
           {photo.sceneElements.map((element) => <span key={element}>{element}</span>)}
         </div>
-        <div className="photoGardenObject">
+        <div className={`photoGardenObject ${object.id}`} aria-label={object.name}>
+          <span className="photoObjectIcon" aria-hidden="true" />
           <span>{object.name}</span>
           <small>{object.photoFeature}</small>
         </div>
-        <div className="photoClock" aria-label={`写真に写った時計 ${photo.clockTime}`}>
-          <span>{photo.clockTime}</span>
-        </div>
+        {photo.clockTime && <PhotoClock time={photo.clockTime} />}
       </div>
       <p>{photo.sourceArea}で見つけた古い写真。庭のものらしい装飾と、小さな時計が写っている。</p>
+    </div>
+  )
+}
+
+function PhotoClock({ time }: { time: string }) {
+  const [hour, minute] = time.split(':').map(Number)
+  const minuteDeg = minute * 6
+  const hourDeg = ((hour % 12) + minute / 60) * 30
+
+  return (
+    <div className="photoClock" aria-label={`写真に写った時計 ${time}`}>
+      <span className="photoClockDial" aria-hidden="true">
+        <i className="clockHand hour" style={{ transform: `rotate(${hourDeg}deg)` }} />
+        <i className="clockHand minute" style={{ transform: `rotate(${minuteDeg}deg)` }} />
+      </span>
+      <span>{time}</span>
     </div>
   )
 }
@@ -695,7 +732,7 @@ function GardenObjectFocus({ state, objectId, onAction }: { state: GameState; ob
         <span />
       </div>
       <p>{object.description}</p>
-      <p>台座の側面に、小さなスイッチがある。</p>
+      <p>台座の側面に、小さな真鍮のスイッチがある。</p>
       <button type="button" disabled={!available || solved || active} onClick={() => onAction({ type: 'ACTIVATE_GARDEN_SWITCH', objectId: object.id })}>
         スイッチ
       </button>

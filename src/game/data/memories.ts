@@ -3,32 +3,32 @@ import type { Memory } from '../types'
 export const createMemories = (): Record<string, Memory> => ({
   tea: {
     id: 'tea',
-    title: 'Tea Room',
+    title: 'PHOTO A',
     description: '待合室のティーセットと、白い鳥籠が写った古い写真。',
     unlocked: false,
   },
   vow: {
     id: 'vow',
-    title: 'Vows',
-    description: '祭壇の灯と、噴水が写った古い写真。',
+    title: 'PHOTO B',
+    description: '祭壇の灯りと、噴水が写った古い写真。',
     unlocked: false,
   },
   banquet: {
     id: 'banquet',
-    title: 'Banquet',
+    title: 'PHOTO C',
     description: '披露宴のテーブルと、天使像が写った古い写真。',
     unlocked: false,
   },
   melody: {
     id: 'melody',
-    title: 'Melody',
+    title: 'PHOTO D',
     description: 'ピアノと、ガーデンランプが写った古い写真。',
     unlocked: false,
   },
   september23: {
     id: 'september23',
-    title: 'September 23',
-    description: 'TRUE Route専用の五枚目の古い写真。正式内容は未実装。',
+    title: 'PHOTO E',
+    description: '開いた門の外から、Maison Symphoniqueを振り返った古い写真。',
     unlocked: false,
   },
 })

@@ -283,9 +283,123 @@ h3 {
   display: none;
 }
 
+.gardenStageLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gardenStageObject {
+  position: absolute;
+  display: block;
+  opacity: 0.92;
+  filter: drop-shadow(0 8px 10px rgba(35, 42, 35, 0.22));
+}
+
+.gardenStageObject::before,
+.gardenStageObject::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.gardenStageObject.birdcage::before {
+  bottom: 5%;
+  width: 62%;
+  height: 72%;
+  border: 3px solid #fbf6ea;
+  border-radius: 50% 50% 8px 8px;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,0.7) 0 9px, rgba(210,218,207,0.45) 10px 12px);
+}
+
+.gardenStageObject.birdcage::after {
+  top: 2%;
+  width: 34%;
+  height: 18%;
+  border: 2px solid #fbf6ea;
+  border-bottom: 0;
+  border-radius: 50% 50% 0 0;
+}
+
+.gardenStageObject.lamp::before {
+  bottom: 0;
+  width: 48%;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(241, 196, 104, 0.64) 0 28%, #171717 28% 34%, #171717 34% 100%);
+  clip-path: polygon(25% 0, 75% 0, 100% 26%, 58% 26%, 58% 100%, 42% 100%, 42% 26%, 0 26%);
+}
+
+.gardenStageObject.fountain::before {
+  bottom: 5%;
+  width: 88%;
+  height: 54%;
+  border: 3px solid #d8d2c4;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 0, rgba(222, 248, 255, 0.85) 0 11px, transparent 12px),
+    linear-gradient(180deg, rgba(217, 241, 241, 0.68), rgba(160, 190, 190, 0.74));
+}
+
+.gardenStageObject.angel::before {
+  bottom: 5%;
+  width: 58%;
+  height: 88%;
+  border-radius: 45% 45% 16px 16px;
+  background:
+    radial-gradient(circle at 50% 13%, #f8fafc 0 9px, transparent 10px),
+    linear-gradient(90deg, #f8fafc 0 45%, #e2e8f0 46% 100%);
+  box-shadow:
+    -16px 20px 0 -8px rgba(248, 250, 252, 0.75),
+    16px 20px 0 -8px rgba(226, 232, 240, 0.75);
+}
+
+.gardenStageObject.active {
+  filter: drop-shadow(0 0 14px rgba(230, 190, 98, 0.7));
+}
+
+.gardenStageGate {
+  position: absolute;
+  left: 36%;
+  top: 18%;
+  width: 28%;
+  height: 42%;
+  opacity: 0.72;
+}
+
+.gardenStageGate::before,
+.gardenStageGate::after {
+  content: '';
+  position: absolute;
+  top: 12%;
+  bottom: 8%;
+  width: 43%;
+  border: 3px solid #334155;
+  border-radius: 70px 70px 4px 4px;
+  background: repeating-linear-gradient(90deg, transparent 0 12px, rgba(51,65,85,0.85) 12px 15px);
+  transition: transform 500ms ease;
+}
+
+.gardenStageGate::before {
+  left: 5%;
+}
+
+.gardenStageGate::after {
+  right: 5%;
+}
+
+.gardenStageGate.open::before {
+  transform: translateX(-18px) rotateY(18deg);
+}
+
+.gardenStageGate.open::after {
+  transform: translateX(18px) rotateY(-18deg);
+}
+
 .hotspot {
   position: absolute;
-  z-index: 1;
+  z-index: 2;
   border: 0;
   border-radius: 0;
   padding: 0;
@@ -1631,6 +1745,210 @@ h3 {
 
 .gardenGatePuzzle.open .gateLock {
   transform: translateY(58px) rotate(-18deg);
+}
+
+/* Phase 3A-3 temporary production visuals for memory photos and Garden. */
+.oldPhotoComposition {
+  min-height: 310px;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(255, 250, 230, 0.48), transparent 18%),
+    linear-gradient(180deg, rgba(245, 238, 222, 0.86), rgba(192, 175, 143, 0.72)),
+    #d9c9ad;
+  box-shadow:
+    inset 0 0 0 1px rgba(80, 65, 46, 0.25),
+    0 10px 22px rgba(43, 37, 34, 0.12);
+}
+
+.oldPhotoComposition::after {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 58%, rgba(77, 58, 38, 0.16) 100%),
+    linear-gradient(135deg, rgba(255,255,255,0.18), transparent 44%, rgba(77,58,38,0.14));
+}
+
+.oldPhotoComposition .photoRoom {
+  position: absolute;
+  inset: 18px;
+  display: block;
+  max-width: none;
+  border-radius: 6px;
+  background:
+    linear-gradient(90deg, transparent 0 16%, rgba(80, 107, 90, 0.14) 16% 17%, transparent 17% 100%),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.36), rgba(96, 80, 62, 0.12));
+}
+
+.oldPhotoComposition .photoRoom span {
+  position: absolute;
+  padding: 5px 8px;
+}
+
+.oldPhotoComposition .photoRoom span:nth-child(1) {
+  left: 7%;
+  top: 58%;
+}
+
+.oldPhotoComposition .photoRoom span:nth-child(2) {
+  left: 13%;
+  top: 70%;
+}
+
+.oldPhotoComposition .photoRoom span:nth-child(3) {
+  left: 32%;
+  top: 67%;
+}
+
+.oldPhotoComposition .photoRoom span:nth-child(4) {
+  left: 55%;
+  top: 24%;
+}
+
+.oldPhotoComposition .photoRoom span:nth-child(5) {
+  left: 12%;
+  top: 22%;
+}
+
+.photoGardenObject {
+  right: 26px;
+  bottom: 28px;
+  width: min(39%, 190px);
+}
+
+.photoObjectIcon {
+  display: block;
+  width: 74px;
+  height: 76px;
+  justify-self: center;
+}
+
+.photoGardenObject.birdcage .photoObjectIcon {
+  border: 3px solid #f7f1e5;
+  border-radius: 38px 38px 8px 8px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.8) 0 5px, transparent 5px 10px),
+    rgba(210, 218, 207, 0.45);
+}
+
+.photoGardenObject.lamp .photoObjectIcon {
+  width: 48px;
+  border: 3px solid #1f1a16;
+  background: linear-gradient(180deg, rgba(246, 209, 132, 0.55) 0 35%, transparent 35% 100%);
+  clip-path: polygon(25% 0, 75% 0, 100% 30%, 60% 30%, 60% 100%, 40% 100%, 40% 30%, 0 30%);
+}
+
+.photoGardenObject.fountain .photoObjectIcon {
+  width: 104px;
+  height: 66px;
+  border: 3px solid #d7d0c3;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(219, 246, 252, 0.9) 0 10px, transparent 11px),
+    linear-gradient(180deg, rgba(219, 246, 252, 0.62), rgba(184, 204, 203, 0.72));
+}
+
+.photoGardenObject.angel .photoObjectIcon {
+  width: 68px;
+  border-radius: 45% 45% 16px 16px;
+  background:
+    radial-gradient(circle at 50% 16%, #f6f1e8 0 10px, transparent 11px),
+    linear-gradient(90deg, #f8fafc 0 44%, #e2e8f0 45% 100%);
+  box-shadow:
+    -20px 18px 0 -8px rgba(248, 250, 252, 0.75),
+    20px 18px 0 -8px rgba(226, 232, 240, 0.75);
+}
+
+.photoClock {
+  display: grid;
+  gap: 4px;
+  width: 82px;
+  min-height: 102px;
+  border-radius: 10px;
+}
+
+.photoClockDial {
+  position: relative;
+  display: block;
+  width: 58px;
+  height: 58px;
+  border: 2px solid rgba(75, 56, 36, 0.46);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #4c382c 0 3px, transparent 4px),
+    repeating-conic-gradient(from 0deg, rgba(75, 56, 36, 0.46) 0 1deg, transparent 1deg 30deg),
+    #fbf4e8;
+}
+
+.photoClock .clockHand {
+  left: 50%;
+  bottom: 50%;
+  transform-origin: 50% 100%;
+}
+
+.photoClock .clockHand.hour {
+  height: 18px;
+  background: #4c382c;
+}
+
+.photoClock .clockHand.minute {
+  height: 24px;
+  background: #2b2522;
+}
+
+.oldPhotoComposition.photo-vows .photoGardenObject {
+  right: auto;
+  left: 42%;
+  bottom: 30px;
+}
+
+.oldPhotoComposition.photo-melody .photoGardenObject {
+  right: 34px;
+  top: 78px;
+  bottom: auto;
+}
+
+.oldPhotoComposition.photo-banquet .photoGardenObject {
+  right: 32px;
+  bottom: 52px;
+}
+
+.oldPhotoComposition.september23 {
+  background:
+    linear-gradient(180deg, rgba(238, 177, 124, 0.42), rgba(67, 76, 70, 0.32)),
+    linear-gradient(120deg, rgba(70, 83, 67, 0.86), rgba(142, 118, 86, 0.65));
+}
+
+.gardenObjectIllustration {
+  min-height: 180px;
+  background:
+    radial-gradient(circle at 24% 18%, rgba(255, 250, 240, 0.78), transparent 22%),
+    linear-gradient(180deg, #eef4ef, #dce9df);
+}
+
+.gardenObjectIllustration.birdcage span {
+  border-color: #f8f4ea;
+  background:
+    repeating-linear-gradient(90deg, #fff 0 9px, #d9e2e7 10px 12px),
+    linear-gradient(180deg, rgba(255,255,255,0.78), rgba(210,218,207,0.65));
+  box-shadow: 0 -10px 0 -6px #f8f4ea;
+}
+
+.gardenObjectIllustration.lamp span {
+  background: linear-gradient(180deg, rgba(241, 196, 104, 0.58) 0 30%, #111827 30% 34%, transparent 34% 100%);
+}
+
+.gateIllustration {
+  min-height: 220px;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.72), rgba(190, 212, 196, 0.5)),
+    radial-gradient(circle at 50% 20%, rgba(255, 255, 255, 0.7), transparent 26%),
+    #e8edf0;
+}
+
+.gatePanel {
+  top: 34px;
+  bottom: 22px;
+  border-radius: 80px 80px 4px 4px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 16px, rgba(51, 65, 85, 0.82) 16px 20px),
+    rgba(248, 250, 252, 0.18);
 }
 
 .invitationHeader {

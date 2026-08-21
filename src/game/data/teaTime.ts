@@ -10,47 +10,47 @@ export type TeaPair = {
   finalPuzzleMark?: string
 }
 
-// TODO: Finalize pairing before the wedding build. These are temporary QA pairs.
+// TODO: Replace after Maison Symphonique tea service visuals are finalized.
 export const teaTimePairs: TeaPair[] = [
   {
-    id: 'coffee-tiramisu',
+    id: 'coffee-gateau-chocolat',
     drinkId: 'coffee',
     drinkName: 'Coffee',
-    drinkIcon: 'C',
-    sweetId: 'tiramisu',
-    sweetName: 'Tiramisu',
-    sweetIcon: '▰',
-    description: 'ほろ苦い香りのカップ。',
+    drinkIcon: 'CO',
+    sweetId: 'gateau-chocolat',
+    sweetName: 'Gateau Chocolat',
+    sweetIcon: 'GC',
+    description: '深い茶色のコーヒーカップ。',
   },
   {
-    id: 'earl-grey-lemon-cake',
+    id: 'earl-grey-cookies',
     drinkId: 'earl-grey',
     drinkName: 'Earl Grey',
-    drinkIcon: 'E',
-    sweetId: 'lemon-cake',
-    sweetName: 'Lemon Cake',
-    sweetIcon: '△',
-    description: '柑橘の香りがする紅茶。',
+    drinkIcon: 'EG',
+    sweetId: 'cookies',
+    sweetName: 'Cookies',
+    sweetIcon: 'CK',
+    description: '花柄のカップから、紅茶の香りがする。',
   },
   {
-    id: 'herbal-tea-light-cookie',
-    drinkId: 'herbal-tea',
-    drinkName: 'Herbal Tea',
-    drinkIcon: 'H',
-    sweetId: 'light-cookie',
-    sweetName: 'Light Cookie',
-    sweetIcon: '○',
-    description: '淡いハーブの香りが残っている。',
+    id: 'matcha-wagashi',
+    drinkId: 'matcha',
+    drinkName: 'Matcha',
+    drinkIcon: 'MA',
+    sweetId: 'wagashi',
+    sweetName: 'Wagashi',
+    sweetIcon: 'WA',
+    description: '抹茶碗に、静かな緑が残っている。',
   },
   {
-    id: 'darjeeling-shortcake',
-    drinkId: 'darjeeling',
-    drinkName: 'Darjeeling',
-    drinkIcon: 'D',
-    sweetId: 'shortcake',
-    sweetName: 'Shortcake',
-    sweetIcon: '□',
-    description: 'すっきりした色の紅茶。',
+    id: 'chinese-tea-sesame-balls',
+    drinkId: 'chinese-tea',
+    drinkName: 'Chinese Tea',
+    drinkIcon: 'CT',
+    sweetId: 'sesame-balls',
+    sweetName: 'Sesame Balls',
+    sweetIcon: 'SB',
+    description: '小さな茶器に、香ばしいお茶が注がれている。',
   },
 ]
 
@@ -59,10 +59,10 @@ export const correctTeaTimeSlots: Record<string, string> = Object.fromEntries(
 )
 
 export const initialTeaTimeSlots: Record<string, string> = {
-  tiramisu: 'earl-grey',
-  'lemon-cake': 'darjeeling',
-  'light-cookie': 'coffee',
-  shortcake: 'herbal-tea',
+  'gateau-chocolat': 'earl-grey',
+  cookies: 'chinese-tea',
+  wagashi: 'coffee',
+  'sesame-balls': 'matcha',
 }
 
 export const getTeaDrink = (drinkId: string): TeaPair | undefined => teaTimePairs.find((pair) => pair.drinkId === drinkId)

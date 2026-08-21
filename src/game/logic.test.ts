@@ -30,12 +30,14 @@ import {
   updateClockDragSessionFromAngle,
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
-import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData } from './data/pianoOverlayPuzzle'
+import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData, pianoReferenceMark } from './data/pianoOverlayPuzzle'
 import { allMemoryPhotos, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './data/memoryPhotos'
 import { weddingDateDisplay } from './data/endingText'
 import { trueClockTarget } from './data/trueRoute'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
+import { correctTeaTimeSlots, teaTimePairs } from './data/teaTime'
 import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
+import { gameConfig } from './config'
 import { clearSave, loadGame, saveGame } from './save'
 
 const createP03ReadyState = () => {
@@ -193,17 +195,32 @@ describe('PuzzleState', () => {
 
   it('P01 Tea Time swaps cups and solves on the final correct placement', () => {
     let state = createInitialState()
-    state = moveTeaCup(state, 'coffee', 'tiramisu')
+    state = moveTeaCup(state, 'coffee', 'gateau-chocolat')
 
-    expect(state.teaTime.cupSlots.tiramisu).toBe('coffee')
+    expect(state.teaTime.cupSlots['gateau-chocolat']).toBe('coffee')
     expect(state.puzzles.p01_waiting_room.status).toBe('available')
 
-    state = moveTeaCup(state, 'earl-grey', 'lemon-cake')
-    state = moveTeaCup(state, 'herbal-tea', 'light-cookie')
+    state = moveTeaCup(state, 'earl-grey', 'cookies')
+    state = moveTeaCup(state, 'chinese-tea', 'sesame-balls')
 
     expect(state.puzzles.p01_waiting_room.status).toBe('solved')
     expect(state.flags.dressingRoomUnlocked).toBe(true)
     expect(state.flags.ceremonyUnlocked).toBe(true)
+  })
+
+  it('uses the Phase 3A formal Tea Time pairing data', () => {
+    expect(teaTimePairs.map((pair) => `${pair.drinkName}:${pair.sweetName}`)).toEqual([
+      'Coffee:Gateau Chocolat',
+      'Earl Grey:Cookies',
+      'Matcha:Wagashi',
+      'Chinese Tea:Sesame Balls',
+    ])
+    expect(correctTeaTimeSlots).toEqual({
+      'gateau-chocolat': 'coffee',
+      cookies: 'earl-grey',
+      wagashi: 'matcha',
+      'sesame-balls': 'chinese-tea',
+    })
   })
 
   it('P01 solved alone does not start the Grand Clock', () => {
@@ -533,6 +550,11 @@ describe('PuzzleState', () => {
     expect(getPianoSequenceForP05()).toEqual([1, 3, 4, 6])
     expect(getPianoSequenceForP05()).toEqual(getDerivedPianoSequence())
     expect(getPhraseLength()).toBe(getDerivedPianoSequence().length)
+  })
+
+  it('uses the Phase 3A black circle as the visible piano reference mark', () => {
+    expect(pianoReferenceMark).toBe('●')
+    expect(pianoOverlayPuzzleData.cReferenceKeyIndex).toBe(0)
   })
 
   it('P05 accepts every visible piano key', () => {
@@ -929,7 +951,7 @@ describe('SaveState', () => {
     })
 
     let state = reducer(createInitialState(), { type: 'MARK_NORMAL_END_CLEARED' })
-    state = moveTeaCup(state, 'coffee', 'tiramisu')
+    state = moveTeaCup(state, 'coffee', 'gateau-chocolat')
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
     for (const candleId of correctCandleSequence) {
       state = lightCeremonyCandle(state, candleId)
@@ -937,7 +959,7 @@ describe('SaveState', () => {
     saveGame(state)
     const loaded = loadGame()
     expect(loaded.normalEndingCleared).toBe(true)
-    expect(loaded.teaTime.cupSlots.tiramisu).toBe('coffee')
+    expect(loaded.teaTime.cupSlots['gateau-chocolat']).toBe('coffee')
     expect(loaded.puzzles.p02_ceremony.status).toBe('solved')
     expect(loaded.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
     clearSave()
@@ -966,6 +988,37 @@ describe('SaveState', () => {
     const reloaded = loadGame()
     expect(reloaded.memories.tea.unlocked).toBe(true)
     expect(getTeaDrawerState(reloaded)).toBe('open-empty')
+    vi.unstubAllGlobals()
+  })
+
+  it('migrates old Tea Time cup slot keys to the current formal data', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    const oldState = createInitialState()
+    storage.set(gameConfig.saveKey, JSON.stringify({
+      ...oldState,
+      teaTime: {
+        cupSlots: {
+          tiramisu: 'earl-grey',
+          'lemon-cake': 'darjeeling',
+          'light-cookie': 'coffee',
+          shortcake: 'herbal-tea',
+        },
+      },
+    }))
+
+    const loaded = loadGame()
+    expect(loaded.teaTime.cupSlots).toEqual({
+      'gateau-chocolat': 'earl-grey',
+      cookies: 'chinese-tea',
+      wagashi: 'coffee',
+      'sesame-balls': 'matcha',
+    })
     vi.unstubAllGlobals()
   })
 

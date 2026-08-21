@@ -23,26 +23,26 @@ export const ceremonyCandles: CeremonyCandle[] = [
   {
     id: 'ceremony-candle-cube',
     shape: 'cube',
-    name: 'Cube Candle',
-    description: '直線的な面を持つ、四角いキャンドル。',
+    name: 'Square Holder',
+    description: '四角いガラス台座に立てられたキャンドル。',
   },
   {
     id: 'ceremony-candle-orb',
     shape: 'orb',
-    name: 'Orb Candle',
-    description: '丸みを帯びた、やわらかな形のキャンドル。',
+    name: 'Round Holder',
+    description: '丸みのあるガラス台座に立てられたキャンドル。',
   },
   {
     id: 'ceremony-candle-twist',
     shape: 'twist',
-    name: 'Twist Candle',
-    description: 'ゆるく螺旋を描くキャンドル。',
+    name: 'Spiral Holder',
+    description: '螺旋意匠の台座に立てられたキャンドル。',
   },
   {
     id: 'ceremony-candle-faceted',
     shape: 'faceted',
-    name: 'Faceted Candle',
-    description: '小さな面が光を返す、多面体のキャンドル。',
+    name: 'Faceted Holder',
+    description: 'カットガラスの台座に立てられたキャンドル。',
   },
 ]
 
@@ -51,7 +51,7 @@ export const ceremonyVases: CeremonyVase[] = [
   {
     id: 'ceremony-vase-orb',
     shape: 'orb',
-    name: '丸みのある花器',
+    name: 'Round Vase',
     description: '丸みを帯びたガラスの花器。淡い花が飾られている。',
     orderFromEntrance: 1,
     position: { x: 24, y: 66, width: 14, height: 14 },
@@ -59,7 +59,7 @@ export const ceremonyVases: CeremonyVase[] = [
   {
     id: 'ceremony-vase-twist',
     shape: 'twist',
-    name: '螺旋の花器',
+    name: 'Spiral Vase',
     description: '螺旋を描くような細工の花器。',
     orderFromEntrance: 2,
     position: { x: 62, y: 60, width: 14, height: 14 },
@@ -67,7 +67,7 @@ export const ceremonyVases: CeremonyVase[] = [
   {
     id: 'ceremony-vase-faceted',
     shape: 'faceted',
-    name: 'カットガラスの花器',
+    name: 'Faceted Glass Vase',
     description: '光を細かく反射する、カットガラスの花器。',
     orderFromEntrance: 3,
     position: { x: 28, y: 42, width: 14, height: 14 },
@@ -76,7 +76,7 @@ export const ceremonyVases: CeremonyVase[] = [
   {
     id: 'ceremony-vase-cube',
     shape: 'cube',
-    name: '四角い花器',
+    name: 'Square Vase',
     description: '直線的な四角い花器。',
     orderFromEntrance: 4,
     position: { x: 60, y: 32, width: 14, height: 14 },

@@ -3,7 +3,7 @@ import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
 import { coupleDisplayName, normalEndingText, trueEndingText, weddingDateDisplay } from './game/data/endingText'
-import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData } from './game/data/pianoOverlayPuzzle'
+import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData, pianoReferenceMark } from './game/data/pianoOverlayPuzzle'
 import { allMemoryPhotos, getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './game/data/memoryPhotos'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
@@ -316,15 +316,15 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
         {teaTimePairs.map((pair) => {
           const drink = getTeaDrink(state.teaTime.cupSlots[pair.sweetId])
           return (
-            <div key={pair.sweetId} className="teaSlot" data-sweet-id={pair.sweetId}>
-              <div className="sweetPlate" title={pair.sweetName}>
+            <div key={pair.sweetId} className={`teaSlot teaPair-${pair.id}`} data-sweet-id={pair.sweetId}>
+              <div className={`sweetPlate sweet-${pair.sweetId}`} title={pair.sweetName}>
                 <span className="sweetIcon" aria-hidden="true">{pair.sweetIcon}</span>
                 <strong>{pair.sweetName}</strong>
               </div>
               {drink && (
                 <button
                   type="button"
-                  className={`teaCup ${dragging?.cupId === drink.drinkId ? 'isDragging' : ''}`}
+                  className={`teaCup drink-${drink.drinkId} ${dragging?.cupId === drink.drinkId ? 'isDragging' : ''}`}
                   title={drink.description ?? drink.drinkName}
                   aria-label={`${drink.drinkName} のカップ`}
                   disabled={solved}
@@ -579,7 +579,7 @@ function KeyboardBaseLayer() {
     <div className="pictureKeyboard base">
       {Array.from({ length: pianoOverlayPuzzleData.whiteKeyCount }, (_, index) => (
         <span key={index} className="whiteKeyOutline">
-          {index === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準の星">★</strong>}
+          {index === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準点">{pianoReferenceMark}</strong>}
         </span>
       ))}
     </div>
@@ -876,7 +876,7 @@ function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: 
                   playKey(key.keyIndex)
                 }}
               >
-                {key.position === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準の星">★</strong>}
+                {key.position === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準点">{pianoReferenceMark}</strong>}
               </button>
             ))}
           </div>

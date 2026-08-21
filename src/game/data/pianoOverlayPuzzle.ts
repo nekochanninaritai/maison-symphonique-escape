@@ -20,6 +20,8 @@ export type PlayablePianoKey = {
   toneOffset: number
 }
 
+export const pianoReferenceMark = '●'
+
 // TODO: Replace after Maison Symphonique picture and transparent sheet visuals are finalized.
 export const pianoOverlayPuzzleData: PianoOverlayPuzzleData = {
   whiteKeyCount: 8,

@@ -1,6 +1,7 @@
 import { gameConfig } from './config'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { getReceptionLockDigits } from './data/receptionTables'
+import { correctTeaTimeSlots, initialTeaTimeSlots } from './data/teaTime'
 import { p06TargetTime } from './data/weddingSchedule'
 import { gardenPuzzleObjects } from './data/memoryPhotos'
 import { createInitialState, refreshPuzzleAvailability } from './logic'
@@ -66,6 +67,9 @@ export const loadGame = (): GameState => {
     }
     if (restored.puzzles.p01_waiting_room?.status === 'solved') {
       restored.flags = { ...restored.flags, dressingRoomUnlocked: true, ceremonyUnlocked: true }
+      restored.teaTime = { cupSlots: correctTeaTimeSlots }
+    } else if (!Object.keys(initialTeaTimeSlots).every((sweetId) => sweetId in restored.teaTime.cupSlots)) {
+      restored.teaTime = { cupSlots: initialTeaTimeSlots }
     }
     if (restored.clockState.handAttached && restored.puzzles.p02_ceremony?.status === 'solved') {
       restored.flags = { ...restored.flags, grandClockStarted: true }

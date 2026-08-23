@@ -1400,3 +1400,70 @@ describe('SaveState', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('Regression: FAIL-01 normalEndingCleared + trueEndingCleared state', () => {
+  it('normalEndingCleared is true and trueEndingCleared is false after NORMAL END', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+
+    expect(state.normalEndingCleared).toBe(true)
+    expect(state.trueEndingCleared).toBe(false)
+  })
+
+  it('trueEndingCleared is true after TRUE END', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 4 })
+    state = reducer(state, { type: 'GO_TRUE_END' })
+
+    expect(state.normalEndingCleared).toBe(false)
+    expect(state.trueEndingCleared).toBe(true)
+  })
+})
+
+describe('Regression: WARN-02 save/load P05 piano secret state', () => {
+  it('saves and loads pianoSecretOpened flag after P05 and piano secret opened', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP05ReadyState()
+    state = solvePuzzle(state, 'p05_piano', true)
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
+    expect(state.flags.pianoSecretOpened).toBe(true)
+    expect(state.inventory['small-key'].consumed).toBe(true)
+    expect(state.inventory['old-invitation'].obtained).toBe(true)
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.flags.pianoSecretOpened).toBe(true)
+    expect(loaded.flags.invitationObtained).toBe(true)
+    expect(loaded.inventory['small-key'].consumed).toBe(true)
+    expect(loaded.inventory['small-key'].obtained).toBe(false)
+    expect(loaded.inventory['old-invitation'].obtained).toBe(true)
+    expect(loaded.puzzles.p06_grand_clock.status).toBe('available')
+    vi.unstubAllGlobals()
+  })
+
+  it('saves and loads P05 solved without pianoSecretOpened — small-key is not consumed', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP05ReadyState()
+    state = solvePuzzle(state, 'p05_piano', true)
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.flags.pianoSecretOpened).not.toBe(true)
+    expect(loaded.inventory['small-key'].consumed).toBe(false)
+    vi.unstubAllGlobals()
+  })
+})

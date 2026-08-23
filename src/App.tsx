@@ -209,7 +209,7 @@ function GameScreen({
             {focusHotspot.id === 'garden-gate' && <GardenGateFocus state={state} onAction={onAction} />}
             {state.messageQueue.length > 0 && (
               <div className="focusMessage" aria-live="polite">
-                {state.messageQueue.map((message) => <p key={message}>{message}</p>)}
+                {state.messageQueue.map((message, index) => <p key={index}>{message}</p>)}
               </div>
             )}
             <button
@@ -258,7 +258,10 @@ function GameScreen({
               type="button"
               className={ceremonyCue ? 'ceremonyCue' : undefined}
               disabled={Boolean(exit.unlockCondition && !exit.unlockCondition(state))}
-              onClick={() => onAction({ type: 'MOVE', areaId: exit.to })}
+              onClick={() => {
+                onFocus(null)
+                onAction({ type: 'MOVE', areaId: exit.to })
+              }}
             >
               {exit.label}
             </button>
@@ -972,7 +975,7 @@ function MessageWindow({ state, onClear }: { state: GameState; onClear: () => vo
   if (state.messageQueue.length === 0) return null
   return (
     <div className="messageWindow">
-      {state.messageQueue.map((message) => <p key={message}>{message}</p>)}
+      {state.messageQueue.map((message, index) => <p key={index}>{message}</p>)}
       <button type="button" onClick={onClear}>閉じる</button>
     </div>
   )
@@ -1044,7 +1047,7 @@ function NormalEnd({ state, onContinue, onTitle }: { state: GameState; onContinu
       <p>2026年9月23日。</p>
       <p>長い一日は、こうして終わった。</p>
       <MemoryMeter state={state} />
-      <p>まだ何か残っている。</p>
+      {!state.trueEndingCleared && <p>まだ何か残っている。</p>}
       <div className="buttonRow">
         <button type="button" onClick={onContinue}>{normalEndingText.returnLabel}</button>
         <button type="button" className="secondary" onClick={onTitle}>タイトルへ</button>

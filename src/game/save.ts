@@ -100,6 +100,13 @@ export const loadGame = (): GameState => {
     if (restored.puzzles.p05_piano?.status === 'solved') {
       restored.pianoPerformance = { input: [] }
       restored.flags = { ...restored.flags, pianoMechanismUnlocked: true, ceremonyLightVisible: true }
+      if (restored.flags.pianoSecretOpened) {
+        restored.flags = { ...restored.flags, pianoSecretOpened: true, invitationObtained: true }
+        restored.inventory = {
+          ...restored.inventory,
+          'small-key': { ...initial.inventory['small-key'], obtained: false, consumed: true },
+        }
+      }
     }
     if (restored.puzzles.p06_grand_clock?.status === 'solved') {
       restored.flags = { ...restored.flags, gardenUnlocked: true }

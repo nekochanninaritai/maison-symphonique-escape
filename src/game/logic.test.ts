@@ -33,7 +33,7 @@ import { allCandleIds, correctCandleSequence, lightEventVase } from './data/cere
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData, pianoReferenceMark } from './data/pianoOverlayPuzzle'
 import { allMemoryPhotos, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './data/memoryPhotos'
 import { weddingDateDisplay } from './data/endingText'
-import { trueClockTarget } from './data/trueRoute'
+import { trueClockMessages, trueClockTarget } from './data/trueRoute'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { correctTeaTimeSlots, teaTimePairs } from './data/teaTime'
 import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
@@ -1467,3 +1467,37 @@ describe('Regression: WARN-02 save/load P05 piano secret state', () => {
     vi.unstubAllGlobals()
   })
 })
+
+describe('Regression: WARN-05 clock hint after normal ending', () => {
+  it('shows the three-line clock hint only after NORMAL END with hand attached and true route not yet unlocked', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    state = reducer(state, { type: 'START_GAME' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+
+    expect(state.messageQueue).toEqual(trueClockMessages.clockHint)
+    expect(state.messageQueue.length).toBe(3)
+  })
+
+  it('does not show the clock hint before NORMAL END', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+
+    expect(state.messageQueue).not.toEqual(trueClockMessages.clockHint)
+    expect(state.messageQueue.some((message) => message.includes('はじめてこの館'))).toBe(false)
+  })
+
+  it('does not show the clock hint after true route is unlocked', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'GO_NORMAL_END' })
+    state = reducer(state, { type: 'START_GAME' })
+    state = reducer(state, { type: 'UNLOCK_TRUE_ROUTE' })
+    state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
+
+    expect(state.messageQueue.some((message) => message.includes('はじめてこの館'))).toBe(false)
+  })
+})
+

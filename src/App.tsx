@@ -155,10 +155,7 @@ function GameScreen({
       </header>
 
       <div className={`stage ${state.worldMode} scene-${background}`} aria-label={`${currentArea.name} ${background}`}>
-        <div className="placeholderScene">
-          <span>{background}</span>
-          <small>{state.worldMode === 'memory' ? 'Memory World placeholder' : 'Empty World placeholder'}</small>
-        </div>
+        <div className="stageVignette" aria-hidden="true" />
         {currentArea.areaId === 'garden' && <GardenStageLayer state={state} />}
         {visibleHotspots.map((hotspot) => (
           <button
@@ -272,17 +269,19 @@ function GameScreen({
       <Inventory state={state} selectedItemName={selectedItemName} onInspectItem={onItemFocus} onAction={onAction} />
       <MemoryGallery state={state} onInspectMemory={(memoryId) => onItemFocus(`memory:${memoryId}`)} />
 
-      <section className="placeholderPuzzles">
-        <h3>Placeholder Puzzle</h3>
-        {Object.values(state.puzzles)
-          .filter((puzzle) => puzzle.areaId === state.currentArea && !focusOnlyPuzzleIds.has(puzzle.puzzleId))
-          .map((puzzle) => (
-            <PuzzleRow key={puzzle.puzzleId} state={state} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
-          ))}
-        {state.worldMode === 'memory' && state.currentArea === 'garden' && (
-          <button type="button" onClick={() => onAction({ type: 'GO_TRUE_END' })}>TRUE ENDへ</button>
-        )}
-      </section>
+      {DEBUG_MODE && (
+        <section className="placeholderPuzzles">
+          <h3>Placeholder Puzzle</h3>
+          {Object.values(state.puzzles)
+            .filter((puzzle) => puzzle.areaId === state.currentArea && !focusOnlyPuzzleIds.has(puzzle.puzzleId))
+            .map((puzzle) => (
+              <PuzzleRow key={puzzle.puzzleId} state={state} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
+            ))}
+          {state.worldMode === 'memory' && state.currentArea === 'garden' && (
+            <button type="button" onClick={() => onAction({ type: 'GO_TRUE_END' })}>TRUE ENDへ</button>
+          )}
+        </section>
+      )}
     </section>
   )
 }

@@ -203,7 +203,7 @@ h3 {
 
 .stage {
   position: relative;
-  min-height: 48svh;
+  min-height: 54svh;
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
@@ -212,82 +212,78 @@ h3 {
   background-size: cover;
 }
 
-.stage.memory {
-  background: #9eb0a4;
-}
-
-.stage.scene-entrance,
-.stage.scene-entrance-memory {
-  background-image:
-    linear-gradient(rgba(43, 37, 34, 0.04), rgba(43, 37, 34, 0.16)),
-    url('./assets/environments/bg-01-entrance.jpg');
-}
-
-.stage.scene-waiting-room,
-.stage.scene-waiting-room-memory {
-  background-image:
-    linear-gradient(rgba(43, 37, 34, 0.03), rgba(43, 37, 34, 0.14)),
-    url('./assets/environments/bg-02-waiting-room.jpg');
-}
-
-.stage.scene-dressing-room,
-.stage.scene-dressing-room-memory {
-  background-image:
-    linear-gradient(rgba(43, 37, 34, 0.03), rgba(43, 37, 34, 0.14)),
-    url('./assets/environments/bg-03-dressing-room.jpg');
-}
-
-.stage.scene-ceremony,
-.stage.scene-ceremony-memory {
-  background-image:
-    linear-gradient(rgba(43, 37, 34, 0.02), rgba(43, 37, 34, 0.12)),
-    url('./assets/environments/bg-04-ceremony.jpg');
-}
-
-.stage.scene-reception,
-.stage.scene-reception-memory {
-  background-image:
-    linear-gradient(rgba(43, 37, 34, 0.04), rgba(43, 37, 34, 0.18)),
-    url('./assets/environments/bg-05-reception.jpg');
-}
-
-.stage.scene-garden,
-.stage.scene-garden-memory {
-  background-image:
-    linear-gradient(rgba(20, 32, 24, 0.02), rgba(20, 32, 24, 0.18)),
-    url('./assets/environments/bg-06-garden.jpg');
-}
-
-.placeholderScene {
+/* ── Stage vignette overlay: soft inner shadow for depth ── */
+.stageVignette {
   position: absolute;
   inset: 0;
-  z-index: 0;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  color: #fffdf8;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.34);
-  background:
-    radial-gradient(circle at 50% 42%, transparent 0 44%, rgba(43, 37, 34, 0.16) 100%);
+  z-index: 1;
   pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 50% 0%, transparent 42%, rgba(28, 22, 18, 0.18) 100%),
+    radial-gradient(ellipse at 50% 100%, transparent 38%, rgba(28, 22, 18, 0.22) 100%),
+    linear-gradient(180deg, rgba(28, 22, 18, 0.06) 0%, transparent 28%, transparent 72%, rgba(28, 22, 18, 0.12) 100%);
 }
 
-.placeholderScene span {
-  font-size: clamp(2rem, 10vw, 5rem);
-  font-weight: 700;
+/* ── Memory world: warm amber tint over the scene ── */
+.stage.memory .stageVignette {
+  background:
+    radial-gradient(ellipse at 50% 0%, transparent 42%, rgba(28, 22, 18, 0.22) 100%),
+    radial-gradient(ellipse at 50% 100%, transparent 38%, rgba(28, 22, 18, 0.28) 100%),
+    linear-gradient(180deg, rgba(180, 140, 70, 0.12) 0%, rgba(180, 140, 70, 0.06) 100%);
 }
 
-.placeholderScene span,
-.placeholderScene small {
-  display: none;
+/* ── Entrance ── */
+/* Clock is right-centre in the image (~x 58%). Pull focus slightly right. */
+.stage.scene-entrance,
+.stage.scene-entrance-memory {
+  background-image: url('./assets/environments/bg-01-entrance.jpg');
+  background-position: 62% center;
+}
+
+/* ── Waiting Room ── */
+/* Frame is upper-centre; table is lower-centre. Standard centre works well. */
+.stage.scene-waiting-room,
+.stage.scene-waiting-room-memory {
+  background-image: url('./assets/environments/bg-02-waiting-room.jpg');
+  background-position: center center;
+}
+
+/* ── Dressing Room ── */
+.stage.scene-dressing-room,
+.stage.scene-dressing-room-memory {
+  background-image: url('./assets/environments/bg-03-dressing-room.jpg');
+  background-position: center center;
+}
+
+/* ── Ceremony ── */
+/* Aisle runs centre; altar is upper-centre. */
+.stage.scene-ceremony,
+.stage.scene-ceremony-memory {
+  background-image: url('./assets/environments/bg-04-ceremony.jpg');
+  background-position: center 30%;
+}
+
+/* ── Reception ── */
+/* Piano is upper-right; tables spread across centre. Pull focus right slightly. */
+.stage.scene-reception,
+.stage.scene-reception-memory {
+  background-image: url('./assets/environments/bg-05-reception.jpg');
+  background-position: 58% center;
+}
+
+/* ── Garden ── */
+.stage.scene-garden,
+.stage.scene-garden-memory {
+  background-image: url('./assets/environments/bg-06-garden.jpg');
+  background-position: center center;
 }
 
 .gardenStageLayer {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
 }
 
 .gardenStageObject {
@@ -399,7 +395,7 @@ h3 {
 
 .hotspot {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   border: 0;
   border-radius: 0;
   padding: 0;
@@ -2481,7 +2477,25 @@ h3 {
   }
 
   .stage {
-    min-height: 46svh;
+    min-height: 44svh;
+  }
+
+  /* On narrow screens shift entrance right so the clock is visible */
+  .stage.scene-entrance,
+  .stage.scene-entrance-memory {
+    background-position: 70% center;
+  }
+
+  /* On narrow screens ceremony: show altar in upper frame */
+  .stage.scene-ceremony,
+  .stage.scene-ceremony-memory {
+    background-position: center 28%;
+  }
+
+  /* On narrow screens reception: show piano + front tables */
+  .stage.scene-reception,
+  .stage.scene-reception-memory {
+    background-position: 62% center;
   }
 
   .puzzleRow {

@@ -1373,10 +1373,12 @@ h3 {
 
 .lockDial strong {
   padding: 8px 0;
-  border: 1px solid rgba(166, 120, 58, 0.35);
+  border: 1px solid rgba(166, 120, 58, 0.55);
   border-radius: 6px;
   background: #fffdfa;
+  color: var(--ink);
   font-size: 1.4rem;
+  letter-spacing: 0.04em;
 }
 
 .lockDial button {

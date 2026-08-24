@@ -281,7 +281,7 @@ describe('PuzzleState', () => {
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
 
     expect(state.puzzles.p02_ceremony.status).toBe('solved')
-    expect(state.flags.receptionUnlocked).toBe(true)
+    expect(state.flags.receptionUnlocked).not.toBe(true)
     expect(state.flags.grandClockStarted).not.toBe(true)
     expect(state.clockState.currentTime).toBe('09:23')
     expect(state.puzzles.p03_reception.status).toBe('locked')
@@ -298,7 +298,7 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p02_ceremony.status).toBe('solved')
     expect(state.ceremonyCandles.input).toEqual(correctCandleSequence)
     expect(state.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
-    expect(state.flags.receptionUnlocked).toBe(true)
+    expect(state.flags.receptionUnlocked).not.toBe(true)
   })
 
   it('altar-side object is dark before P02 is solved', () => {

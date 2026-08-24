@@ -17,7 +17,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'locked',
     prerequisites: ['p01_waiting_room'],
     description: '祭壇の四本のキャンドルへ、順に火を灯す。',
-    rewards: { flags: { receptionUnlocked: true } },
+    rewards: {},
   },
   p03_reception: {
     puzzleId: 'p03_reception',

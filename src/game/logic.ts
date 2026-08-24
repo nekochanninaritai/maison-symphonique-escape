@@ -286,7 +286,7 @@ const startGrandClock = (state: GameState): GameState =>
   advanceClock(
     {
       ...state,
-      flags: { ...state.flags, grandClockStarted: true },
+      flags: { ...state.flags, grandClockStarted: true, receptionUnlocked: true },
     },
     '12:00',
   )

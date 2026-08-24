@@ -54,6 +54,11 @@ button:disabled {
   background: var(--paper);
 }
 
+/* ── Game screen parchment base ── */
+.gameScreen {
+  background: #f6f1e8;
+}
+
 .titleScreen {
   position: relative;
   display: grid;
@@ -180,19 +185,33 @@ h3 {
 .gameScreen {
   display: grid;
   grid-template-rows: auto minmax(300px, 1fr) auto auto auto;
-  gap: 12px;
+  gap: 10px;
   padding: 12px;
 }
 
+/* ── Top bar: chapter label + area name + HUD ── */
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(166, 120, 58, 0.22);
+}
+
+.topBar > div:first-child .eyebrow {
+  margin-bottom: 2px;
+  font-size: 0.7rem;
+  color: var(--gold);
+  letter-spacing: 0.12em;
 }
 
 .topBar h2 {
   margin-bottom: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0.02em;
 }
 
 .hud {
@@ -444,26 +463,71 @@ h3 {
   margin-bottom: 0;
 }
 
+/* ── Message window: parchment narrative style ── */
 .messageWindow {
   display: grid;
-  gap: 8px;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fffaf0;
-  box-shadow: var(--shadow);
+  gap: 6px;
+  padding: 16px 18px;
+  border: 1px solid rgba(166, 120, 58, 0.3);
+  border-radius: 6px;
+  background:
+    linear-gradient(rgba(255, 252, 244, 0.96), rgba(255, 248, 235, 0.96));
+  box-shadow:
+    0 2px 14px rgba(43, 37, 34, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--ink);
 }
 
+.messageWindow p {
+  margin-bottom: 0;
+}
+
+.messageWindow button {
+  justify-self: start;
+  min-height: 36px;
+  padding: 6px 18px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: transparent;
+  border-color: rgba(166, 120, 58, 0.35);
+}
+
+/* ── Area navigation ── */
 .areaNav {
   justify-content: center;
+  gap: 6px;
 }
 
+.areaNav button {
+  flex: 1 1 120px;
+  min-height: 42px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  border-color: rgba(166, 120, 58, 0.4);
+  background:
+    linear-gradient(rgba(255, 252, 244, 0.9), rgba(245, 238, 222, 0.9));
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.areaNav button:not(:disabled):hover {
+  border-color: var(--gold);
+  background:
+    linear-gradient(rgba(255, 253, 248, 1), rgba(250, 244, 230, 1));
+}
+
+.areaNav button:disabled {
+  opacity: 0.38;
+}
+
+/* ── Inventory panel ── */
 .inventory,
 .placeholderPuzzles {
   padding: 12px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(166, 120, 58, 0.28);
   border-radius: 8px;
-  background: rgba(255, 250, 240, 0.72);
+  background: rgba(251, 247, 239, 0.82);
 }
 
 .inventory h3,

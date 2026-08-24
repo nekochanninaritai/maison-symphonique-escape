@@ -114,7 +114,7 @@ export const areas: Record<string, Area> = {
     ],
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
-      { to: 'dressing-room', label: '控室へ', unlockCondition: (state) => state.flags.dressingRoomUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved' },
+      { to: 'dressing-room', label: '控室へ' },
       { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved' },
     ],
   },
@@ -124,7 +124,7 @@ export const areas: Record<string, Area> = {
     chapter: 'Waiting Room / Sub Area',
     emptyBackground: 'dressing-room',
     memoryBackground: 'dressing-room-memory',
-    unlockCondition: (state) => state.flags.dressingRoomUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved',
+    unlockCondition: () => true,
     hotspots: [
       {
         id: 'clock-hand-case',

@@ -172,13 +172,22 @@ describe('PuzzleState', () => {
 
     expect(state.puzzles.p01_waiting_room.status).toBe('available')
     expect(state.puzzles.p02_ceremony.status).toBe('locked')
-    expect(canMoveToArea(state, 'dressing-room')).toBe(false)
+    expect(canMoveToArea(state, 'dressing-room')).toBe(true)
     expect(canMoveToArea(state, 'ceremony')).toBe(false)
     expect(state.puzzles.p03_reception.status).toBe('locked')
     expect(state.puzzles.p04_sheet_overlay.status).toBe('locked')
     expect(state.puzzles.p05_piano.status).toBe('locked')
     expect(state.puzzles.p06_grand_clock.status).toBe('locked')
     expect(state.puzzles.p07_garden_final.status).toBe('locked')
+  })
+
+  it('Dressing Room is accessible before P01 while Ceremony remains locked', () => {
+    const state = createInitialState()
+
+    expect(state.puzzles.p01_waiting_room.status).toBe('available')
+    expect(canMoveToArea(state, 'dressing-room')).toBe(true)
+    expect(canMoveToArea(state, 'ceremony')).toBe(false)
+    expect(state.clockState.currentTime).toBe('09:23')
   })
 
   it('P01 solved unlocks Dressing Room, Ceremony, and P02', () => {

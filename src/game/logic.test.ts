@@ -345,6 +345,31 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(['炎が、ふっと消えた。'])
   })
 
+  it('entering Ceremony advances the clock from 09:23 to 12:00', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    expect(state.clockState.currentTime).toBe('09:23')
+
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+
+    expect(state.currentArea).toBe('ceremony')
+    expect(state.clockState.currentTime).toBe('12:00')
+    expect(state.flags.grandClockStarted).not.toBe(true)
+    expect(state.flags.receptionUnlocked).not.toBe(true)
+  })
+
+  it('re-entering Ceremony does not rewind a later clock time', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '13:00' })
+    state = reducer(state, { type: 'MOVE', areaId: 'waiting-room' })
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+
+    expect(state.clockState.currentTime).toBe('13:00')
+  })
+
   it('Clock Hand attached then P02 solved starts the Grand Clock', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })

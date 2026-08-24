@@ -5,4 +5,11 @@ export const gameConfig = {
   saveVersion: 5,
 }
 
-export const DEBUG_MODE = import.meta.env.DEV || import.meta.env.VITE_DEBUG_MODE === 'true'
+const debugQueryFlag = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('debug')
+
+export const DEBUG_MODE =
+  debugQueryFlag === '1'
+    ? true
+    : debugQueryFlag === '0'
+      ? false
+      : import.meta.env.DEV || import.meta.env.VITE_DEBUG_MODE === 'true'

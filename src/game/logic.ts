@@ -52,7 +52,7 @@ export const createInitialState = (): GameState => ({
   clockState: {
     handObtained: false,
     handAttached: false,
-    currentTime: '09:23',
+    currentTime: '11:00',
     canManualRotate: false,
     trueRouteUnlocked: false,
   },
@@ -117,6 +117,17 @@ export const canTriggerTrueRoute = (state: GameState, time = state.clockState.cu
 
 export const isP06ClockActive = (state: GameState): boolean =>
   state.clockState.handAttached && state.puzzles.p06_grand_clock?.status === 'available' && isItemAvailable(state, 'old-invitation')
+
+export const canManuallyControlGrandClock = (state: GameState): boolean =>
+  state.clockState.handAttached && (state.clockState.canManualRotate === true || isP06ClockActive(state))
+
+const shouldUnlockCeremony = (state: GameState): boolean =>
+  state.puzzles.p01_waiting_room?.status === 'solved' && state.clockState.handAttached === true
+
+const unlockCeremonyIfReady = (state: GameState): GameState =>
+  shouldUnlockCeremony(state) && state.flags.ceremonyUnlocked !== true
+    ? { ...state, flags: { ...state.flags, ceremonyUnlocked: true } }
+    : state
 
 export type TeaDrawerState = 'locked' | 'open-with-photo' | 'open-empty'
 
@@ -219,8 +230,7 @@ export const attachClockHand = (state: GameState): GameState => {
     return withMessage(state, ['長針はまだ見つかっていない。'])
   }
 
-  return withMessage(
-    {
+  const attached = unlockCeremonyIfReady({
       ...state,
       selectedItemId: null,
       inventory: {
@@ -231,17 +241,15 @@ export const attachClockHand = (state: GameState): GameState => {
         ...state.clockState,
         handAttached: true,
       },
-    },
+    })
+
+  return withMessage(
+    attached,
     ['カチッ', '長針は元の場所に戻った。', 'しかし、時計は止まったままだ。'],
   )
 }
 
-const attachClockHandFromAction = (state: GameState): GameState => {
-  const attached = attachClockHand(state)
-  const next = startGrandClockIfReady(attached)
-  if (!next.started) return attached
-  return withMessage(next.state, ['カチャ。', '長針は元の場所に戻った。', '時計の奥で、止まっていた歯車が静かに動き出した。'])
-}
+const attachClockHandFromAction = (state: GameState): GameState => attachClockHand(state)
 
 export const setClockTime = (state: GameState, time: string): GameState => {
   if (canTriggerTrueRoute(state, time)) {
@@ -278,23 +286,6 @@ export const advanceClock = (state: GameState, targetTime: string): GameState =>
     currentTime: targetTime,
   },
 })
-
-const shouldStartGrandClock = (state: GameState): boolean =>
-  state.clockState.handAttached && state.puzzles.p02_ceremony?.status === 'solved' && state.flags.grandClockStarted !== true
-
-const startGrandClock = (state: GameState): GameState =>
-  advanceClock(
-    {
-      ...state,
-      flags: { ...state.flags, grandClockStarted: true, receptionUnlocked: true },
-    },
-    '12:00',
-  )
-
-const startGrandClockIfReady = (state: GameState): { state: GameState; started: boolean } => {
-  if (!shouldStartGrandClock(state)) return { state, started: false }
-  return { state: startGrandClock(state), started: true }
-}
 
 export const unlockTrueRoute = (state: GameState): GameState => {
   let next = unlockMemory(state, 'september23')
@@ -379,8 +370,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzle.rewards.advanceClockTo) {
     next = advanceClock(next, puzzle.rewards.advanceClockTo)
   }
-  const grandClockStart = startGrandClockIfReady(next)
-  next = grandClockStart.state
+  next = unlockCeremonyIfReady(next)
   if (puzzle.rewards.goNormalEnd) {
     next = {
       ...next,
@@ -394,11 +384,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   const messages =
     puzzleId === 'p01_waiting_room'
       ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', 'ティーテーブルの引き出しが、ゆっくりと開いた。', 'そして館のどこかからも、扉の開く音がした。']
-      : grandClockStart.started
-        ? puzzleId === 'p02_ceremony'
-          ? ['四つの灯が、静かに祭壇を照らした。', '――ゴーン。', '遠くで、時計の鐘が鳴った。']
-          : ['時計の奥で、止まっていた歯車が静かに動き出した。']
-        : puzzleId === 'p02_ceremony'
+      : puzzleId === 'p02_ceremony'
           ? ['四つの灯が、静かに祭壇を照らした。']
           : puzzleId === 'p05_piano'
             ? ['最後の音が、静かな披露宴会場に響いた。', '――遠くで、小さな鐘が鳴った。']
@@ -705,7 +691,7 @@ export const resetP02Candles = (state: GameState): GameState =>
     },
     clockState: {
       ...state.clockState,
-      currentTime: '09:23',
+      currentTime: '11:00',
     },
     messageQueue: ['P02 Candle Puzzle をリセットした。'],
   })
@@ -800,10 +786,10 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
         flags: action.areaId === 'garden' ? { ...state.flags, gardenReached: true } : state.flags,
         clockState:
           action.areaId === 'ceremony' &&
-          state.clockState.currentTime === '09:23'
+          state.clockState.currentTime === '11:00'
             ? { ...state.clockState, currentTime: '12:00' }
             : action.areaId === 'reception' &&
-                state.flags.grandClockStarted === true &&
+                state.flags.receptionUnlocked === true &&
                 state.clockState.currentTime === '12:00'
               ? { ...state.clockState, currentTime: '13:00' }
               : state.clockState,
@@ -921,11 +907,11 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
     case 'CLEAR_INVENTORY':
       return { ...state, inventory: createItems(), selectedItemId: null, clockState: { ...state.clockState, handObtained: false } }
     case 'ATTACH_CLOCK_HAND':
-      return startGrandClockIfReady({
+      return unlockCeremonyIfReady({
         ...state,
         inventory: { ...state.inventory, 'clock-hand': cloneItem(state.inventory['clock-hand'], { obtained: false, consumed: true }) },
         clockState: { ...state.clockState, handObtained: true, handAttached: true },
-      }).state
+      })
     case 'GO_NORMAL_END':
       return {
         ...unlockNormalMemories(state),

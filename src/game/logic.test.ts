@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   applyPianoOverlay,
   attachClockHand,
+  canManuallyControlGrandClock,
   canMoveToArea,
   createInitialState,
   discoverReceptionAnomaly,
@@ -23,9 +24,14 @@ import {
 import {
   clockAngleFromPoint,
   createClockDragSessionFromAngle,
+  hourHandAngleFromTime,
   minuteFromClockAngle,
+  minuteHandAngleFromTime,
   normalizeAngleDelta,
   normalizeTime,
+  setHourInTime,
+  setMinuteInTime,
+  timeFromClockHandPoint,
   timeFromClockPoint,
   updateClockDragSessionFromAngle,
 } from './clock'
@@ -40,10 +46,17 @@ import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
 import { gameConfig } from './config'
 import { clearSave, loadGame, saveGame } from './save'
 
-const createP03ReadyState = () => {
+const createCeremonyReadyState = () => {
   let state = createInitialState()
-  state = solvePuzzle(state, 'p02_ceremony', true)
-  return reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+  state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+  state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+  state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+  return reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+}
+
+const createP03ReadyState = () => {
+  const state = createCeremonyReadyState()
+  return solvePuzzle(state, 'p02_ceremony')
 }
 
 const createP04ReadyState = () => {
@@ -55,7 +68,8 @@ const createP04ReadyState = () => {
 const createP05ReadyState = () => {
   let state = createP04ReadyState()
   state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
-  return reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+  state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+  return reducer(state, { type: 'MOVE', areaId: 'reception' })
 }
 
 const createP06ReadyState = () => {
@@ -74,7 +88,7 @@ describe('ClockState', () => {
 
     expect(state.clockState.handAttached).toBe(true)
     expect(state.clockState.canManualRotate).toBe(false)
-    expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.clockState.currentTime).toBe('11:00')
     expect(state.inventory['clock-hand'].obtained).toBe(false)
   })
 
@@ -101,6 +115,33 @@ describe('ClockState', () => {
     expect(minuteFromClockAngle(138)).toBe(23)
     expect(timeFromClockPoint({ x: 83.5, y: 87.2 }, rect, '09:00')).toBe('09:23')
     expect(normalizeTime(-1)).toBe('23:59')
+  })
+
+  it('derives hand angles from the current time', () => {
+    expect(minuteHandAngleFromTime('09:23')).toBe(138)
+    expect(hourHandAngleFromTime('03:30')).toBe(105)
+    expect(hourHandAngleFromTime('15:30')).toBe(105)
+  })
+
+  it('updates only minutes when the minute hand is moved', () => {
+    expect(setMinuteInTime('13:20', 40)).toBe('13:40')
+    expect(timeFromClockHandPoint('minute', { x: 50, y: 100 }, { left: 0, top: 0, width: 100, height: 100 }, '11:00')).toBe('11:30')
+  })
+
+  it('updates only hours when the hour hand is moved', () => {
+    expect(setHourInTime('13:40', 3)).toBe('15:40')
+    expect(setHourInTime('23:40', 0)).toBe('00:40')
+    expect(timeFromClockHandPoint('hour', { x: 100, y: 50 }, { left: 0, top: 0, width: 100, height: 100 }, '13:40')).toBe('15:40')
+  })
+
+  it('can reach the P06 and TRUE target times with separate hands', () => {
+    let p06Time = setHourInTime('14:00', 3)
+    p06Time = setMinuteInTime(p06Time, 30)
+    expect(p06Time).toBe(p06TargetTime)
+
+    let trueTime = setHourInTime('15:30', 9)
+    trueTime = setMinuteInTime(trueTime, 23)
+    expect(trueTime).toBe(trueClockTarget)
   })
 
   it('moves the full clock time back by one hour after one counterclockwise rotation', () => {
@@ -141,6 +182,7 @@ describe('ClockState', () => {
     state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
 
     expect(state.clockState.canManualRotate).toBe(false)
+    expect(canManuallyControlGrandClock(state)).toBe(false)
   })
 
   it('unlocks manual clock control after the normal ending', () => {
@@ -151,6 +193,15 @@ describe('ClockState', () => {
     state = reducer(state, { type: 'EXAMINE', hotspotId: 'grand-clock' })
 
     expect(state.clockState.canManualRotate).toBe(true)
+    expect(canManuallyControlGrandClock(state)).toBe(true)
+  })
+
+  it('allows manual clock control during P06 without unlocking TRUE manual mode', () => {
+    const state = createP06ReadyState()
+
+    expect(state.clockState.canManualRotate).toBe(false)
+    expect(isP06ClockActive(state)).toBe(true)
+    expect(canManuallyControlGrandClock(state)).toBe(true)
   })
 })
 
@@ -187,19 +238,19 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p01_waiting_room.status).toBe('available')
     expect(canMoveToArea(state, 'dressing-room')).toBe(true)
     expect(canMoveToArea(state, 'ceremony')).toBe(false)
-    expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.clockState.currentTime).toBe('11:00')
   })
 
-  it('P01 solved unlocks Dressing Room, Ceremony, and P02', () => {
+  it('P01 solved keeps Ceremony locked until the clock hand is attached', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
 
     expect(state.puzzles.p01_waiting_room.status).toBe('solved')
     expect(state.flags.dressingRoomUnlocked).toBe(true)
-    expect(state.flags.ceremonyUnlocked).toBe(true)
+    expect(state.flags.ceremonyUnlocked).not.toBe(true)
     expect(canMoveToArea(state, 'dressing-room')).toBe(true)
-    expect(canMoveToArea(state, 'ceremony')).toBe(true)
-    expect(state.puzzles.p02_ceremony.status).toBe('available')
+    expect(canMoveToArea(state, 'ceremony')).toBe(false)
+    expect(state.puzzles.p02_ceremony.status).toBe('locked')
   })
 
   it('P01 Tea Time swaps cups and solves on the final correct placement', () => {
@@ -214,7 +265,7 @@ describe('PuzzleState', () => {
 
     expect(state.puzzles.p01_waiting_room.status).toBe('solved')
     expect(state.flags.dressingRoomUnlocked).toBe(true)
-    expect(state.flags.ceremonyUnlocked).toBe(true)
+    expect(state.flags.ceremonyUnlocked).not.toBe(true)
   })
 
   it('uses the Phase 3A formal Tea Time pairing data', () => {
@@ -237,7 +288,7 @@ describe('PuzzleState', () => {
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
 
     expect(state.flags.grandClockStarted).not.toBe(true)
-    expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.clockState.currentTime).toBe('11:00')
   })
 
   it('P01 drawer is locked before Tea Time is solved', () => {
@@ -281,24 +332,26 @@ describe('PuzzleState', () => {
 
     expect(state.clockState.handAttached).toBe(true)
     expect(state.flags.grandClockStarted).not.toBe(true)
-    expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.flags.ceremonyUnlocked).toBe(true)
+    expect(canMoveToArea(state, 'ceremony')).toBe(true)
+    expect(state.clockState.currentTime).toBe('11:00')
   })
 
-  it('P02 solved before Clock Hand does not start the Grand Clock', () => {
+  it('Clock Hand attached alone does not unlock Ceremony', () => {
     let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
 
-    expect(state.puzzles.p02_ceremony.status).toBe('solved')
+    expect(state.clockState.handAttached).toBe(true)
+    expect(state.flags.ceremonyUnlocked).not.toBe(true)
+    expect(canMoveToArea(state, 'ceremony')).toBe(false)
     expect(state.flags.receptionUnlocked).not.toBe(true)
-    expect(state.flags.grandClockStarted).not.toBe(true)
-    expect(state.clockState.currentTime).toBe('09:23')
-    expect(state.puzzles.p03_reception.status).toBe('locked')
+    expect(state.clockState.currentTime).toBe('11:00')
   })
 
   it('correct P02 candle sequence solves the Ceremony puzzle', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    let state = createCeremonyReadyState()
 
     for (const candleId of correctCandleSequence) {
       state = lightCeremonyCandle(state, candleId)
@@ -307,12 +360,11 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p02_ceremony.status).toBe('solved')
     expect(state.ceremonyCandles.input).toEqual(correctCandleSequence)
     expect(state.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
-    expect(state.flags.receptionUnlocked).not.toBe(true)
+    expect(state.flags.receptionUnlocked).toBe(true)
   })
 
   it('altar-side object is dark before P02 is solved', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    const state = createCeremonyReadyState()
 
     expect(getAltarPhotoState(state)).toBe('dark-object')
 
@@ -322,8 +374,7 @@ describe('PuzzleState', () => {
   })
 
   it('P02 solved reveals PHOTO B for pickup without auto-obtaining it', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    let state = createCeremonyReadyState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
 
     expect(state.memories.vow.unlocked).toBe(false)
@@ -341,8 +392,7 @@ describe('PuzzleState', () => {
   })
 
   it('wrong P02 candle sequence resets input without solving', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    let state = createCeremonyReadyState()
     const wrongFirst = allCandleIds.find((id) => id !== correctCandleSequence[0])
     expect(wrongFirst).toBeDefined()
 
@@ -354,11 +404,14 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(['炎が、ふっと消えた。'])
   })
 
-  it('entering Ceremony advances the clock from 09:23 to 12:00', () => {
+  it('P01 and Clock Hand unlock Ceremony, then first entry advances the clock from 11:00 to 12:00', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
 
-    expect(state.clockState.currentTime).toBe('09:23')
+    expect(state.flags.ceremonyUnlocked).toBe(true)
+    expect(state.clockState.currentTime).toBe('11:00')
 
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
 
@@ -369,9 +422,7 @@ describe('PuzzleState', () => {
   })
 
   it('re-entering Ceremony does not rewind a later clock time', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
-    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    let state = createCeremonyReadyState()
     state = reducer(state, { type: 'SET_CLOCK_TIME', time: '13:00' })
     state = reducer(state, { type: 'MOVE', areaId: 'waiting-room' })
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
@@ -379,35 +430,37 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('13:00')
   })
 
-  it('Clock Hand attached then P02 solved starts the Grand Clock', () => {
+  it('P01 then Clock Hand unlocks Ceremony and P02 unlocks Reception', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
+    expect(state.flags.ceremonyUnlocked).toBe(true)
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
 
     expect(state.clockState.currentTime).toBe('12:00')
-    expect(state.flags.grandClockStarted).toBe(true)
     expect(state.flags.receptionUnlocked).toBe(true)
     expect(canMoveToArea(state, 'reception')).toBe(true)
   })
 
-  it('P02 solved then Clock Hand attached also starts the Grand Clock', () => {
+  it('Clock Hand then P01 also unlocks Ceremony', () => {
     let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
+    expect(state.flags.ceremonyUnlocked).not.toBe(true)
 
-    expect(state.clockState.currentTime).toBe('12:00')
-    expect(state.flags.grandClockStarted).toBe(true)
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+
+    expect(state.clockState.currentTime).toBe('11:00')
+    expect(state.flags.ceremonyUnlocked).toBe(true)
+    expect(canMoveToArea(state, 'ceremony')).toBe(true)
   })
 
   it('P02 solved keeps all candles lit on revisit', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    let state = createCeremonyReadyState()
     for (const candleId of correctCandleSequence) {
       state = reducer(state, { type: 'LIGHT_CEREMONY_CANDLE', candleId })
     }
@@ -418,22 +471,18 @@ describe('PuzzleState', () => {
     expect(state.ceremonyCandles.lit.sort()).toEqual([...allCandleIds].sort())
   })
 
-  it('Grand Clock start event fires only once', () => {
-    let state = createInitialState()
-    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+  it('Ceremony unlock and P02 solve do not rewind a later clock time', () => {
+    let state = createCeremonyReadyState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
-    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
-    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
-    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
     state = reducer(state, { type: 'SET_CLOCK_TIME', time: '13:00' })
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony', force: true })
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
 
-    expect(state.flags.grandClockStarted).toBe(true)
+    expect(state.flags.receptionUnlocked).toBe(true)
     expect(state.clockState.currentTime).toBe('13:00')
   })
 
-  it('entering Reception advances the Grand Clock from 12:00 to 13:00', () => {
+  it('entering Reception advances the clock from 12:00 to 13:00', () => {
     let state = createP03ReadyState()
 
     expect(state.clockState.currentTime).toBe('12:00')
@@ -444,7 +493,7 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('13:00')
   })
 
-  it('re-entering Reception does not rewind or advance the Grand Clock', () => {
+  it('re-entering Reception does not rewind or advance the clock', () => {
     let state = createP03ReadyState()
 
     state = reducer(state, { type: 'MOVE', areaId: 'reception' })
@@ -733,12 +782,15 @@ describe('PuzzleState', () => {
 
     expect(state.flags.pianoMechanismUnlocked).toBe(true)
     expect(state.flags.ceremonyLightVisible).toBe(true)
+    expect(state.clockState.currentTime).toBe('14:00')
     expect(lightEventVase?.isFutureLightEventAnchor).toBe(true)
   })
 
   it('examining the Ceremony light obtains the small key', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
     state = reducer(state, { type: 'SET_FLAG', flagId: 'ceremonyLightVisible', value: true })
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
     state = reducer(state, { type: 'EXAMINE', hotspotId: 'ceremony-light' })
@@ -1022,6 +1074,9 @@ describe('SaveState', () => {
     let state = reducer(createInitialState(), { type: 'MARK_NORMAL_END_CLEARED' })
     state = moveTeaCup(state, 'coffee', 'gateau-chocolat')
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
     for (const candleId of correctCandleSequence) {
       state = lightCeremonyCandle(state, candleId)
     }
@@ -1101,6 +1156,9 @@ describe('SaveState', () => {
 
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
     saveGame(state)
 

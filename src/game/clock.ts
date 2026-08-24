@@ -15,6 +15,8 @@ export type ClockDragSession = {
   totalMinutes: number
 }
 
+export type ClockHandKind = 'hour' | 'minute'
+
 export const minutesFromTime = (time: string): number => {
   const [hours, minutes] = time.split(':').map(Number)
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return 0
@@ -40,11 +42,56 @@ export const minuteFromClockAngle = (angle: number): number => {
   return Math.round((((angle % 360) + 360) % 360) / 6) % 60
 }
 
+export const hourFromClockAngle = (angle: number): number => {
+  return Math.round((((angle % 360) + 360) % 360) / 30) % 12
+}
+
+export const minuteHandAngleFromTime = (time: string): number => {
+  return (minutesFromTime(time) % 60) * 6
+}
+
+export const hourHandAngleFromTime = (time: string): number => {
+  const totalMinutes = minutesFromTime(time)
+  const hour = Math.floor(totalMinutes / 60) % 12
+  const minute = totalMinutes % 60
+  return hour * 30 + minute * 0.5
+}
+
+export const setMinuteInTime = (currentTime: string, minute: number): string => {
+  const currentMinutes = minutesFromTime(currentTime)
+  const currentHour = Math.floor(currentMinutes / 60)
+  return normalizeTime(currentHour * 60 + minute)
+}
+
+export const setHourInTime = (currentTime: string, hourOnDial: number): string => {
+  const currentMinutes = minutesFromTime(currentTime)
+  const currentHour = Math.floor(currentMinutes / 60)
+  const minute = currentMinutes % 60
+  const dialHour = ((hourOnDial % 12) + 12) % 12
+  const candidates = [dialHour, dialHour + 12, dialHour - 12, dialHour + 24]
+    .filter((hour) => hour >= 0 && hour <= 24)
+  const closestHour = candidates.reduce((closest, candidate) => (
+    Math.abs(candidate - currentHour) < Math.abs(closest - currentHour) ? candidate : closest
+  ), candidates[0] ?? dialHour)
+  return normalizeTime(closestHour * 60 + minute)
+}
+
 export const timeFromClockPoint = (point: ClockPoint, rect: ClockRect, currentTime: string): string => {
   const currentMinutes = minutesFromTime(currentTime)
   const currentHour = Math.floor(currentMinutes / 60)
   const nextMinute = minuteFromClockAngle(clockAngleFromPoint(point, rect))
   return normalizeTime(currentHour * 60 + nextMinute)
+}
+
+export const timeFromClockHandPoint = (
+  hand: ClockHandKind,
+  point: ClockPoint,
+  rect: ClockRect,
+  currentTime: string,
+): string => {
+  const angle = clockAngleFromPoint(point, rect)
+  if (hand === 'minute') return setMinuteInTime(currentTime, minuteFromClockAngle(angle))
+  return setHourInTime(currentTime, hourFromClockAngle(angle))
 }
 
 export const normalizeAngleDelta = (fromAngle: number, toAngle: number): number => {

@@ -2428,7 +2428,7 @@ h3 {
   width: min(76vw, 320px);
   min-height: auto;
   aspect-ratio: 1;
-  border-width: 2px;
+  border: 2px solid rgba(43, 37, 34, 0.2);
   border-radius: 50%;
   padding: 0;
   background:
@@ -2436,6 +2436,7 @@ h3 {
     radial-gradient(circle, #f8efe2 0 62%, #e7d2b5 63% 100%);
   touch-action: none;
   user-select: none;
+  box-sizing: border-box;
 }
 
 .largeClockFace.manual {
@@ -2461,6 +2462,37 @@ h3 {
   left: calc(50% - 2px);
   width: 4px;
   height: 39%;
+}
+
+.clockHandHitArea {
+  position: absolute;
+  left: calc(50% - 22px);
+  bottom: 50%;
+  width: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  transform-origin: 50% 100%;
+  touch-action: none;
+  cursor: grab;
+  z-index: 2;
+}
+
+.clockHandHitArea.hour {
+  height: 31%;
+}
+
+.clockHandHitArea.minute {
+  height: 44%;
+}
+
+.clockHandHitArea:disabled {
+  cursor: default;
+}
+
+.clockHandHitArea.active {
+  cursor: grabbing;
 }
 
 .missingHand {

@@ -66,16 +66,21 @@ export const loadGame = (): GameState => {
       }
     }
     if (restored.puzzles.p01_waiting_room?.status === 'solved') {
-      restored.flags = { ...restored.flags, dressingRoomUnlocked: true, ceremonyUnlocked: true }
+      restored.flags = {
+        ...restored.flags,
+        dressingRoomUnlocked: true,
+        ceremonyUnlocked: restored.clockState.handAttached === true ? true : restored.flags.ceremonyUnlocked,
+      }
       restored.teaTime = { cupSlots: correctTeaTimeSlots }
     } else if (!Object.keys(initialTeaTimeSlots).every((sweetId) => sweetId in restored.teaTime.cupSlots)) {
       restored.teaTime = { cupSlots: initialTeaTimeSlots }
     }
-    if (restored.clockState.handAttached && restored.puzzles.p02_ceremony?.status === 'solved') {
-      restored.flags = { ...restored.flags, grandClockStarted: true }
+    if (restored.clockState.handAttached && restored.puzzles.p01_waiting_room?.status === 'solved') {
+      restored.flags = { ...restored.flags, ceremonyUnlocked: true }
     }
     if (restored.puzzles.p02_ceremony?.status === 'solved') {
       restored.ceremonyCandles = { input: correctCandleSequence, lit: allCandleIds }
+      restored.flags = { ...restored.flags, receptionUnlocked: true }
     }
     if (restored.puzzles.p03_reception?.status === 'solved') {
       restored.receptionTables = {

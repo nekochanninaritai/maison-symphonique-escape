@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type PointerEvent } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
 import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
@@ -12,10 +12,10 @@ import { oldInvitationSchedule, p06TargetTime } from './game/data/weddingSchedul
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
-import { createClockDragSession, updateClockDragSession } from './game/clock'
-import { getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, isP06ClockActive, reducer, shouldShowCeremonyNavCue } from './game/logic'
+import { hourHandAngleFromTime, minuteHandAngleFromTime, timeFromClockHandPoint } from './game/clock'
+import { canManuallyControlGrandClock, getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, reducer, shouldShowCeremonyNavCue } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
-import type { ClockDragSession } from './game/clock'
+import type { ClockHandKind } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
@@ -706,9 +706,8 @@ function PhotoFocus({ memoryId }: { memoryId: string }) {
 }
 
 function PhotoClock({ time }: { time: string }) {
-  const [hour, minute] = time.split(':').map(Number)
-  const minuteDeg = minute * 6
-  const hourDeg = ((hour % 12) + minute / 60) * 30
+  const minuteDeg = minuteHandAngleFromTime(time)
+  const hourDeg = hourHandAngleFromTime(time)
 
   return (
     <div className="photoClock" aria-label={`写真に写った時計 ${time}`}>
@@ -759,9 +758,8 @@ function GardenGateFocus({ state, onAction }: { state: GameState; onAction: (act
 }
 
 function ClockWidget({ state }: { state: GameState }) {
-  const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
-  const minuteDeg = minute * 6
-  const hourDeg = ((hour % 12) + minute / 60) * 30
+  const minuteDeg = minuteHandAngleFromTime(state.clockState.currentTime)
+  const hourDeg = hourHandAngleFromTime(state.clockState.currentTime)
 
   return (
     <div className="clockWidget">
@@ -779,16 +777,54 @@ function ClockWidget({ state }: { state: GameState }) {
 }
 
 function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
-  const dragSessionRef = useRef<ClockDragSession | null>(null)
-  const [hour, minute] = state.clockState.currentTime.split(':').map(Number)
-  const minuteDeg = minute * 6
-  const hourDeg = ((hour % 12) + minute / 60) * 30
-  const p06Active = isP06ClockActive(state)
-  const canManipulate = state.clockState.handAttached && (state.clockState.canManualRotate || p06Active)
+  const draggingHandRef = useRef<ClockHandKind | null>(null)
+  const [activeHand, setActiveHand] = useState<ClockHandKind | null>(null)
+  const minuteDeg = minuteHandAngleFromTime(state.clockState.currentTime)
+  const hourDeg = hourHandAngleFromTime(state.clockState.currentTime)
+  const canManipulate = canManuallyControlGrandClock(state)
 
   useEffect(() => {
-    if (!canManipulate) dragSessionRef.current = null
+    if (canManipulate) return
+    draggingHandRef.current = null
+    setActiveHand(null)
   }, [canManipulate])
+
+  const setTimeFromPointer = (hand: ClockHandKind, event: PointerEvent<HTMLButtonElement>) => {
+    const face = event.currentTarget.closest('.largeClockFace')
+    if (!(face instanceof HTMLElement)) return
+    const time = timeFromClockHandPoint(
+      hand,
+      { x: event.clientX, y: event.clientY },
+      face.getBoundingClientRect(),
+      state.clockState.currentTime,
+    )
+    onAction({ type: 'SET_CLOCK_TIME', time })
+  }
+
+  const beginHandDrag = (hand: ClockHandKind, event: PointerEvent<HTMLButtonElement>) => {
+    if (!canManipulate) return
+    event.preventDefault()
+    event.stopPropagation()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    draggingHandRef.current = hand
+    setActiveHand(hand)
+    setTimeFromPointer(hand, event)
+  }
+
+  const moveHandDrag = (hand: ClockHandKind, event: PointerEvent<HTMLButtonElement>) => {
+    if (!canManipulate || draggingHandRef.current !== hand) return
+    event.preventDefault()
+    event.stopPropagation()
+    setTimeFromPointer(hand, event)
+  }
+
+  const endHandDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    draggingHandRef.current = null
+    setActiveHand(null)
+  }
 
   return (
     <div className="grandClockFocus">
@@ -797,45 +833,38 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
         <span>TIME</span>
         <strong>{state.clockState.currentTime}</strong>
       </div>
-      <button
-        type="button"
-        className={`largeClockFace ${canManipulate ? 'manual' : ''}`}
-        aria-label="大時計の長針"
-        onPointerDown={(event) => {
-          if (!canManipulate) return
-          event.preventDefault()
-          event.currentTarget.setPointerCapture(event.pointerId)
-          dragSessionRef.current = createClockDragSession(
-            { x: event.clientX, y: event.clientY },
-            event.currentTarget.getBoundingClientRect(),
-            state.clockState.currentTime,
-          )
-        }}
-        onPointerMove={(event) => {
-          const dragSession = dragSessionRef.current
-          if (!dragSession || !canManipulate) return
-          event.preventDefault()
-          const next = updateClockDragSession(
-            dragSession,
-            { x: event.clientX, y: event.clientY },
-            event.currentTarget.getBoundingClientRect(),
-          )
-          dragSessionRef.current = next.session
-          onAction({ type: 'SET_CLOCK_TIME', time: next.time })
-        }}
-        onPointerUp={(event) => {
-          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.releasePointerCapture(event.pointerId)
-          }
-          dragSessionRef.current = null
-        }}
-        onPointerCancel={() => { dragSessionRef.current = null }}
-      >
+      <div className={`largeClockFace ${canManipulate ? 'manual' : ''}`} role="group" aria-label="大時計">
         <span className="clockHand hour large" style={{ transform: `rotate(${hourDeg}deg)` }} />
         {state.clockState.handAttached && <span className="clockHand minute large" style={{ transform: `rotate(${minuteDeg}deg)` }} />}
+        {state.clockState.handAttached && (
+          <>
+            <button
+              type="button"
+              className={`clockHandHitArea hour ${activeHand === 'hour' ? 'active' : ''}`}
+              style={{ transform: `rotate(${hourDeg}deg)` }}
+              aria-label="大時計の短針"
+              disabled={!canManipulate}
+              onPointerDown={(event) => beginHandDrag('hour', event)}
+              onPointerMove={(event) => moveHandDrag('hour', event)}
+              onPointerUp={endHandDrag}
+              onPointerCancel={endHandDrag}
+            />
+            <button
+              type="button"
+              className={`clockHandHitArea minute ${activeHand === 'minute' ? 'active' : ''}`}
+              style={{ transform: `rotate(${minuteDeg}deg)` }}
+              aria-label="大時計の長針"
+              disabled={!canManipulate}
+              onPointerDown={(event) => beginHandDrag('minute', event)}
+              onPointerMove={(event) => moveHandDrag('minute', event)}
+              onPointerUp={endHandDrag}
+              onPointerCancel={endHandDrag}
+            />
+          </>
+        )}
         {!state.clockState.handAttached && <span className="missingHand">長針なし</span>}
-      </button>
-      {canManipulate && <p className="clockHint">長針に触れると、静かに動く。</p>}
+      </div>
+      {canManipulate && <p className="clockHint">短針と長針に触れると、静かに動く。</p>}
     </div>
   )
 }

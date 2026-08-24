@@ -8,7 +8,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'available',
     prerequisites: [],
     description: '四人分のティーセットを整える。',
-    rewards: { flags: { dressingRoomUnlocked: true, ceremonyUnlocked: true } },
+    rewards: { flags: { dressingRoomUnlocked: true } },
   },
   p02_ceremony: {
     puzzleId: 'p02_ceremony',
@@ -16,8 +16,9 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     areaId: 'ceremony',
     status: 'locked',
     prerequisites: ['p01_waiting_room'],
+    requiredFlags: { ceremonyUnlocked: true },
     description: '祭壇の四本のキャンドルへ、順に火を灯す。',
-    rewards: {},
+    rewards: { flags: { receptionUnlocked: true } },
   },
   p03_reception: {
     puzzleId: 'p03_reception',
@@ -25,7 +26,6 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     areaId: 'reception',
     status: 'locked',
     prerequisites: ['p02_ceremony'],
-    requiredFlags: { grandClockStarted: true },
     description: '四つのテーブルの違和感を、席次表の数字と照合する。',
     rewards: { memories: ['banquet'], items: ['transparent-card'], advanceClockTo: '15:00' },
   },
@@ -47,7 +47,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     prerequisites: ['p04_sheet_overlay'],
     requiredClues: ['pianoSequence'],
     description: '完成した鍵盤図を手掛かりに、ピアノを演奏する。',
-    rewards: { flags: { pianoMechanismUnlocked: true, ceremonyLightVisible: true }, advanceClockTo: '16:30' },
+    rewards: { flags: { pianoMechanismUnlocked: true, ceremonyLightVisible: true }, advanceClockTo: '14:00' },
   },
   p06_grand_clock: {
     puzzleId: 'p06_grand_clock',

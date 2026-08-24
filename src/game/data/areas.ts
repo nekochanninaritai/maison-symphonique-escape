@@ -97,17 +97,14 @@ export const areas: Record<string, Area> = {
         id: 'dressing-door',
         label: '控室の扉',
         position: { x: 70, y: 28, width: 18, height: 38 },
-        message: (state) =>
-          state.flags.dressingRoomUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved'
-            ? ['控室へ続く扉が開いている。']
-            : ['控室へ続く扉は、まだ静かに閉ざされている。'],
+        message: ['控室へ続く扉が開いている。'],
       },
       {
         id: 'ceremony-door',
         label: '挙式会場の扉',
         position: { x: 86, y: 30, width: 12, height: 36 },
         message: (state) =>
-          state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved'
+          state.flags.ceremonyUnlocked === true
             ? ['挙式会場へ続く扉が、少し開いている。']
             : ['挙式会場へ続く扉は、まだ開きそうにない。'],
       },
@@ -115,7 +112,7 @@ export const areas: Record<string, Area> = {
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
       { to: 'dressing-room', label: '控室へ' },
-      { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved' },
+      { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.flags.ceremonyUnlocked === true },
     ],
   },
   'dressing-room': {
@@ -143,7 +140,7 @@ export const areas: Record<string, Area> = {
     chapter: 'Ceremony',
     emptyBackground: 'ceremony',
     memoryBackground: 'ceremony-memory',
-    unlockCondition: (state) => state.flags.ceremonyUnlocked === true || state.puzzles.p01_waiting_room?.status === 'solved',
+    unlockCondition: (state) => state.flags.ceremonyUnlocked === true,
     hotspots: [
       {
         id: 'virgin-road',

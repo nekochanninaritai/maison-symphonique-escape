@@ -1120,9 +1120,47 @@ function TrueEnd({ state, onTitle }: { state: GameState; onTitle: () => void }) 
 
 function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state: GameState; showHotspots: boolean; onToggleHotspots: () => void; onAction: (action: GameAction) => void }) {
   const areaIds = Object.keys(areas) as AreaId[]
+  const quickJumpAreaIds: AreaId[] = ['entrance', 'waiting-room', 'ceremony', 'reception', 'garden']
   const memoryIds = Object.keys(state.memories)
   const puzzleIds = Object.keys(state.puzzles)
+  const normalPhotoMemoryIds = memoryPhotos.map((photo) => photo.memoryId)
+  const photoDebugIds = [...normalPhotoMemoryIds, trueMemoryPhoto.memoryId]
+  const inventoryDebugIds = ['clock-hand', 'transparent-card', 'small-key', 'old-invitation']
   const [debugTime, setDebugTime] = useState(state.clockState.currentTime)
+  const dispatchMany = (actions: GameAction[]) => actions.forEach(onAction)
+  const normalReadyActions: GameAction[] = [
+    { type: 'RESET_ALL' },
+    { type: 'START_GAME' },
+    { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room', force: true },
+    { type: 'OBTAIN_ITEM', itemId: 'clock-hand' },
+    { type: 'ATTACH_CLOCK_HAND' },
+    { type: 'DEBUG_MOVE', areaId: 'ceremony' },
+    { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony', force: true },
+    { type: 'DEBUG_MOVE', areaId: 'reception' },
+    { type: 'SET_P03_LOCK_INPUT', input: getReceptionLockDigits() },
+    { type: 'OPEN_P03_BOX' },
+    { type: 'SELECT_ITEM', itemId: 'transparent-card' },
+    { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' },
+    { type: 'SOLVE_PUZZLE', puzzleId: 'p05_piano', force: true },
+    { type: 'SET_FLAG', flagId: 'pianoMechanismUnlocked', value: true },
+    { type: 'OBTAIN_ITEM', itemId: 'small-key' },
+    { type: 'SELECT_ITEM', itemId: 'small-key' },
+    { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' },
+    ...normalPhotoMemoryIds.map((memoryId): GameAction => ({ type: 'UNLOCK_MEMORY', memoryId })),
+    { type: 'SET_PUZZLE_STATUS', puzzleId: 'p06_grand_clock', status: 'available' },
+    { type: 'SET_CLOCK_TIME', time: p06TargetTime },
+    { type: 'DEBUG_MOVE', areaId: 'garden' },
+    { type: 'SOLVE_PUZZLE', puzzleId: 'p07_garden_final', force: true },
+  ]
+  const trueReadyActions: GameAction[] = [
+    ...normalReadyActions,
+    { type: 'OPEN_GARDEN_GATE' },
+    { type: 'START_GAME' },
+    { type: 'DEBUG_MOVE', areaId: 'entrance' },
+    { type: 'LOCK_MEMORY', memoryId: trueMemoryPhoto.memoryId },
+    { type: 'SET_CLOCK_MANUAL', enabled: true },
+    { type: 'SET_CLOCK_TIME', time: p06TargetTime },
+  ]
 
   return (
     <aside className="debugPanel">
@@ -1131,8 +1169,24 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={onToggleHotspots}>Hotspots {showHotspots ? 'ON' : 'OFF'}</button>
       </header>
       <DebugState state={state} />
+      <DebugGroup title="Quick Jump">
+        {quickJumpAreaIds.map((areaId) => (
+          <button key={areaId} type="button" onClick={() => onAction({ type: 'DEBUG_MOVE', areaId })}>{areas[areaId].name}</button>
+        ))}
+      </DebugGroup>
+      <DebugGroup title="Scenario Presets">
+        <button type="button" onClick={() => dispatchMany(normalReadyActions)}>NORMAL Ready</button>
+        <button type="button" onClick={() => dispatchMany(trueReadyActions)}>TRUE Ready</button>
+      </DebugGroup>
       <DebugGroup title="Area">
         {areaIds.map((areaId) => <button key={areaId} type="button" onClick={() => onAction({ type: 'MOVE', areaId })}>{areas[areaId].name}</button>)}
+      </DebugGroup>
+      <DebugGroup title="Puzzle Quick Clear">
+        {puzzleIds.map((puzzleId, index) => (
+          <button key={puzzleId} type="button" onClick={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId, force: true })}>
+            P{String(index + 1).padStart(2, '0')} Clear
+          </button>
+        ))}
       </DebugGroup>
       <DebugGroup title="Puzzle">
         {puzzleIds.map((puzzleId) => (
@@ -1171,6 +1225,18 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SOLVE_ALL_PUZZLES' })}>全Puzzle Solved</button>
       </DebugGroup>
       <DebugGroup title="Item">
+        {inventoryDebugIds.map((itemId) => {
+          const item = state.inventory[itemId]
+          if (!item) return null
+          const active = item.obtained && !item.consumed
+          return (
+            <div key={itemId} className="debugToggleRow">
+              <span>{item.name}</span>
+              <small>{active ? '所持中' : item.consumed ? '使用済み' : '未所持'}</small>
+              <button type="button" onClick={() => onAction({ type: 'SET_ITEM_OBTAINED', itemId, obtained: !active })}>{active ? 'Remove' : 'Give'}</button>
+            </div>
+          )
+        })}
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'clock-hand' })}>長針取得</button>
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'transparent-card' })}>半透明の紙取得</button>
         <button type="button" onClick={() => onAction({ type: 'OBTAIN_ITEM', itemId: 'small-key' })}>小さな鍵取得</button>
@@ -1231,6 +1297,9 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
       <DebugGroup title="Clock">
         <button type="button" onClick={() => onAction({ type: 'ATTACH_CLOCK_HAND' })}>長針装着</button>
         <button type="button" onClick={() => onAction({ type: 'ADVANCE_CLOCK', time: '12:34' })}>自動進行テスト</button>
+        {['11:00', '12:00', '13:00', '14:00', p06TargetTime, trueClockTarget].map((time) => (
+          <button key={time} type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time })}>{time}</button>
+        ))}
         <label className="debugInput">
           <span>Time</span>
           <input value={debugTime} onChange={(event) => setDebugTime(event.target.value)} />
@@ -1241,6 +1310,20 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SET_CLOCK_TIME', time: '09:23' })}>09:23</button>
       </DebugGroup>
       <DebugGroup title="Memory">
+        <p className="debugSummary">Memory {getMemoryCount(state)} / {memoryIds.length}</p>
+        {photoDebugIds.map((memoryId) => {
+          const memory = state.memories[memoryId]
+          if (!memory) return null
+          return (
+            <div key={memoryId} className="debugToggleRow">
+              <span>{memory.title}</span>
+              <small>{memory.unlocked ? '取得済み' : '未取得'}</small>
+              <button type="button" onClick={() => onAction(memory.unlocked ? { type: 'LOCK_MEMORY', memoryId } : { type: 'UNLOCK_MEMORY', memoryId })}>
+                {memory.unlocked ? 'Remove' : 'Give'}
+              </button>
+            </div>
+          )
+        })}
         {memoryIds.map((memoryId) => <button key={memoryId} type="button" onClick={() => onAction({ type: 'UNLOCK_MEMORY', memoryId })}>{memoryId}</button>)}
         <button type="button" onClick={() => onAction({ type: 'SET_MEMORY_COUNT', count: 4 })}>4 / 5</button>
         <button type="button" onClick={() => onAction({ type: 'SET_MEMORY_COUNT', count: 5 })}>5 / 5</button>
@@ -1265,7 +1348,7 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SET_WORLD_MODE', worldMode: 'memory' })}>memory</button>
         <button type="button" onClick={() => saveGame(state)}>Save確認</button>
         <button type="button" onClick={() => location.reload()}>Load</button>
-        <button type="button" onClick={() => { clearSave(); onAction({ type: 'RESET_ALL' }) }}>完全リセット</button>
+        <button type="button" onClick={() => { clearSave(); onAction({ type: 'RESET_ALL' }) }}>Reset Game</button>
       </DebugGroup>
     </aside>
   )

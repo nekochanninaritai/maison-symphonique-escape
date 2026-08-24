@@ -2646,6 +2646,24 @@ h3 {
   width: fit-content;
 }
 
+.debugToggleRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 0;
+}
+
+.debugToggleRow span {
+  min-width: 0;
+}
+
+.debugToggleRow small,
+.debugSummary {
+  color: #9ca3af;
+}
+
 @media (max-width: 720px) {
   .gameScreen {
     padding: 8px;

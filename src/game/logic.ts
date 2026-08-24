@@ -178,6 +178,18 @@ const unlockMemory = (state: GameState, memoryId: string): GameState => {
   }
 }
 
+const lockMemory = (state: GameState, memoryId: string): GameState => {
+  const memory = state.memories[memoryId]
+  if (!memory) return state
+  return {
+    ...state,
+    memories: {
+      ...state.memories,
+      [memoryId]: { ...memory, unlocked: false },
+    },
+  }
+}
+
 const unlockNormalMemories = (state: GameState): GameState =>
   normalMemoryIds.reduce((current, memoryId) => unlockMemory(current, memoryId), {
     ...state,
@@ -199,6 +211,23 @@ export const obtainItem = (state: GameState, itemId: string): GameState => {
     clockState:
       itemId === 'clock-hand'
         ? { ...state.clockState, handObtained: true }
+        : state.clockState,
+  }
+}
+
+const setItemObtained = (state: GameState, itemId: string, obtained: boolean): GameState => {
+  const item = state.inventory[itemId]
+  if (!item) return state
+  return {
+    ...state,
+    selectedItemId: obtained ? state.selectedItemId : state.selectedItemId === itemId ? null : state.selectedItemId,
+    inventory: {
+      ...state.inventory,
+      [itemId]: cloneItem(item, { obtained, consumed: false }),
+    },
+    clockState:
+      itemId === 'clock-hand'
+        ? { ...state.clockState, handObtained: obtained || state.clockState.handAttached }
         : state.clockState,
   }
 }
@@ -795,6 +824,15 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
               : state.clockState,
         messageQueue: [],
       }
+    case 'DEBUG_MOVE':
+      return {
+        ...state,
+        screen: 'game',
+        currentArea: action.areaId,
+        chapter: areas[action.areaId].chapter,
+        flags: action.areaId === 'garden' ? { ...state.flags, gardenReached: true } : state.flags,
+        messageQueue: [],
+      }
     case 'EXAMINE': {
       const hotspot = getVisibleHotspots(state).find((candidate) => candidate.id === action.hotspotId)
       if (!hotspot) return state
@@ -851,6 +889,8 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return { ...state, worldMode: action.worldMode }
     case 'UNLOCK_MEMORY':
       return unlockMemory(state, action.memoryId)
+    case 'LOCK_MEMORY':
+      return lockMemory(state, action.memoryId)
     case 'SET_MEMORY_COUNT': {
       const memoryIds = Object.keys(state.memories)
       const memories = Object.fromEntries(
@@ -904,6 +944,8 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return openGardenGate(state)
     case 'OBTAIN_ITEM':
       return obtainItem(state, action.itemId)
+    case 'SET_ITEM_OBTAINED':
+      return setItemObtained(state, action.itemId, action.obtained)
     case 'CLEAR_INVENTORY':
       return { ...state, inventory: createItems(), selectedItemId: null, clockState: { ...state.clockState, handObtained: false } }
     case 'ATTACH_CLOCK_HAND':

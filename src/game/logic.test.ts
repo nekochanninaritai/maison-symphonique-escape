@@ -214,6 +214,16 @@ describe('MemoryState', () => {
     state = reducer(state, { type: 'SET_MEMORY_COUNT', count: 0 })
     expect(getMemoryCount(state)).toBe(0)
   })
+
+  it('debug can lock an unlocked memory without changing other memories', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'UNLOCK_MEMORY', memoryId: 'tea' })
+    state = reducer(state, { type: 'UNLOCK_MEMORY', memoryId: 'vow' })
+    state = reducer(state, { type: 'LOCK_MEMORY', memoryId: 'tea' })
+
+    expect(state.memories.tea.unlocked).toBe(false)
+    expect(state.memories.vow.unlocked).toBe(true)
+  })
 })
 
 describe('PuzzleState', () => {
@@ -230,6 +240,31 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p05_piano.status).toBe('locked')
     expect(state.puzzles.p06_grand_clock.status).toBe('locked')
     expect(state.puzzles.p07_garden_final.status).toBe('locked')
+  })
+
+  it('debug movement can jump to locked areas without unlocking them', () => {
+    let state = createInitialState()
+
+    expect(canMoveToArea(state, 'garden')).toBe(false)
+    state = reducer(state, { type: 'DEBUG_MOVE', areaId: 'garden' })
+
+    expect(state.currentArea).toBe('garden')
+    expect(state.screen).toBe('game')
+    expect(state.flags.gardenReached).toBe(true)
+    expect(state.flags.gardenUnlocked).not.toBe(true)
+  })
+
+  it('debug item toggle updates inventory without solving progression', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'SET_ITEM_OBTAINED', itemId: 'old-invitation', obtained: true })
+
+    expect(state.inventory['old-invitation'].obtained).toBe(true)
+    expect(state.puzzles.p06_grand_clock.status).toBe('locked')
+
+    state = reducer(state, { type: 'SET_ITEM_OBTAINED', itemId: 'old-invitation', obtained: false })
+
+    expect(state.inventory['old-invitation'].obtained).toBe(false)
+    expect(state.inventory['old-invitation'].consumed).toBe(false)
   })
 
   it('Dressing Room is accessible before P01 while Ceremony remains locked', () => {

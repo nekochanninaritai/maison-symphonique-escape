@@ -162,6 +162,7 @@ export type GameAction =
   | { type: 'START_GAME' }
   | { type: 'SHOW_TITLE' }
   | { type: 'MOVE'; areaId: AreaId }
+  | { type: 'DEBUG_MOVE'; areaId: AreaId }
   | { type: 'EXAMINE'; hotspotId: string }
   | { type: 'SELECT_ITEM'; itemId: string | null }
   | { type: 'USE_SELECTED_ITEM'; targetId: string }
@@ -174,6 +175,7 @@ export type GameAction =
   | { type: 'SET_CLOCK_MANUAL'; enabled: boolean }
   | { type: 'SET_WORLD_MODE'; worldMode: WorldMode }
   | { type: 'UNLOCK_MEMORY'; memoryId: string }
+  | { type: 'LOCK_MEMORY'; memoryId: string }
   | { type: 'SET_MEMORY_COUNT'; count: number }
   | { type: 'SET_CLUE'; clueId: string; obtained: boolean }
   | { type: 'SET_FLAG'; flagId: string; value: boolean }
@@ -198,6 +200,7 @@ export type GameAction =
   | { type: 'RESET_P07_GARDEN' }
   | { type: 'OPEN_GARDEN_GATE' }
   | { type: 'OBTAIN_ITEM'; itemId: string }
+  | { type: 'SET_ITEM_OBTAINED'; itemId: string; obtained: boolean }
   | { type: 'CLEAR_INVENTORY' }
   | { type: 'ATTACH_CLOCK_HAND' }
   | { type: 'GO_NORMAL_END' }

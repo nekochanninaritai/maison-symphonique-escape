@@ -130,19 +130,17 @@ h3 {
 .areaNav .ceremonyCue {
   position: relative;
   overflow: hidden;
-  border-color: rgba(166, 120, 58, 0.7);
-  background:
-    radial-gradient(circle at 85% 25%, rgba(242, 190, 94, 0.34), transparent 42%),
-    #fffaf0;
-  box-shadow: 0 0 18px rgba(242, 190, 94, 0.24);
+  color: var(--gold);
+  text-shadow: 0 0 12px rgba(242, 190, 94, 0.55);
 }
 
-.areaNav .ceremonyCue::after {
+.areaNav .ceremonyCue::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: auto 8px 4px;
+  height: 1px;
   pointer-events: none;
-  background: linear-gradient(100deg, transparent 0 58%, rgba(255, 224, 153, 0.42) 72%, transparent 100%);
+  background: linear-gradient(90deg, transparent, rgba(242, 190, 94, 0.85), transparent);
 }
 
 .buttonRow {
@@ -192,26 +190,26 @@ h3 {
 /* ── Top bar: chapter label + area name + HUD ── */
 .topBar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid rgba(166, 120, 58, 0.22);
+  padding: 2px 2px 8px;
+  border-bottom: 1px solid rgba(166, 120, 58, 0.16);
 }
 
 .topBar > div:first-child .eyebrow {
-  margin-bottom: 2px;
-  font-size: 0.7rem;
-  color: var(--gold);
-  letter-spacing: 0.12em;
+  margin-bottom: 3px;
+  font-size: 0.62rem;
+  color: rgba(166, 120, 58, 0.8);
+  letter-spacing: 0.26em;
 }
 
 .topBar h2 {
   margin-bottom: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.12rem;
+  font-weight: 400;
   color: var(--ink);
-  letter-spacing: 0.02em;
+  letter-spacing: 0.18em;
 }
 
 .hud {
@@ -222,13 +220,16 @@ h3 {
 
 .stage {
   position: relative;
-  min-height: 54svh;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  min-height: 58svh;
+  border: 1px solid rgba(166, 120, 58, 0.34);
+  border-radius: 10px;
   overflow: hidden;
   background: #cab489;
   background-position: center;
   background-size: cover;
+  box-shadow:
+    0 14px 34px rgba(43, 37, 34, 0.18),
+    inset 0 0 0 1px rgba(255, 250, 240, 0.24);
 }
 
 /* ── Stage vignette overlay: soft inner shadow for depth ── */
@@ -494,35 +495,68 @@ h3 {
   border-color: rgba(166, 120, 58, 0.35);
 }
 
-/* ── Area navigation ── */
+/* ── Area navigation: quiet corridor signage, not form buttons ── */
 .areaNav {
   justify-content: center;
-  gap: 6px;
+  align-items: center;
+  gap: 2px 4px;
+  padding: 2px 0 6px;
 }
 
 .areaNav button {
-  flex: 1 1 120px;
-  min-height: 42px;
-  padding: 8px 14px;
-  font-size: 0.88rem;
-  border-color: rgba(166, 120, 58, 0.4);
-  background:
-    linear-gradient(rgba(255, 252, 244, 0.9), rgba(245, 238, 222, 0.9));
-  transition: background 160ms ease, border-color 160ms ease;
+  flex: 0 1 auto;
+  min-height: 38px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.86rem;
+  letter-spacing: 0.14em;
+  transition: color 160ms ease, opacity 160ms ease;
+}
+
+.areaNav button::after {
+  content: '\2192';
+  margin-left: 8px;
+  color: rgba(166, 120, 58, 0.5);
+}
+
+.areaNav button + button {
+  border-left: 1px solid rgba(166, 120, 58, 0.22);
 }
 
 .areaNav button:not(:disabled):hover {
-  border-color: var(--gold);
-  background:
-    linear-gradient(rgba(255, 253, 248, 1), rgba(250, 244, 230, 1));
+  color: var(--gold);
 }
 
 .areaNav button:disabled {
-  opacity: 0.38;
+  opacity: 0.32;
 }
 
-/* ── Inventory panel ── */
-.inventory,
+/* ── Inventory: a small ledger of what the house gave up ── */
+.inventory {
+  padding: 10px 2px 0;
+  border-top: 1px solid rgba(166, 120, 58, 0.18);
+  background: transparent;
+}
+
+.inventory h3,
+.memoryGallery h3 {
+  margin-bottom: 8px;
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: rgba(166, 120, 58, 0.85);
+  letter-spacing: 0.26em;
+}
+
+.inventorySelection {
+  margin-bottom: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
 .placeholderPuzzles {
   padding: 12px;
   border: 1px solid rgba(166, 120, 58, 0.28);
@@ -530,7 +564,6 @@ h3 {
   background: rgba(251, 247, 239, 0.82);
 }
 
-.inventory h3,
 .placeholderPuzzles h3 {
   margin-bottom: 6px;
   font-size: 1rem;
@@ -541,6 +574,13 @@ h3 {
   display: grid;
   gap: 4px;
   text-align: left;
+  border-color: rgba(166, 120, 58, 0.3);
+  background: rgba(255, 252, 244, 0.78);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.inventoryGrid button:not(:disabled):hover {
+  border-color: rgba(166, 120, 58, 0.55);
 }
 
 .inventoryGrid .selected {
@@ -1536,14 +1576,9 @@ h3 {
 }
 
 .memoryGallery {
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.memoryGallery h3 {
-  margin-top: 0;
+  padding: 10px 2px 0;
+  border-top: 1px solid rgba(166, 120, 58, 0.18);
+  background: transparent;
 }
 
 .memoryPhotoGrid {
@@ -1558,6 +1593,8 @@ h3 {
   gap: 4px;
   min-height: 72px;
   text-align: left;
+  border-color: rgba(166, 120, 58, 0.3);
+  background: rgba(255, 252, 244, 0.78);
 }
 
 .photoFocus,
@@ -2302,13 +2339,15 @@ h3 {
 }
 
 .memoryMeter {
-  font-size: 0.82rem;
+  font-size: 0.7rem;
   color: var(--muted);
+  letter-spacing: 0.1em;
 }
 
 .memoryMeter strong {
-  color: var(--gold);
+  color: rgba(166, 120, 58, 0.9);
   letter-spacing: 0.06em;
+  font-weight: 500;
 }
 
 .clockFace {
@@ -2533,6 +2572,7 @@ h3 {
   .topBar {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
   }
 
   .hud {
@@ -2540,8 +2580,18 @@ h3 {
     justify-content: space-between;
   }
 
+  .areaNav button {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+  }
+
+  .areaNav button::after {
+    margin-left: 6px;
+  }
+
   .stage {
-    min-height: 44svh;
+    min-height: 52svh;
   }
 
   /* On narrow screens shift entrance right so the clock is visible */

@@ -144,7 +144,7 @@ function GameScreen({
   return (
     <section className="gameScreen">
       <header className="topBar">
-        <div>
+        <div className="roomTitle">
           <p className="eyebrow">{currentArea.chapter}</p>
           <h2>{currentArea.name}</h2>
         </div>
@@ -654,7 +654,7 @@ function MemoryGallery({ state, onInspectMemory }: { state: GameState; onInspect
   if (unlockedPhotos.length === 0) return null
   return (
     <aside className="memoryGallery">
-      <h3>Old Photos</h3>
+      <h3>見つけた古い写真</h3>
       <div className="memoryPhotoGrid">
         {unlockedPhotos.map((photo) => (
           <button key={photo.id} type="button" onClick={() => onInspectMemory(photo.memoryId)}>
@@ -994,10 +994,10 @@ function Inventory({
   const obtainedItems = Object.values(state.inventory).filter((item) => item.obtained && !item.consumed)
   return (
     <aside className="inventory">
-      <h3>Inventory</h3>
-      <p>{selectedItemName ? `選択中: ${selectedItemName}` : 'アイテム未選択'}</p>
+      <h3>所持品</h3>
+      {selectedItemName && <p className="inventorySelection">選択中: {selectedItemName}</p>}
       <div className="inventoryGrid">
-        {obtainedItems.length === 0 && <span className="emptyText">空</span>}
+        {obtainedItems.length === 0 && <span className="emptyText">まだ何も手にしていない。</span>}
         {obtainedItems.map((item) => (
           <div key={item.itemId} className="inventoryItem">
             <button type="button" className={state.selectedItemId === item.itemId ? 'selected' : ''} onClick={() => onAction({ type: 'SELECT_ITEM', itemId: state.selectedItemId === item.itemId ? null : item.itemId })}>

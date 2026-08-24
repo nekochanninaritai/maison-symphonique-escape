@@ -760,9 +760,16 @@ function GardenGateFocus({ state, onAction }: { state: GameState; onAction: (act
 function ClockWidget({ state }: { state: GameState }) {
   const minuteDeg = minuteHandAngleFromTime(state.clockState.currentTime)
   const hourDeg = hourHandAngleFromTime(state.clockState.currentTime)
+  const [timeChanged, setTimeChanged] = useState(false)
+
+  useEffect(() => {
+    setTimeChanged(true)
+    const timer = window.setTimeout(() => setTimeChanged(false), 720)
+    return () => window.clearTimeout(timer)
+  }, [state.clockState.currentTime])
 
   return (
-    <div className="clockWidget">
+    <div className={`clockWidget ${timeChanged ? 'timeChanged' : ''}`}>
       <button
         type="button"
         className="clockFace"
@@ -771,7 +778,7 @@ function ClockWidget({ state }: { state: GameState }) {
         <span className="clockHand hour" style={{ transform: `rotate(${hourDeg}deg)` }} />
         {state.clockState.handAttached && <span className="clockHand minute" style={{ transform: `rotate(${minuteDeg}deg)` }} />}
       </button>
-      <span>{state.clockState.currentTime}</span>
+      <span className="clockTimeText">{state.clockState.currentTime}</span>
     </div>
   )
 }
@@ -833,9 +840,9 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
         <span>TIME</span>
         <strong>{state.clockState.currentTime}</strong>
       </div>
-      <div className={`largeClockFace ${canManipulate ? 'manual' : ''}`} role="group" aria-label="大時計">
-        <span className="clockHand hour large" style={{ transform: `rotate(${hourDeg}deg)` }} />
-        {state.clockState.handAttached && <span className="clockHand minute large" style={{ transform: `rotate(${minuteDeg}deg)` }} />}
+      <div className={`largeClockFace ${canManipulate ? 'manual' : ''} ${state.clockState.handAttached ? 'handAttached' : 'handMissing'}`} role="group" aria-label="大時計">
+        <span className={`clockHand hour large ${activeHand === 'hour' ? 'active' : ''}`} style={{ transform: `rotate(${hourDeg}deg)` }} />
+        {state.clockState.handAttached && <span className={`clockHand minute large ${activeHand === 'minute' ? 'active' : ''}`} style={{ transform: `rotate(${minuteDeg}deg)` }} />}
         {state.clockState.handAttached && (
           <>
             <button

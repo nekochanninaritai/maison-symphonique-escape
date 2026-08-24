@@ -399,6 +399,28 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('13:00')
   })
 
+  it('entering Reception advances the Grand Clock from 12:00 to 13:00', () => {
+    let state = createP03ReadyState()
+
+    expect(state.clockState.currentTime).toBe('12:00')
+
+    state = reducer(state, { type: 'MOVE', areaId: 'reception' })
+
+    expect(state.currentArea).toBe('reception')
+    expect(state.clockState.currentTime).toBe('13:00')
+  })
+
+  it('re-entering Reception does not rewind or advance the Grand Clock', () => {
+    let state = createP03ReadyState()
+
+    state = reducer(state, { type: 'MOVE', areaId: 'reception' })
+    expect(state.clockState.currentTime).toBe('13:00')
+
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    state = reducer(state, { type: 'MOVE', areaId: 'reception' })
+
+    expect(state.clockState.currentTime).toBe('13:00')
+  })
   it('P02 solved makes P03 available in Reception', () => {
     const state = createP03ReadyState()
 

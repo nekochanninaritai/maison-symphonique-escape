@@ -798,6 +798,12 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
         currentArea: action.areaId,
         chapter: areas[action.areaId].chapter,
         flags: action.areaId === 'garden' ? { ...state.flags, gardenReached: true } : state.flags,
+        clockState:
+          action.areaId === 'reception' &&
+          state.flags.grandClockStarted === true &&
+          state.clockState.currentTime === '12:00'
+            ? { ...state.clockState, currentTime: '13:00' }
+            : state.clockState,
         messageQueue: [],
       }
     case 'EXAMINE': {

@@ -96,6 +96,16 @@ export const loadGame = (): GameState => {
         ...restored.memories,
         banquet: { ...restored.memories.banquet, unlocked: true },
       }
+      if (
+        restored.puzzles.p05_piano?.status !== 'solved' &&
+        restored.puzzles.p06_grand_clock?.status !== 'solved' &&
+        restored.clockState.currentTime === '15:00' &&
+        !restored.normalEndingCleared &&
+        !restored.trueRouteUnlocked &&
+        !restored.trueEndingCleared
+      ) {
+        restored.clockState = { ...restored.clockState, currentTime: '13:00' }
+      }
     }
     if (restored.puzzles.p04_sheet_overlay?.status === 'solved') {
       restored.pianoOverlay = { overlayApplied: true }

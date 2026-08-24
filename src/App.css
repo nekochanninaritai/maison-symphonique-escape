@@ -702,20 +702,63 @@ h3 {
     linear-gradient(145deg, rgba(246, 241, 232, 0.95), rgba(255, 250, 240, 0.98));
 }
 
+.teaSlot::before {
+  content: '';
+  justify-self: end;
+  width: 34px;
+  height: 8px;
+  margin-bottom: -16px;
+  border-radius: 999px;
+  opacity: 0.72;
+}
+
 .teaPair-coffee-gateau-chocolat {
   border-color: rgba(99, 67, 43, 0.46);
+  background:
+    radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.72), transparent 28%),
+    linear-gradient(135deg, rgba(70, 45, 31, 0.1), transparent 42%),
+    linear-gradient(145deg, rgba(246, 241, 232, 0.95), rgba(255, 250, 240, 0.98));
+}
+
+.teaPair-coffee-gateau-chocolat::before {
+  background: linear-gradient(90deg, #3a2118, #8f6b42);
 }
 
 .teaPair-earl-grey-cookies {
   border-color: rgba(158, 113, 132, 0.38);
+  background:
+    radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.72), transparent 28%),
+    radial-gradient(circle at 88% 20%, rgba(194, 116, 140, 0.16) 0 8px, transparent 9px),
+    radial-gradient(circle at 78% 30%, rgba(194, 116, 140, 0.13) 0 5px, transparent 6px),
+    linear-gradient(145deg, rgba(246, 241, 232, 0.95), rgba(255, 250, 240, 0.98));
+}
+
+.teaPair-earl-grey-cookies::before {
+  background: linear-gradient(90deg, #b98396, #e8d5b5);
 }
 
 .teaPair-matcha-wagashi {
   border-color: rgba(80, 107, 90, 0.46);
+  background:
+    radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.72), transparent 28%),
+    linear-gradient(90deg, transparent 0 48%, rgba(80, 107, 90, 0.13) 48% 52%, transparent 52%),
+    linear-gradient(145deg, rgba(239, 245, 235, 0.96), rgba(255, 250, 240, 0.98));
+}
+
+.teaPair-matcha-wagashi::before {
+  background: linear-gradient(90deg, #506b5a, #f4c1cf);
 }
 
 .teaPair-chinese-tea-sesame-balls {
   border-color: rgba(166, 120, 58, 0.46);
+  background:
+    radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.72), transparent 28%),
+    repeating-linear-gradient(90deg, rgba(166, 120, 58, 0.12) 0 1px, transparent 1px 10px),
+    linear-gradient(145deg, rgba(246, 241, 232, 0.95), rgba(255, 250, 240, 0.98));
+}
+
+.teaPair-chinese-tea-sesame-balls::before {
+  background: linear-gradient(90deg, #b88734, #d7ac50);
 }
 
 .sweetPlate {
@@ -1505,7 +1548,7 @@ h3 {
 }
 
 .pianoPuzzle.phraseReset .pianoKeyboard {
-  animation: pianoNeutral 360ms ease-out;
+  animation: pianoNeutral 460ms ease-out;
 }
 
 .pianoKeyhole {
@@ -1545,11 +1588,33 @@ h3 {
 
 @keyframes pianoNeutral {
   0% {
-    filter: brightness(0.9);
+    filter: brightness(0.96);
+    transform: translateY(0);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 250, 240, 0.2),
+      0 0 0 rgba(166, 120, 58, 0);
+  }
+
+  38% {
+    filter: brightness(0.9) saturate(0.9);
+    transform: translateY(2px);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 250, 240, 0.28),
+      0 0 18px rgba(166, 120, 58, 0.28);
   }
 
   100% {
     filter: brightness(1);
+    transform: translateY(0);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 250, 240, 0.2),
+      0 0 0 rgba(166, 120, 58, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pianoPuzzle.phraseReset .pianoKeyboard {
+    animation-duration: 1ms;
   }
 }
 
@@ -1561,10 +1626,10 @@ h3 {
 
 .oldInvitationPaper {
   display: grid;
-  gap: 18px;
+  gap: 20px;
   width: min(100%, 430px);
   margin: 16px auto;
-  padding: 24px 22px;
+  padding: 24px 22px 26px;
   border: 1px solid rgba(143, 107, 66, 0.42);
   border-radius: 6px;
   color: #3d332c;
@@ -2054,6 +2119,8 @@ h3 {
   display: grid;
   gap: 4px;
   text-align: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(143, 107, 66, 0.2);
 }
 
 .invitationHeader span {
@@ -2073,7 +2140,7 @@ h3 {
   display: grid;
   gap: 0;
   margin: 0;
-  padding: 0;
+  padding: 4px 0;
   list-style: none;
 }
 
@@ -2090,10 +2157,10 @@ h3 {
 .invitationSchedule li {
   position: relative;
   display: grid;
-  grid-template-columns: 40px 72px 1fr;
+  grid-template-columns: 40px 82px 1fr;
   align-items: center;
-  gap: 10px;
-  min-height: 54px;
+  gap: 12px;
+  min-height: 58px;
   border-top: 1px solid rgba(143, 107, 66, 0.18);
 }
 
@@ -2139,9 +2206,14 @@ h3 {
 }
 
 .invitationSchedule time {
+  justify-self: stretch;
+  padding: 4px 7px;
+  border-radius: 4px;
+  background: rgba(255, 250, 240, 0.48);
   font-variant-numeric: tabular-nums;
   color: var(--ink);
   font-weight: 700;
+  text-align: center;
 }
 
 .invitationSchedule strong {
@@ -2153,6 +2225,7 @@ h3 {
 .invitationSchedule .missingTime time {
   position: relative;
   color: rgba(61, 51, 44, 0.4);
+  background: rgba(143, 107, 66, 0.08);
 }
 
 .invitationSchedule .missingTime time::after {

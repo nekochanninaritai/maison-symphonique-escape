@@ -27,7 +27,7 @@ export const createPuzzles = (): Record<string, Puzzle> => ({
     status: 'locked',
     prerequisites: ['p02_ceremony'],
     description: '四つのテーブルの違和感を、席次表の数字と照合する。',
-    rewards: { memories: ['banquet'], items: ['transparent-card'], advanceClockTo: '15:00' },
+    rewards: { memories: ['banquet'], items: ['transparent-card'] },
   },
   p04_sheet_overlay: {
     puzzleId: 'p04_sheet_overlay',

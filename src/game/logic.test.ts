@@ -75,9 +75,9 @@ const createP05ReadyState = () => {
 const createP06ReadyState = () => {
   let state = createP05ReadyState()
   state = solvePuzzle(state, 'p05_piano', true)
-  state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'old-invitation' })
-  state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
-  return reducer(state, { type: 'SET_CLOCK_TIME', time: '15:00' })
+  state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
+  state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
+  return reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
 }
 
 describe('ClockState', () => {
@@ -581,8 +581,10 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(['カチ……', '鍵は開かない。'])
   })
 
-  it('correct P03 lock code opens the box, rewards the card and memory, and advances the clock', () => {
+  it('correct P03 lock code opens the box and rewards the card and memory without changing the clock', () => {
     let state = createP03ReadyState()
+    expect(state.clockState.currentTime).toBe('12:00')
+
     state = setReceptionLockInput(state, getReceptionLockDigits())
     state = openReceptionBox(state)
 
@@ -590,7 +592,7 @@ describe('PuzzleState', () => {
     expect(state.puzzles.p03_reception.status).toBe('solved')
     expect(state.inventory['transparent-card'].obtained).toBe(true)
     expect(state.memories.banquet.unlocked).toBe(true)
-    expect(state.clockState.currentTime).toBe('15:00')
+    expect(state.clockState.currentTime).toBe('12:00')
   })
 
   it('P03 rewards do not duplicate after the box is reopened', () => {
@@ -821,6 +823,44 @@ describe('PuzzleState', () => {
     expect(lightEventVase?.isFutureLightEventAnchor).toBe(true)
   })
 
+  it('main clock progression is monotonic until the P06 manual target', () => {
+    let state = createInitialState()
+    expect(state.clockState.currentTime).toBe('11:00')
+
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
+    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    expect(state.clockState.currentTime).toBe('11:00')
+
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    expect(state.clockState.currentTime).toBe('12:00')
+
+    state = solvePuzzle(state, 'p02_ceremony')
+    state = reducer(state, { type: 'MOVE', areaId: 'reception' })
+    expect(state.clockState.currentTime).toBe('13:00')
+
+    state = setReceptionLockInput(state, getReceptionLockDigits())
+    state = openReceptionBox(state)
+    expect(state.clockState.currentTime).toBe('13:00')
+
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'transparent-card' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'framed-picture' })
+    expect(state.clockState.currentTime).toBe('13:00')
+
+    state = solvePuzzle(state, 'p05_piano', true)
+    expect(state.clockState.currentTime).toBe('14:00')
+
+    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'small-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
+    expect(state.puzzles.p06_grand_clock.status).toBe('available')
+    expect(state.clockState.currentTime).toBe('14:00')
+
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: p06TargetTime })
+    expect(state.puzzles.p06_grand_clock.status).toBe('solved')
+    expect(state.clockState.currentTime).toBe(p06TargetTime)
+  })
+
   it('examining the Ceremony light obtains the small key', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
@@ -906,7 +946,7 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(solvedState.messageQueue)
     expect(state.trueRouteUnlocked).not.toBe(true)
     expect(state.worldMode).toBe('empty')
-    expect(getMemoryCount(state)).toBe(1)
+    expect(state.memories.september23.unlocked).toBe(false)
   })
 
   it('09:23 before NORMAL END does not unlock TRUE route', () => {
@@ -1233,7 +1273,26 @@ describe('SaveState', () => {
     expect(loaded.puzzles.p03_reception.status).toBe('solved')
     expect(loaded.inventory['transparent-card'].obtained).toBe(true)
     expect(loaded.memories.banquet.unlocked).toBe(true)
-    expect(loaded.clockState.currentTime).toBe('15:00')
+    expect(loaded.clockState.currentTime).toBe('12:00')
+    vi.unstubAllGlobals()
+  })
+
+  it('normalizes legacy P03-only saves that carried the clock forward to 15:00', () => {
+    const storage = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    })
+
+    let state = createP04ReadyState()
+    state = reducer(state, { type: 'SET_CLOCK_TIME', time: '15:00' })
+    saveGame(state)
+
+    const loaded = loadGame()
+    expect(loaded.puzzles.p03_reception.status).toBe('solved')
+    expect(loaded.puzzles.p05_piano.status).not.toBe('solved')
+    expect(loaded.clockState.currentTime).toBe('13:00')
     vi.unstubAllGlobals()
   })
 

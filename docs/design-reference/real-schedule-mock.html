@@ -36,6 +36,8 @@
         gap: 5px;
         text-align: center;
         margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid rgba(166, 120, 58, 0.2);
       }
 
       header span {
@@ -55,7 +57,7 @@
         position: relative;
         display: grid;
         margin: 0;
-        padding: 0;
+        padding: 4px 0;
         list-style: none;
       }
 
@@ -72,9 +74,9 @@
       li {
         position: relative;
         display: grid;
-        grid-template-columns: 40px 74px 1fr;
+        grid-template-columns: 40px 82px 1fr;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
         min-height: 58px;
         border-top: 1px solid rgba(166, 120, 58, 0.2);
       }
@@ -120,9 +122,14 @@
       }
 
       time {
+        justify-self: stretch;
+        padding: 4px 7px;
+        border-radius: 4px;
+        background: rgba(255, 250, 240, 0.64);
         color: #2b2522;
         font-weight: 700;
         font-variant-numeric: tabular-nums;
+        text-align: center;
       }
 
       strong {

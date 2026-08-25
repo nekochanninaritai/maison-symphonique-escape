@@ -1104,14 +1104,14 @@ function PhotoEReveal({ state, onContinue }: { state: GameState; onContinue: () 
 
 function TrueEnd({ state, onTitle }: { state: GameState; onTitle: () => void }) {
   return (
-    <section className="readingScreen ending">
+    <section className="readingScreen ending trueEnding">
       <p className="eyebrow">TRUE END</p>
       {trueEndingText.body.map((line) => <p key={line}>{line}</p>)}
       <h2>TRUE END</h2>
       <p className="endingCouple">{coupleDisplayName}</p>
       <p className="endingDate">{weddingDateDisplay}</p>
       <h2>September 23</h2>
-      <p>最後の演出は、Phase 2以降で結婚式当日の写真とともに実装します。</p>
+      <p>Maison Symphoniqueに、やわらかな光が戻っていく。</p>
       <MemoryMeter state={state} />
       <button type="button" onClick={onTitle}>タイトルへ</button>
     </section>

@@ -21,6 +21,8 @@
 body {
   margin: 0;
   min-width: 320px;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
 }
 
 button {
@@ -31,6 +33,8 @@ button {
   color: var(--ink);
   background: #fffaf0;
   font: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(166, 120, 58, 0.18);
 }
 
 button:disabled {
@@ -178,6 +182,23 @@ h3 {
 .ending {
   justify-items: center;
   text-align: center;
+  align-content: center;
+  padding: max(32px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 50% 20%, rgba(255, 250, 230, 0.78), transparent 34%),
+    linear-gradient(180deg, #fbf7ef, #eadcc8);
+}
+
+.ending h2 {
+  margin-bottom: 18px;
+  font-family: "Times New Roman", "Yu Mincho", serif;
+  font-size: clamp(2rem, 9vw, 4rem);
+  font-weight: 400;
+  color: #3d332c;
+}
+
+.ending p {
+  line-height: 1.8;
 }
 
 .gameScreen {
@@ -185,6 +206,7 @@ h3 {
   grid-template-rows: auto minmax(300px, 1fr) auto auto auto;
   gap: 10px;
   padding: 12px;
+  overflow-x: hidden;
 }
 
 /* ── Top bar: chapter label + area name + HUD ── */
@@ -220,7 +242,7 @@ h3 {
 
 .stage {
   position: relative;
-  min-height: 58svh;
+  min-height: clamp(420px, 58svh, 660px);
   border: 1px solid rgba(166, 120, 58, 0.34);
   border-radius: 10px;
   overflow: hidden;
@@ -254,19 +276,19 @@ h3 {
 }
 
 /* ── Entrance ── */
-/* Clock is right-centre in the image (~x 58%). Pull focus slightly right. */
+/* Real Maison lobby: staircase and passages sit near centre. */
 .stage.scene-entrance,
 .stage.scene-entrance-memory {
   background-image: url('./assets/environments/bg-01-entrance.jpg');
-  background-position: 62% center;
+  background-position: 48% center;
 }
 
 /* ── Waiting Room ── */
-/* Frame is upper-centre; table is lower-centre. Standard centre works well. */
+/* Real Maison salon: keep the long table and window wall balanced. */
 .stage.scene-waiting-room,
 .stage.scene-waiting-room-memory {
   background-image: url('./assets/environments/bg-02-waiting-room.jpg');
-  background-position: center center;
+  background-position: 54% center;
 }
 
 /* ── Dressing Room ── */
@@ -285,11 +307,11 @@ h3 {
 }
 
 /* ── Reception ── */
-/* Piano is upper-right; tables spread across centre. Pull focus right slightly. */
+/* Real Maison reception: keep the central aisle and surrounding tables visible. */
 .stage.scene-reception,
 .stage.scene-reception-memory {
   background-image: url('./assets/environments/bg-05-reception.jpg');
-  background-position: 58% center;
+  background-position: 52% center;
 }
 
 /* ── Garden ── */
@@ -421,6 +443,7 @@ h3 {
   padding: 0;
   background: transparent;
   color: transparent;
+  touch-action: manipulation;
 }
 
 .hotspot.visible {
@@ -436,18 +459,22 @@ h3 {
   z-index: 8;
   display: grid;
   place-items: center;
-  padding: 18px;
-  background: rgba(28, 24, 23, 0.58);
+  padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255, 250, 240, 0.08), transparent 34%),
+    rgba(28, 24, 23, 0.58);
 }
 
 .focusScene > div {
-  width: min(100%, 520px);
+  width: min(100%, 560px);
   max-height: calc(100svh - 36px);
   overflow: auto;
   padding: 22px;
   border-radius: 8px;
   background: var(--paper);
   box-shadow: var(--shadow);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .focusMessage {
@@ -1457,6 +1484,8 @@ h3 {
   border: 2px solid rgba(43, 37, 34, 0.28);
   border-radius: 8px;
   background:
+    linear-gradient(180deg, rgba(43, 37, 34, 0.08), rgba(43, 37, 34, 0.56)),
+    url('./assets/environments/piano-01-focus.jpg') center 56% / cover no-repeat,
     radial-gradient(ellipse at 32% 18%, rgba(255, 250, 240, 0.14), transparent 26%),
     linear-gradient(115deg, transparent 0 16%, rgba(255, 250, 240, 0.06) 16% 17%, transparent 17% 100%),
     linear-gradient(180deg, rgba(43, 37, 34, 0.12), transparent 45%),
@@ -1664,6 +1693,12 @@ h3 {
   background: rgba(255, 252, 244, 0.78);
 }
 
+.memoryPhotoGrid button:not(:disabled):hover,
+.memoryPhotoGrid button:not(:disabled):focus-visible {
+  border-color: rgba(166, 120, 58, 0.58);
+  background: rgba(255, 250, 240, 0.96);
+}
+
 .photoFocus,
 .gardenObjectPuzzle,
 .gardenGatePuzzle {
@@ -1783,11 +1818,29 @@ h3 {
 }
 
 .endingDate {
-  font-size: 1.25rem;
+  font-size: 1.32rem;
+  color: var(--gold);
 }
 
 .photoEReveal {
   animation: endingFadeIn 700ms ease both;
+}
+
+.trueEnding {
+  color: #fffaf0;
+  background:
+    linear-gradient(rgba(32, 28, 24, 0.36), rgba(32, 28, 24, 0.58)),
+    url('./assets/environments/bg-true-exterior.jpg') center / cover no-repeat;
+  text-shadow: 0 1px 8px rgba(24, 18, 14, 0.54);
+}
+
+.trueEnding .endingDate {
+  color: #f5dca7;
+}
+
+.trueEnding .memoryMeter,
+.trueEnding button {
+  text-shadow: none;
 }
 
 @keyframes endingFadeIn {
@@ -1921,6 +1974,7 @@ h3 {
   box-shadow:
     inset 0 0 0 1px rgba(80, 65, 46, 0.25),
     0 10px 22px rgba(43, 37, 34, 0.12);
+  isolation: isolate;
 }
 
 .oldPhotoComposition::after {
@@ -1938,11 +1992,15 @@ h3 {
   background:
     linear-gradient(90deg, transparent 0 16%, rgba(80, 107, 90, 0.14) 16% 17%, transparent 17% 100%),
     linear-gradient(180deg, rgba(255, 250, 240, 0.36), rgba(96, 80, 62, 0.12));
+  box-shadow: inset 0 0 40px rgba(86, 67, 46, 0.16);
 }
 
 .oldPhotoComposition .photoRoom span {
   position: absolute;
   padding: 5px 8px;
+  max-width: min(42%, 150px);
+  color: rgba(47, 42, 36, 0.86);
+  line-height: 1.35;
 }
 
 .oldPhotoComposition .photoRoom span:nth-child(1) {
@@ -1974,6 +2032,9 @@ h3 {
   right: 26px;
   bottom: 28px;
   width: min(39%, 190px);
+  z-index: 1;
+  color: rgba(47, 42, 36, 0.9);
+  box-shadow: 0 8px 16px rgba(70, 52, 34, 0.12);
 }
 
 .photoObjectIcon {
@@ -2022,9 +2083,12 @@ h3 {
 .photoClock {
   display: grid;
   gap: 4px;
-  width: 82px;
-  min-height: 102px;
+  place-items: center;
+  width: 86px;
+  min-height: 108px;
   border-radius: 10px;
+  z-index: 2;
+  box-shadow: 0 8px 16px rgba(70, 52, 34, 0.12);
 }
 
 .photoClockDial {
@@ -2056,6 +2120,12 @@ h3 {
   background: #2b2522;
 }
 
+.photoClock > span:last-child {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
 .oldPhotoComposition.photo-vows .photoGardenObject {
   right: auto;
   left: 42%;
@@ -2084,6 +2154,12 @@ h3 {
   background:
     radial-gradient(circle at 24% 18%, rgba(255, 250, 240, 0.78), transparent 22%),
     linear-gradient(180deg, #eef4ef, #dce9df);
+}
+
+.gardenObjectPuzzle button,
+.gardenGatePuzzle button {
+  width: min(100%, 320px);
+  justify-self: center;
 }
 
 .gardenObjectIllustration.birdcage span {
@@ -2765,13 +2841,13 @@ h3 {
   }
 
   .stage {
-    min-height: 52svh;
+    min-height: clamp(390px, 52svh, 560px);
   }
 
-  /* On narrow screens shift entrance right so the clock is visible */
+  /* On narrow screens keep the staircase and main passages visible. */
   .stage.scene-entrance,
   .stage.scene-entrance-memory {
-    background-position: 70% center;
+    background-position: 48% center;
   }
 
   /* On narrow screens ceremony: show altar in upper frame */
@@ -2780,10 +2856,10 @@ h3 {
     background-position: center 28%;
   }
 
-  /* On narrow screens reception: show piano + front tables */
+  /* On narrow screens reception: preserve tables and walking space. */
   .stage.scene-reception,
   .stage.scene-reception-memory {
-    background-position: 62% center;
+    background-position: 50% center;
   }
 
   .puzzleRow {
@@ -2856,8 +2932,9 @@ h3 {
   }
 
   .invitationSchedule li {
-    grid-template-columns: 36px 64px 1fr;
+    grid-template-columns: 36px 70px 1fr;
     gap: 8px;
+    min-height: 56px;
   }
 
   .scheduleIcon {
@@ -2930,29 +3007,103 @@ h3 {
   }
 
   .oldPhotoComposition {
-    min-height: 250px;
+    min-height: 282px;
     padding: 12px;
   }
 
-  .photoRoom {
+  .oldPhotoComposition .photoRoom {
+    inset: 12px;
     max-width: 100%;
+  }
+
+  .oldPhotoComposition .photoRoom span {
+    max-width: min(48%, 132px);
+    padding: 4px 6px;
+    font-size: 0.76rem;
   }
 
   .photoGardenObject {
     right: 12px;
-    bottom: 14px;
-    width: min(58%, 210px);
+    bottom: 16px;
+    width: min(57%, 190px);
+    padding: 9px;
+  }
+
+  .photoObjectIcon {
+    width: 64px;
+    height: 66px;
   }
 
   .photoClock {
     right: 12px;
     top: 12px;
-    width: 64px;
-    min-height: 64px;
+    width: 76px;
+    min-height: 94px;
+  }
+
+  .photoClockDial {
+    width: 52px;
+    height: 52px;
+  }
+
+  .photoClock .clockHand.hour {
+    height: 16px;
+  }
+
+  .photoClock .clockHand.minute {
+    height: 21px;
+  }
+
+  .photoClock > span:last-child {
+    font-size: 0.82rem;
   }
 
   .gardenObjectIllustration,
   .gateIllustration {
-    min-height: 140px;
+    min-height: 158px;
+  }
+}
+
+@media (max-width: 380px) {
+  .topBar h2 {
+    font-size: 1rem;
+    letter-spacing: 0.12em;
+  }
+
+  .clockFace {
+    width: 52px;
+    min-height: 52px;
+  }
+
+  .clockTimeText,
+  .memoryMeter {
+    font-size: 0.68rem;
+  }
+
+  .areaNav button,
+  .buttonRow button {
+    flex-basis: 128px;
+  }
+
+  .teaTableGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .oldInvitationPaper {
+    padding-inline: 10px;
+  }
+
+  .invitationSchedule li {
+    grid-template-columns: 32px 68px 1fr;
+    gap: 7px;
+  }
+
+  .scheduleIcon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .oldPhotoComposition {
+    min-height: 300px;
   }
 }

@@ -314,6 +314,64 @@ h3 {
   background-position: 52% center;
 }
 
+.stage.scene-reception.receptionView-tables,
+.stage.scene-reception-memory.receptionView-tables {
+  background-image: url('./assets/environments/reception-table-focus.jpg');
+  background-position: 50% 48%;
+}
+
+.stage.scene-reception.receptionView-piano-area,
+.stage.scene-reception-memory.receptionView-piano-area {
+  background-image: url('./assets/environments/reception-piano-area.jpg');
+  background-position: 50% 50%;
+}
+
+.receptionNavHotspot,
+.receptionBackButton {
+  position: absolute;
+  z-index: 4;
+  touch-action: manipulation;
+}
+
+.receptionNavHotspot {
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: transparent;
+}
+
+.receptionNavHotspot.visible {
+  border: 2px dashed #d34848;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  text-shadow: 0 1px 6px #000;
+}
+
+.receptionNavHotspotTables {
+  left: 10%;
+  top: 42%;
+  width: 58%;
+  height: 48%;
+}
+
+.receptionNavHotspotPiano {
+  left: 16%;
+  top: 26%;
+  width: 28%;
+  height: 20%;
+}
+
+.receptionBackButton {
+  left: 14px;
+  top: 14px;
+  min-height: 42px;
+  padding: 8px 13px;
+  border-color: rgba(255, 250, 240, 0.65);
+  background: rgba(43, 37, 34, 0.62);
+  color: #fffaf0;
+  box-shadow: 0 10px 24px rgba(28, 24, 23, 0.26);
+}
+
 /* ── Garden ── */
 .stage.scene-garden,
 .stage.scene-garden-memory {
@@ -1473,6 +1531,36 @@ h3 {
   display: grid;
   gap: 12px;
   margin: 16px 0;
+}
+
+.pianoPhotoInspect {
+  position: relative;
+  min-height: 360px;
+  border: 2px solid rgba(43, 37, 34, 0.28);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(43, 37, 34, 0.02), rgba(43, 37, 34, 0.32)),
+    url('./assets/environments/piano-01-focus.jpg') center 55% / cover no-repeat,
+    #6b4532;
+  overflow: hidden;
+}
+
+.pianoKeyboardAccess {
+  position: absolute;
+  left: 27%;
+  bottom: 26%;
+  z-index: 2;
+  width: 47%;
+  min-height: 58px;
+  border-color: rgba(255, 250, 240, 0.55);
+  background: rgba(43, 37, 34, 0.4);
+  color: #fffaf0;
+  box-shadow: 0 10px 24px rgba(28, 24, 23, 0.18);
+}
+
+.pianoPhotoKeyhole {
+  right: 33%;
+  top: 48%;
 }
 
 .pianoCabinet {
@@ -2862,6 +2950,38 @@ h3 {
     background-position: 50% center;
   }
 
+  .stage.scene-reception.receptionView-tables,
+  .stage.scene-reception-memory.receptionView-tables {
+    background-position: 50% 38%;
+  }
+
+  .stage.scene-reception.receptionView-piano-area,
+  .stage.scene-reception-memory.receptionView-piano-area {
+    background-position: 48% 50%;
+  }
+
+  .receptionNavHotspotTables {
+    left: 7%;
+    top: 44%;
+    width: 68%;
+    height: 44%;
+  }
+
+  .receptionNavHotspotPiano {
+    left: 13%;
+    top: 28%;
+    width: 36%;
+    height: 20%;
+  }
+
+  .receptionBackButton {
+    left: 10px;
+    top: 10px;
+    min-height: 40px;
+    padding: 7px 11px;
+    font-size: 0.82rem;
+  }
+
   .puzzleRow {
     grid-template-columns: 1fr;
   }
@@ -2940,6 +3060,23 @@ h3 {
   .scheduleIcon {
     width: 34px;
     height: 34px;
+  }
+
+  .pianoPhotoInspect {
+    min-height: 300px;
+    background-position: 50% 56%;
+  }
+
+  .pianoKeyboardAccess {
+    left: 24%;
+    bottom: 24%;
+    width: 53%;
+    min-height: 52px;
+  }
+
+  .pianoPhotoKeyhole {
+    right: 28%;
+    top: 48%;
   }
 
   .pianoCabinet {

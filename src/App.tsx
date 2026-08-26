@@ -19,6 +19,10 @@ import type { ClockHandKind } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
+type ReceptionView = 'main' | 'tables' | 'piano-area'
+
+const isReceptionTableViewHotspot = (hotspot: Hotspot) =>
+  hotspot.id === 'seating-chart' || hotspot.id === 'reception-box' || hotspot.id.startsWith('reception-table-')
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -137,9 +141,31 @@ function GameScreen({
   onItemFocus: (itemId: string | null) => void
   onAction: (action: GameAction) => void
 }) {
+  const [receptionView, setReceptionView] = useState<ReceptionView>('main')
+  const isReception = currentArea.areaId === 'reception'
   const focusHotspot = visibleHotspots.find((hotspot) => hotspot.focusScene?.id === activeFocus)
   const background = state.worldMode === 'memory' ? currentArea.memoryBackground : currentArea.emptyBackground
   const selectedItem = state.selectedItemId ? state.inventory[state.selectedItemId] : null
+  const displayedHotspots = useMemo(() => {
+    if (!isReception) return visibleHotspots
+    if (receptionView === 'tables') return visibleHotspots.filter(isReceptionTableViewHotspot)
+    if (receptionView === 'piano-area') return visibleHotspots.filter((hotspot) => hotspot.id === 'piano')
+    return []
+  }, [isReception, receptionView, visibleHotspots])
+  const receptionViewLabel = receptionView === 'tables' ? 'テーブル周辺' : receptionView === 'piano-area' ? 'ピアノのある方' : '披露宴会場'
+
+  useEffect(() => {
+    if (!isReception && receptionView !== 'main') {
+      setReceptionView('main')
+      onFocus(null)
+    }
+  }, [isReception, onFocus, receptionView])
+
+  const changeReceptionView = (view: ReceptionView) => {
+    onAction({ type: 'CLEAR_MESSAGES' })
+    onFocus(null)
+    setReceptionView(view)
+  }
 
   return (
     <section className="gameScreen">
@@ -154,10 +180,38 @@ function GameScreen({
         </div>
       </header>
 
-      <div className={`stage ${state.worldMode} scene-${background}`} aria-label={`${currentArea.name} ${background}`}>
+      <div
+        className={`stage ${state.worldMode} scene-${background} ${isReception ? `receptionView-${receptionView}` : ''}`}
+        aria-label={isReception ? `${currentArea.name} ${receptionViewLabel}` : `${currentArea.name} ${background}`}
+      >
         <div className="stageVignette" aria-hidden="true" />
         {currentArea.areaId === 'garden' && <GardenStageLayer state={state} />}
-        {visibleHotspots.map((hotspot) => (
+        {isReception && receptionView === 'main' && (
+          <>
+            <button
+              type="button"
+              className={`receptionNavHotspot receptionNavHotspotTables ${showHotspots ? 'visible' : ''}`}
+              aria-label="披露宴テーブル周辺へ近づく"
+              onClick={() => changeReceptionView('tables')}
+            >
+              {showHotspots && 'テーブル周辺'}
+            </button>
+            <button
+              type="button"
+              className={`receptionNavHotspot receptionNavHotspotPiano ${showHotspots ? 'visible' : ''}`}
+              aria-label="ピアノのある方へ近づく"
+              onClick={() => changeReceptionView('piano-area')}
+            >
+              {showHotspots && 'ピアノのある方'}
+            </button>
+          </>
+        )}
+        {isReception && receptionView !== 'main' && (
+          <button type="button" className="receptionBackButton" onClick={() => changeReceptionView('main')}>
+            披露宴会場へ戻る
+          </button>
+        )}
+        {displayedHotspots.map((hotspot) => (
           <button
             key={hotspot.id}
             type="button"
@@ -883,6 +937,7 @@ function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: 
   const [pressedKey, setPressedKey] = useState<number | null>(null)
   const [phraseReset, setPhraseReset] = useState(false)
   const [autoPlaying, setAutoPlaying] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
   const previousSolvedRef = useRef(solved)
   const previousInputLengthRef = useRef(state.pianoPerformance.input.length)
   const playableKeys = useMemo(() => getPlayablePianoKeys(), [])
@@ -903,6 +958,14 @@ function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: 
     if (autoPlaying) return
     playTone(keyIndex)
     onAction({ type: 'PLAY_PIANO_KEY', keyIndex })
+  }
+
+  const inspectKeyhole = () => {
+    if (state.selectedItemId === 'small-key') {
+      onAction({ type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
+      return
+    }
+    onAction({ type: 'EXAMINE_PIANO_KEYHOLE' })
   }
 
   useEffect(() => {
@@ -935,7 +998,22 @@ function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: 
 
   return (
     <div className={`pianoPuzzle ${phraseReset ? 'phraseReset' : ''}`}>
-      <div className="pianoCabinet">
+      {!keyboardOpen ? (
+        <div className="pianoPhotoInspect">
+          <button type="button" className="pianoKeyboardAccess" aria-label="ピアノの鍵盤を調べる" onClick={() => setKeyboardOpen(true)}>
+            鍵盤を調べる
+          </button>
+          <button
+            type="button"
+            className={`pianoKeyhole pianoPhotoKeyhole ${state.flags.pianoSecretOpened ? 'opened' : ''}`}
+            aria-label="小さな鍵穴"
+            onClick={inspectKeyhole}
+          >
+            <span aria-hidden="true" />
+          </button>
+        </div>
+      ) : (
+        <div className="pianoCabinet">
         <div className="pianoLid" aria-hidden="true" />
         <div className="pianoKeyboard" aria-label="ピアノ鍵盤">
           <div className="pianoWhiteKeys">
@@ -976,17 +1054,12 @@ function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: 
           type="button"
           className={`pianoKeyhole ${state.flags.pianoSecretOpened ? 'opened' : ''}`}
           aria-label="小さな鍵穴"
-          onClick={() => {
-            if (state.selectedItemId === 'small-key') {
-              onAction({ type: 'USE_SELECTED_ITEM', targetId: 'piano-keyhole' })
-              return
-            }
-            onAction({ type: 'EXAMINE_PIANO_KEYHOLE' })
-          }}
+          onClick={inspectKeyhole}
         >
           <span aria-hidden="true" />
         </button>
       </div>
+      )}
       {!available && !solved && <p className="clockHint">静かな鍵盤が、まだ音を待っている。</p>}
       {state.flags.pianoSecretOpened && <p className="clockHint">秘密収納は開いている。</p>}
     </div>

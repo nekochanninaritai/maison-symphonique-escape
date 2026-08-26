@@ -242,7 +242,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'piano',
         label: 'ピアノ',
-        position: { x: 72, y: 24, width: 24, height: 28 },
+        position: { x: 39, y: 36, width: 28, height: 28 },
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',

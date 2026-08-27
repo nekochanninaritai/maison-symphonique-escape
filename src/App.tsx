@@ -19,7 +19,7 @@ import type { ClockHandKind } from './game/clock'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
-type ReceptionView = 'main' | 'tables' | 'piano-area'
+type ReceptionView = 'main' | 'tables' | 'piano-area' | 'piano-focus'
 
 const isReceptionTableViewHotspot = (hotspot: Hotspot) =>
   hotspot.id === 'seating-chart' || hotspot.id === 'reception-box' || hotspot.id.startsWith('reception-table-')
@@ -152,7 +152,8 @@ function GameScreen({
     if (receptionView === 'piano-area') return visibleHotspots.filter((hotspot) => hotspot.id === 'piano')
     return []
   }, [isReception, receptionView, visibleHotspots])
-  const receptionViewLabel = receptionView === 'tables' ? 'テーブル周辺' : receptionView === 'piano-area' ? 'ピアノのある方' : '披露宴会場'
+  const receptionViewLabel = receptionView === 'tables' ? 'テーブル周辺' : receptionView === 'piano-area' ? 'ピアノのある方' : receptionView === 'piano-focus' ? 'ピアノ' : '披露宴会場'
+  const isReceptionPianoFocus = isReception && receptionView === 'piano-focus'
 
   useEffect(() => {
     if (!isReception && receptionView !== 'main') {
@@ -207,8 +208,12 @@ function GameScreen({
           </>
         )}
         {isReception && receptionView !== 'main' && (
-          <button type="button" className="receptionBackButton" onClick={() => changeReceptionView('main')}>
-            披露宴会場へ戻る
+          <button
+            type="button"
+            className="receptionBackButton"
+            onClick={() => changeReceptionView(receptionView === 'piano-focus' ? 'piano-area' : 'main')}
+          >
+            {receptionView === 'piano-focus' ? 'ピアノのある方へ戻る' : '披露宴会場へ戻る'}
           </button>
         )}
         {displayedHotspots.map((hotspot) => (
@@ -224,6 +229,11 @@ function GameScreen({
             }}
             aria-label={hotspot.label}
             onClick={() => {
+              if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
+                onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
+                changeReceptionView('piano-focus')
+                return
+              }
               if (hotspot.id === 'garden-gate' && (state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open')) {
                 onAction({ type: 'OPEN_GARDEN_GATE' })
                 return
@@ -240,9 +250,44 @@ function GameScreen({
             {showHotspots && hotspot.label}
           </button>
         ))}
+        {isReceptionPianoFocus && (
+          <button
+            type="button"
+            className={`pianoFocusHotspot ${showHotspots ? 'visible' : ''}`}
+            aria-label="ピアノを調べる"
+            onClick={() => {
+              onAction({ type: 'EXAMINE', hotspotId: 'piano' })
+              onFocus('focus-piano')
+            }}
+          >
+            {showHotspots && 'ピアノ'}
+          </button>
+        )}
       </div>
 
-      {focusHotspot?.focusScene && (
+      {isReceptionPianoFocus && activeFocus === 'focus-piano' && (
+        <div className="pianoPuzzleOverlay" role="dialog" aria-modal="true">
+          <div>
+            <PianoFocus state={state} onAction={onAction} startOpen />
+            {state.messageQueue.length > 0 && (
+              <div className="focusMessage" aria-live="polite">
+                {state.messageQueue.map((message, index) => <p key={index}>{message}</p>)}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                onAction({ type: 'CLEAR_MESSAGES' })
+                onFocus(null)
+              }}
+            >
+              ピアノへ戻る
+            </button>
+          </div>
+        </div>
+      )}
+
+      {focusHotspot?.focusScene && !(isReceptionPianoFocus && activeFocus === 'focus-piano') && (
         <div className="focusScene" role="dialog" aria-modal="true">
           <div>
             <p className="eyebrow">Focus Scene</p>
@@ -930,14 +975,14 @@ function GrandClockFocus({ state, onAction }: { state: GameState; onAction: (act
   )
 }
 
-function PianoFocus({ state, onAction }: { state: GameState; onAction: (action: GameAction) => void }) {
+function PianoFocus({ state, onAction, startOpen = false }: { state: GameState; onAction: (action: GameAction) => void; startOpen?: boolean }) {
   const puzzle = state.puzzles.p05_piano
   const solved = puzzle?.status === 'solved'
   const available = puzzle?.status === 'available'
   const [pressedKey, setPressedKey] = useState<number | null>(null)
   const [phraseReset, setPhraseReset] = useState(false)
   const [autoPlaying, setAutoPlaying] = useState(false)
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(startOpen)
   const previousSolvedRef = useRef(solved)
   const previousInputLengthRef = useRef(state.pianoPerformance.input.length)
   const playableKeys = useMemo(() => getPlayablePianoKeys(), [])

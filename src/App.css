@@ -326,6 +326,13 @@ h3 {
   background-position: 50% 50%;
 }
 
+.stage.scene-reception.receptionView-piano-focus,
+.stage.scene-reception-memory.receptionView-piano-focus {
+  min-height: clamp(620px, 78svh, 780px);
+  background-image: url('./assets/environments/piano-01-focus.jpg');
+  background-position: 50% 50%;
+}
+
 .receptionNavHotspot,
 .receptionBackButton {
   position: absolute;
@@ -370,6 +377,50 @@ h3 {
   background: rgba(43, 37, 34, 0.62);
   color: #fffaf0;
   box-shadow: 0 10px 24px rgba(28, 24, 23, 0.26);
+}
+
+.pianoFocusHotspot {
+  position: absolute;
+  z-index: 3;
+  left: 24%;
+  top: 34%;
+  width: 48%;
+  height: 38%;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: transparent;
+  touch-action: manipulation;
+}
+
+.pianoFocusHotspot.visible {
+  border: 2px dashed #d34848;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  text-shadow: 0 1px 6px #000;
+}
+
+.pianoPuzzleOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  place-items: end center;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(28, 24, 23, 0.42);
+}
+
+.pianoPuzzleOverlay > div {
+  width: min(100%, 620px);
+  max-height: calc(100svh - 24px);
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid rgba(255, 250, 240, 0.34);
+  border-radius: 10px;
+  background: rgba(255, 250, 240, 0.96);
+  box-shadow: var(--shadow);
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Garden ── */
@@ -2960,6 +3011,12 @@ h3 {
     background-position: 48% 50%;
   }
 
+  .stage.scene-reception.receptionView-piano-focus,
+  .stage.scene-reception-memory.receptionView-piano-focus {
+    min-height: min(76svh, 690px);
+    background-position: 50% 50%;
+  }
+
   .receptionNavHotspotTables {
     left: 7%;
     top: 44%;
@@ -2980,6 +3037,22 @@ h3 {
     min-height: 40px;
     padding: 7px 11px;
     font-size: 0.82rem;
+  }
+
+  .pianoFocusHotspot {
+    left: 16%;
+    top: 35%;
+    width: 58%;
+    height: 39%;
+  }
+
+  .pianoPuzzleOverlay {
+    padding: 8px;
+  }
+
+  .pianoPuzzleOverlay > div {
+    max-height: calc(100svh - 16px);
+    padding: 12px;
   }
 
   .puzzleRow {

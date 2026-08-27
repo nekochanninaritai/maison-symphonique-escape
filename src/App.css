@@ -299,11 +299,15 @@ h3 {
 }
 
 /* ── Ceremony ── */
-/* Aisle runs centre; altar is upper-centre. */
+/* Real Maison ceremony: portrait aisle photo, altar in the upper middle. */
 .stage.scene-ceremony,
 .stage.scene-ceremony-memory {
   background-image: url('./assets/environments/bg-04-ceremony.jpg');
-  background-position: center 30%;
+  background-position: center 46%;
+}
+
+.focusScene.focus-altar > div {
+  width: min(100%, 920px);
 }
 
 /* ── Reception ── */
@@ -1156,6 +1160,23 @@ h3 {
   font-size: 0.9rem;
 }
 
+.altarRealScene {
+  position: relative;
+  width: min(100%, 820px);
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(143, 107, 66, 0.28);
+  border-radius: 8px;
+  background: url('./assets/environments/ceremony-02-altar-unlit.jpg') center / contain no-repeat #181412;
+  box-shadow: 0 14px 34px rgba(43, 37, 34, 0.22);
+  transition: background-image 360ms ease, filter 360ms ease;
+}
+
+.candlePuzzle.altarLit .altarRealScene {
+  background-image: url('./assets/environments/ceremony-03-altar-lit.jpg');
+}
+
 .candleGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1250,6 +1271,66 @@ h3 {
 
 .candleButton strong {
   font-size: 0.9rem;
+}
+
+.altarRealScene .altarCandleHotspot {
+  position: absolute;
+  min-height: 0;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: transparent;
+  box-shadow: none;
+}
+
+.altarRealScene .altarCandleHotspot:focus-visible {
+  outline: 2px solid rgba(255, 250, 240, 0.9);
+  outline-offset: 2px;
+}
+
+.altarRealScene .altarCandleHotspot:not(:disabled):active,
+.altarRealScene .altarCandleHotspot.lit {
+  background: radial-gradient(circle, rgba(255, 233, 166, 0.34), rgba(255, 233, 166, 0.08) 48%, transparent 72%);
+}
+
+.altarRealScene .altarCandleHotspot:disabled:not(.lit) {
+  opacity: 1;
+}
+
+.altarRealScene .altarCandleHotspot .flame,
+.altarRealScene .altarCandleHotspot .candleShape,
+.altarRealScene .altarCandleHotspot strong {
+  display: none;
+}
+
+.altarRealScene .altarCandle-1 {
+  left: 24%;
+  top: 52%;
+  width: 10%;
+  height: 28%;
+}
+
+.altarRealScene .altarCandle-2 {
+  left: 36%;
+  top: 51%;
+  width: 9%;
+  height: 29%;
+}
+
+.altarRealScene .altarCandle-3 {
+  left: 57%;
+  top: 51%;
+  width: 10%;
+  height: 29%;
+}
+
+.altarRealScene .altarCandle-4 {
+  left: 70%;
+  top: 51%;
+  width: 10%;
+  height: 29%;
 }
 
 .candleInput {

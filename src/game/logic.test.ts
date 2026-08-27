@@ -291,6 +291,41 @@ describe('PuzzleState', () => {
     expect(areas['dressing-room'].exits).toContainEqual({ to: 'entrance', label: 'エントランスへ戻る' })
   })
 
+  it('keeps old vase hotspots out of the real-photo Ceremony Main', () => {
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.id.startsWith('ceremony-vase-'))).toBe(false)
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.label === 'Round Vase')).toBe(false)
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.label === 'Spiral Vase')).toBe(false)
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.label === 'Faceted Glass Vase')).toBe(false)
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.label === 'Square Vase')).toBe(false)
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.id === 'altar')).toBe(true)
+    expect(areas.ceremony.hotspots.some((hotspot) => hotspot.id === 'ceremony-light')).toBe(true)
+  })
+
+  it('adds one flavor hotspot for the Ceremony Main hanging lamps without puzzle rewards', () => {
+    const hangingLampHotspots = areas.ceremony.hotspots.filter((hotspot) => hotspot.id === 'hanging-lamps')
+    expect(hangingLampHotspots).toHaveLength(1)
+    expect(hangingLampHotspots[0].label).toBe('吊り下げランプ')
+    expect(hangingLampHotspots[0].position).toEqual({ x: 6, y: 18, width: 88, height: 22 })
+    expect(hangingLampHotspots[0].itemReward).toBeUndefined()
+    expect(hangingLampHotspots[0].flagUpdate).toBeUndefined()
+    expect(hangingLampHotspots[0].focusScene).toBeUndefined()
+  })
+
+  it('examining Ceremony hanging lamps does not change puzzle, memory, inventory, or clock state', () => {
+    const state = reducer(
+      { ...createInitialState(), currentArea: 'ceremony', flags: { ...createInitialState().flags, ceremonyUnlocked: true } },
+      { type: 'EXAMINE', hotspotId: 'hanging-lamps' },
+    )
+
+    expect(state.messageQueue).toEqual(['天井から、形の異なる四つのランプが吊られている。どれも古いガラスで作られているようだ。'])
+    expect(state.puzzles.p02_ceremony.status).toBe('locked')
+    expect(state.ceremonyCandles.input).toEqual([])
+    expect(state.ceremonyCandles.lit).toEqual([])
+    expect(Object.values(state.inventory).some((item) => item.obtained)).toBe(false)
+    expect(Object.values(state.memories).some((memory) => memory.unlocked)).toBe(false)
+    expect(state.clockState.currentTime).toBe('11:00')
+  })
+
   it('P01 solved keeps Ceremony locked until the clock hand is attached', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })

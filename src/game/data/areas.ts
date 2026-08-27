@@ -1,4 +1,4 @@
-import { ceremonyVases, lightEventVase } from './ceremonyCandles'
+import { lightEventVase } from './ceremonyCandles'
 import { gardenPuzzleObjects } from './memoryPhotos'
 import { receptionTables } from './receptionTables'
 import { trueClockMessages } from './trueRoute'
@@ -148,9 +148,15 @@ export const areas: Record<string, Area> = {
         message: ['祭壇へ向かって、まっすぐバージンロードが伸びている。'],
       },
       {
+        id: 'hanging-lamps',
+        label: '吊り下げランプ',
+        position: { x: 6, y: 18, width: 88, height: 22 },
+        message: ['天井から、形の異なる四つのランプが吊られている。どれも古いガラスで作られているようだ。'],
+      },
+      {
         id: 'altar',
         label: '祭壇',
-        position: { x: 34, y: 24, width: 32, height: 30 },
+        position: { x: 34, y: 45, width: 32, height: 18 },
         focusScene: {
           id: 'focus-altar',
           title: '祭壇',
@@ -161,22 +167,13 @@ export const areas: Record<string, Area> = {
       {
         id: 'photo-vows',
         label: '祭壇脇',
-        position: { x: 66, y: 28, width: 12, height: 14 },
+        position: { x: 68, y: 50, width: 12, height: 14 },
         visibilityCondition: (state) => !state.memories.vow?.unlocked,
         message: (state) =>
           state.puzzles.p02_ceremony?.status === 'solved'
             ? ['四本の灯に照らされて、祭壇脇の古い写真が見える。']
             : ['祭壇の脇に、何かが置かれている。', 'ここからでは暗くてよく見えない。'],
       },
-      ...ceremonyVases.map((vase): Area['hotspots'][number] => ({
-        id: vase.id,
-        label: vase.name,
-        position: vase.position,
-        message: (state) =>
-          vase.isFutureLightEventAnchor && state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened
-            ? ['花器が、以前より強い光を返している。']
-            : [vase.description],
-      })),
       {
         id: 'ceremony-light',
         label: '淡い光',

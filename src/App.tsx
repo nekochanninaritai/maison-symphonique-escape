@@ -511,28 +511,31 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
   const available = puzzle?.status === 'available'
   const litIds = solved ? new Set(ceremonyCandles.map((candle) => candle.id)) : new Set(state.ceremonyCandles.lit)
   const altarPhotoState = getAltarPhotoState(state)
+  const altarCandles = correctCandleSequence
+    .map((candleId) => ceremonyCandles.find((candle) => candle.id === candleId))
+    .filter((candle): candle is (typeof ceremonyCandles)[number] => Boolean(candle))
 
   return (
-    <div className="candlePuzzle">
+    <div className={`candlePuzzle ${solved ? 'altarLit' : 'altarUnlit'}`}>
       <div className="candleHeader">
         <span>{solved ? 'solved' : puzzle?.status ?? 'locked'}</span>
         <p>{solved ? '四つの灯が、今も祭壇を照らしている。' : '会場で見た形を思い出しながら、順に火を灯す。'}</p>
       </div>
-      <div className="candleGrid" aria-label="誓いの灯">
-        {ceremonyCandles.map((candle) => {
+      <div className="altarRealScene" aria-label="祭壇の四本のキャンドル">
+        {altarCandles.map((candle, index) => {
           const lit = litIds.has(candle.id)
           return (
             <button
               key={candle.id}
               type="button"
-              className={`candleButton ${candle.shape} ${lit ? 'lit' : ''}`}
+              className={`candleButton altarCandleHotspot altarCandle-${index + 1} ${candle.shape} ${lit ? 'lit' : ''}`}
               disabled={!available || solved || lit}
               aria-pressed={lit}
               aria-label={`${candle.name} ${lit ? '点灯' : '消灯'}`}
               title={candle.description}
               onClick={() => onAction({ type: 'LIGHT_CEREMONY_CANDLE', candleId: candle.id })}
             >
-              <span className="flame" aria-hidden="true">{lit ? '火' : ''}</span>
+              <span className="flame" aria-hidden="true" />
               <span className="candleShape" aria-hidden="true" />
               <strong>{candle.name}</strong>
             </button>

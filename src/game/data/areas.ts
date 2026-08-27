@@ -67,7 +67,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'tea-table',
         label: 'ティーテーブル',
-        position: { x: 36, y: 64, width: 30, height: 26 },
+        position: { x: 31, y: 55, width: 45, height: 34 },
         focusScene: {
           id: 'focus-tea-time',
           title: 'Puzzle 01「ティータイム」',

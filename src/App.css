@@ -284,11 +284,11 @@ h3 {
 }
 
 /* ── Waiting Room ── */
-/* Real Maison salon: keep the long table and window wall balanced. */
+/* Real Maison waiting room: keep the foreground tea table centred. */
 .stage.scene-waiting-room,
 .stage.scene-waiting-room-memory {
   background-image: url('./assets/environments/bg-02-waiting-room.jpg');
-  background-position: 54% center;
+  background-position: 50% center;
 }
 
 /* ── Dressing Room ── */
@@ -598,6 +598,30 @@ h3 {
 
 .focusMessage p {
   margin-bottom: 0;
+}
+
+.focusScene.focus-tea-table > div {
+  width: min(100%, 760px);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.72), rgba(255, 250, 240, 0.9)),
+    url('./assets/environments/bg-02-waiting-room.jpg') 50% 76% / 162% auto no-repeat,
+    var(--paper);
+}
+
+.focusScene.focus-tea-table .teaTimePuzzle {
+  padding: 14px;
+  border: 1px solid rgba(255, 250, 240, 0.56);
+  border-radius: 10px;
+  background: rgba(255, 250, 240, 0.82);
+  box-shadow: 0 12px 26px rgba(43, 37, 34, 0.16);
+  backdrop-filter: blur(2px);
+}
+
+.focusScene.focus-tea-table .teaTimeHeader,
+.focusScene.focus-tea-table > div > .eyebrow,
+.focusScene.focus-tea-table > div > h3,
+.focusScene.focus-tea-table > div > p {
+  text-shadow: 0 1px 10px rgba(255, 250, 240, 0.82);
 }
 
 /* ── Message window: parchment narrative style ── */
@@ -3083,6 +3107,17 @@ h3 {
   .focusScene > div {
     max-height: calc(100svh - 20px);
     padding: 16px;
+  }
+
+  .focusScene.focus-tea-table > div {
+    background:
+      linear-gradient(180deg, rgba(255, 250, 240, 0.76), rgba(255, 250, 240, 0.92)),
+      url('./assets/environments/bg-02-waiting-room.jpg') 52% 78% / 238% auto no-repeat,
+      var(--paper);
+  }
+
+  .focusScene.focus-tea-table .teaTimePuzzle {
+    padding: 10px;
   }
 
   .seatingChartGrid {

@@ -288,7 +288,7 @@ function GameScreen({
       )}
 
       {focusHotspot?.focusScene && !(isReceptionPianoFocus && activeFocus === 'focus-piano') && (
-        <div className="focusScene" role="dialog" aria-modal="true">
+        <div className={`focusScene focus-${focusHotspot.id}`} role="dialog" aria-modal="true">
           <div>
             <p className="eyebrow">Focus Scene</p>
             <h3>{focusHotspot.focusScene.title}</h3>

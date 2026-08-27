@@ -298,6 +298,7 @@ function GameScreen({
             <h3>{focusHotspot.focusScene.title}</h3>
             <p>{focusHotspot.focusScene.description}</p>
             {focusHotspot.id === 'tea-table' && <TeaTimeFocus state={state} onAction={onAction} />}
+            {focusHotspot.id === 'clock-hand-case' && <BridalClockFocus state={state} onAction={onAction} showHotspots={showHotspots} />}
             {focusHotspot.id === 'altar' && <CandleFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'seating-chart' && <SeatingChartFocus />}
             {focusHotspot.id.startsWith('reception-table-') && <ReceptionTableFocus state={state} tableId={focusHotspot.id.replace('reception-table-', '')} onAction={onAction} />}
@@ -501,6 +502,26 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
           <small>{drawerState === 'locked' ? '閉じている' : drawerState === 'open-with-photo' ? '古い写真が見える' : '空になっている'}</small>
         </span>
       </button>
+    </div>
+  )
+}
+
+function BridalClockFocus({ state, onAction, showHotspots }: { state: GameState; onAction: (action: GameAction) => void; showHotspots: boolean }) {
+  const clockHandTaken = state.inventory['clock-hand'].obtained || state.clockState.handAttached
+
+  return (
+    <div className="bridalClockFocus">
+      <div className="bridalClockPhoto" aria-label="控室の置時計">
+        <button
+          type="button"
+          className={`bridalClockHotspot ${showHotspots ? 'visible' : ''}`}
+          aria-label="置時計を調べる"
+          onClick={() => onAction({ type: 'EXAMINE_BRIDAL_CLOCK' })}
+        >
+          {showHotspots && '置時計'}
+        </button>
+      </div>
+      <p>{clockHandTaken ? '時計は静かに止まっている。' : '古い置時計が、窓辺の光を受けている。'}</p>
     </div>
   )
 }

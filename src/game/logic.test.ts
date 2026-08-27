@@ -277,6 +277,31 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('11:00')
   })
 
+  it('routes the Bridal Room clock hotspot through a focus scene without immediate item pickup', () => {
+    const clockHotspot = areas['dressing-room'].hotspots.find((hotspot) => hotspot.id === 'clock-hand-case')
+
+    expect(clockHotspot?.label).toBe('置時計')
+    expect(clockHotspot?.position).toEqual({ x: 37, y: 24, width: 12, height: 9 })
+    expect(clockHotspot?.focusScene?.id).toBe('focus-bridal-clock')
+    expect(clockHotspot?.itemReward).toBeUndefined()
+
+    const state = reducer({ ...createInitialState(), currentArea: 'dressing-room' }, { type: 'EXAMINE', hotspotId: 'clock-hand-case' })
+    expect(state.inventory['clock-hand'].obtained).toBe(false)
+    expect(state.clockState.handObtained).not.toBe(true)
+  })
+
+  it('obtains the existing clock hand from the Bridal Room clock focus once', () => {
+    let state = reducer({ ...createInitialState(), currentArea: 'dressing-room' }, { type: 'EXAMINE_BRIDAL_CLOCK' })
+
+    expect(state.inventory['clock-hand'].obtained).toBe(true)
+    expect(state.clockState.handObtained).toBe(true)
+    expect(state.messageQueue).toEqual(['時計のそばに、細い金色の針が置かれていた。', '古い時計の長針を手に入れた。'])
+
+    state = reducer(state, { type: 'EXAMINE_BRIDAL_CLOCK' })
+    expect(state.inventory['clock-hand'].obtained).toBe(true)
+    expect(state.messageQueue).toEqual(['古い置時計が、静かに時を止めている。'])
+  })
+
   it('routes Dressing Room through the Entrance left space instead of Waiting Room', () => {
     const entranceLeftSpace = areas.entrance.hotspots.find((hotspot) => hotspot.id === 'entrance-left-space')
     const grandClock = areas.entrance.hotspots.find((hotspot) => hotspot.id === 'grand-clock')

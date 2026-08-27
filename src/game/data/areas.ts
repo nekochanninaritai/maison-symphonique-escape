@@ -124,11 +124,14 @@ export const areas: Record<string, Area> = {
     hotspots: [
       {
         id: 'clock-hand-case',
-        label: '小さなケース',
-        position: { x: 62, y: 48, width: 20, height: 18 },
-        visibilityCondition: (state) => !state.inventory['clock-hand'].obtained && !state.clockState.handAttached,
-        message: ['小さなケースの中に、細い金色の針が入っていた。', '古い時計の長針を手に入れた。'],
-        itemReward: 'clock-hand',
+        label: '置時計',
+        position: { x: 37, y: 24, width: 12, height: 9 },
+        focusScene: {
+          id: 'focus-bridal-clock',
+          title: '置時計',
+          description: '奥のキャビネットに、古い置時計が置かれている。',
+        },
+        message: ['奥のキャビネットに、古い置時計が置かれている。'],
       },
     ],
     exits: [{ to: 'entrance', label: 'エントランスへ戻る' }],

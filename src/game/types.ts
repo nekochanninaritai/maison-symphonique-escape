@@ -181,6 +181,7 @@ export type GameAction =
   | { type: 'SET_FLAG'; flagId: string; value: boolean }
   | { type: 'MOVE_TEA_CUP'; cupId: string; targetSweetId: string }
   | { type: 'EXAMINE_TEA_DRAWER' }
+  | { type: 'EXAMINE_BRIDAL_CLOCK' }
   | { type: 'RESET_P01_TEA_TIME' }
   | { type: 'LIGHT_CEREMONY_CANDLE'; candleId: string }
   | { type: 'EXAMINE_ALTAR_PHOTO' }

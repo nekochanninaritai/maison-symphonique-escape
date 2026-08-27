@@ -792,6 +792,13 @@ export const examineAltarPhoto = (state: GameState): GameState => {
   return withMessage(unlockMemory(state, 'vow'), ['四本の灯に照らされて、祭壇脇の古い写真が見える。', '古い写真「PHOTO B」を手に入れた。'])
 }
 
+export const examineBridalClock = (state: GameState): GameState => {
+  if (state.inventory['clock-hand'].obtained || state.clockState.handAttached) {
+    return withMessage(state, ['古い置時計が、静かに時を止めている。'])
+  }
+  return withMessage(obtainItem(state, 'clock-hand'), ['時計のそばに、細い金色の針が置かれていた。', '古い時計の長針を手に入れた。'])
+}
+
 export const canMoveToArea = (state: GameState, areaId: AreaId): boolean => {
   const area = areas[areaId]
   return Boolean(area) && (!area.unlockCondition || area.unlockCondition(state))
@@ -906,6 +913,8 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return moveTeaCup(state, action.cupId, action.targetSweetId)
     case 'EXAMINE_TEA_DRAWER':
       return examineTeaDrawer(state)
+    case 'EXAMINE_BRIDAL_CLOCK':
+      return examineBridalClock(state)
     case 'RESET_P01_TEA_TIME':
       return resetP01TeaTime(state)
     case 'LIGHT_CEREMONY_CANDLE':

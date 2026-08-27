@@ -295,7 +295,55 @@ h3 {
 .stage.scene-dressing-room,
 .stage.scene-dressing-room-memory {
   background-image: url('./assets/environments/bg-03-dressing-room.jpg');
-  background-position: center center;
+  background-position: center 42%;
+}
+
+.focusScene.focus-clock-hand-case > div {
+  width: min(100%, 860px);
+}
+
+.bridalClockFocus {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.bridalClockFocus p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.bridalClockPhoto {
+  position: relative;
+  width: min(100%, 430px);
+  aspect-ratio: 9 / 16;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid rgba(143, 107, 66, 0.28);
+  border-radius: 8px;
+  background: url('./assets/environments/bridal-clock-focus.jpg') center / contain no-repeat #1c1713;
+  box-shadow: 0 14px 34px rgba(43, 37, 34, 0.22);
+}
+
+.bridalClockHotspot {
+  position: absolute;
+  left: 18%;
+  top: 28%;
+  width: 64%;
+  height: 60%;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: transparent;
+  touch-action: manipulation;
+}
+
+.bridalClockHotspot.visible {
+  border: 2px dashed #d34848;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  text-shadow: 0 1px 6px #000;
 }
 
 /* ── Ceremony ── */

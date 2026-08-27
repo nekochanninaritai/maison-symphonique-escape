@@ -229,6 +229,10 @@ function GameScreen({
             }}
             aria-label={hotspot.label}
             onClick={() => {
+              if (hotspot.id === 'entrance-left-space') {
+                onAction({ type: 'MOVE', areaId: 'dressing-room' })
+                return
+              }
               if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
                 onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
                 changeReceptionView('piano-focus')

@@ -15,7 +15,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'grand-clock',
         label: '古い大時計',
-        position: { x: 55, y: 22, width: 16, height: 48 },
+        position: { x: 8, y: 27, width: 12, height: 43 },
         useTarget: 'grand-clock',
         focusScene: {
           id: 'focus-grand-clock',
@@ -42,9 +42,15 @@ export const areas: Record<string, Area> = {
         },
       },
       {
+        id: 'entrance-left-space',
+        label: '左奥へ',
+        position: { x: 0, y: 18, width: 8, height: 58 },
+        message: ['左側に、奥へ続く空間がある。'],
+      },
+      {
         id: 'entrance-desk',
         label: '受付台',
-        position: { x: 12, y: 58, width: 24, height: 18 },
+        position: { x: 33, y: 58, width: 38, height: 24 },
         message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
       },
@@ -94,12 +100,6 @@ export const areas: Record<string, Area> = {
             : ['額に収められた古い絵。', 'ピアノが描かれているが、どこか未完成に見える。'],
       },
       {
-        id: 'dressing-door',
-        label: '控室の扉',
-        position: { x: 70, y: 28, width: 18, height: 38 },
-        message: ['控室へ続く扉が開いている。'],
-      },
-      {
         id: 'ceremony-door',
         label: '挙式会場の扉',
         position: { x: 86, y: 30, width: 12, height: 36 },
@@ -111,7 +111,6 @@ export const areas: Record<string, Area> = {
     ],
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
-      { to: 'dressing-room', label: '控室へ' },
       { to: 'ceremony', label: '挙式会場へ', unlockCondition: (state) => state.flags.ceremonyUnlocked === true },
     ],
   },
@@ -132,7 +131,7 @@ export const areas: Record<string, Area> = {
         itemReward: 'clock-hand',
       },
     ],
-    exits: [{ to: 'waiting-room', label: '待合室へ戻る' }],
+    exits: [{ to: 'entrance', label: 'エントランスへ戻る' }],
   },
   ceremony: {
     areaId: 'ceremony',

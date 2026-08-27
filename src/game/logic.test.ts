@@ -36,6 +36,7 @@ import {
   updateClockDragSessionFromAngle,
 } from './clock'
 import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
+import { areas } from './data/areas'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData, pianoReferenceMark } from './data/pianoOverlayPuzzle'
 import { allMemoryPhotos, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './data/memoryPhotos'
 import { weddingDateDisplay } from './data/endingText'
@@ -274,6 +275,20 @@ describe('PuzzleState', () => {
     expect(canMoveToArea(state, 'dressing-room')).toBe(true)
     expect(canMoveToArea(state, 'ceremony')).toBe(false)
     expect(state.clockState.currentTime).toBe('11:00')
+  })
+
+  it('routes Dressing Room through the Entrance left space instead of Waiting Room', () => {
+    const entranceLeftSpace = areas.entrance.hotspots.find((hotspot) => hotspot.id === 'entrance-left-space')
+    const grandClock = areas.entrance.hotspots.find((hotspot) => hotspot.id === 'grand-clock')
+
+    expect(entranceLeftSpace?.label).toBe('左奥へ')
+    expect(grandClock).toBeDefined()
+    expect((entranceLeftSpace?.position.x ?? 0) + (entranceLeftSpace?.position.width ?? 0)).toBeLessThanOrEqual(grandClock?.position.x ?? 0)
+    expect(areas['waiting-room'].hotspots.some((hotspot) => hotspot.id === 'dressing-door')).toBe(false)
+    expect(areas['waiting-room'].hotspots.some((hotspot) => hotspot.label === '控室の扉')).toBe(false)
+    expect(areas['waiting-room'].exits.some((exit) => exit.to === 'dressing-room')).toBe(false)
+    expect(areas['waiting-room'].exits.some((exit) => exit.to === 'ceremony')).toBe(true)
+    expect(areas['dressing-room'].exits).toContainEqual({ to: 'entrance', label: 'エントランスへ戻る' })
   })
 
   it('P01 solved keeps Ceremony locked until the clock hand is attached', () => {

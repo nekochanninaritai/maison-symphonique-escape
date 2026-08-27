@@ -276,11 +276,11 @@ h3 {
 }
 
 /* ── Entrance ── */
-/* Real Maison lobby: staircase and passages sit near centre. */
+/* Real Maison entrance: keep the left passage and Grand Clock visible. */
 .stage.scene-entrance,
 .stage.scene-entrance-memory {
   background-image: url('./assets/environments/bg-01-entrance.jpg');
-  background-position: 48% center;
+  background-position: 30% center;
 }
 
 /* ── Waiting Room ── */
@@ -3010,7 +3010,7 @@ h3 {
   /* On narrow screens keep the staircase and main passages visible. */
   .stage.scene-entrance,
   .stage.scene-entrance-memory {
-    background-position: 48% center;
+    background-position: 24% center;
   }
 
   /* On narrow screens ceremony: show altar in upper frame */

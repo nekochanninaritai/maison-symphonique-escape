@@ -479,8 +479,12 @@ h3 {
 /* ── Garden ── */
 .stage.scene-garden,
 .stage.scene-garden-memory {
+  aspect-ratio: 1280 / 853;
+  min-height: 0;
   background-image: url('./assets/environments/bg-06-garden.jpg');
   background-position: center center;
+  background-repeat: no-repeat;
+  background-size: contain;
 }
 
 .gardenStageLayer {

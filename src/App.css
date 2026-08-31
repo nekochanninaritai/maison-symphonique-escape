@@ -556,8 +556,8 @@ h3 {
 }
 
 .gardenStageObject.active {
-  opacity: 1;
-  filter: drop-shadow(0 0 14px rgba(230, 190, 98, 0.7));
+  opacity: 0;
+  filter: none;
 }
 
 .gardenStageGate {

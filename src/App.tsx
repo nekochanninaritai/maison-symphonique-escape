@@ -868,11 +868,7 @@ function GardenGateFocus({ state, onAction }: { state: GameState; onAction: (act
   const open = state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open'
   return (
     <div className={`gardenGatePuzzle ${open ? 'open' : 'locked'}`}>
-      <div className="gardenFocusPhoto gate" aria-hidden="true">
-        <span className="gateLock" />
-        <span className="gatePanel left" />
-        <span className="gatePanel right" />
-      </div>
+      <div className="gardenFocusPhoto gate" aria-hidden="true" />
       <p>{open ? '門が開いている。' : '重い鉄の門だ。固く閉ざされている。'}</p>
       {open && <button type="button" onClick={() => onAction({ type: 'OPEN_GARDEN_GATE' })}>門をくぐる</button>}
     </div>

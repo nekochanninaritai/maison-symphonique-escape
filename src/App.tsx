@@ -388,7 +388,6 @@ function GameScreen({
 }
 
 function GardenStageLayer({ state }: { state: GameState }) {
-  const gateOpen = state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open'
   return (
     <div className="gardenStageLayer" aria-hidden="true">
       {gardenPuzzleObjects.map((object) => (
@@ -403,7 +402,6 @@ function GardenStageLayer({ state }: { state: GameState }) {
           }}
         />
       ))}
-      <span className={`gardenStageGate ${gateOpen ? 'open' : 'locked'}`} />
     </div>
   )
 }

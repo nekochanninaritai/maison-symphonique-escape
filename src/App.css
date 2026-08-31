@@ -560,48 +560,6 @@ h3 {
   filter: none;
 }
 
-.gardenStageGate {
-  position: absolute;
-  left: 50%;
-  top: 28%;
-  width: 15%;
-  height: 26%;
-  opacity: 0;
-}
-
-.gardenStageGate::before,
-.gardenStageGate::after {
-  content: '';
-  position: absolute;
-  top: 12%;
-  bottom: 8%;
-  width: 43%;
-  border: 3px solid #334155;
-  border-radius: 70px 70px 4px 4px;
-  background: repeating-linear-gradient(90deg, transparent 0 12px, rgba(51,65,85,0.85) 12px 15px);
-  transition: transform 500ms ease;
-}
-
-.gardenStageGate::before {
-  left: 5%;
-}
-
-.gardenStageGate::after {
-  right: 5%;
-}
-
-.gardenStageGate.open::before {
-  transform: translateX(-18px) rotateY(18deg);
-}
-
-.gardenStageGate.open::after {
-  transform: translateX(18px) rotateY(-18deg);
-}
-
-.gardenStageGate.open {
-  opacity: 0.72;
-}
-
 .hotspot {
   position: absolute;
   z-index: 3;

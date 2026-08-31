@@ -79,7 +79,7 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
     shortName: 'Birdcage',
     description: '白い鳥籠だ。ドーム型の上部に、小さな植物の飾りがついている。',
     photoFeature: '写真の中にも、同じドーム型の鳥籠が写っている。',
-    position: { x: 4, y: 48, width: 15, height: 35 },
+    position: { x: 4, y: 34, width: 15, height: 42 },
   },
   {
     id: 'lamp',
@@ -87,7 +87,7 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
     shortName: 'Lamp',
     description: '細い黒いフレームのランプだ。灯部は六角形をしている。',
     photoFeature: '写真の窓辺にも、同じ形のランプが立っている。',
-    position: { x: 21, y: 14, width: 14, height: 39 },
+    position: { x: 22, y: 10, width: 12, height: 43 },
   },
   {
     id: 'fountain',
@@ -95,7 +95,7 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
     shortName: 'Fountain',
     description: '円形の水盤を持つ小さな噴水だ。中央から細く水が上がっている。',
     photoFeature: '写真の奥にも、同じ円形の噴水が見える。',
-    position: { x: 38, y: 38, width: 14, height: 19 },
+    position: { x: 39, y: 39, width: 11, height: 18 },
   },
   {
     id: 'angel',
@@ -103,7 +103,7 @@ export const gardenPuzzleObjects: GardenPuzzleObject[] = [
     shortName: 'Angel',
     description: '小さな天使像だ。片翼を少し上げ、花束を抱えている。',
     photoFeature: '写真にも、同じ姿勢の天使像が写っている。',
-    position: { x: 83, y: 43, width: 14, height: 28 },
+    position: { x: 84, y: 39, width: 12, height: 31 },
   },
 ]
 

@@ -1075,6 +1075,21 @@ describe('PuzzleState', () => {
     ])
   })
 
+  it('Garden main keeps image-aligned hotspots for objects, book, and gate', () => {
+    const gardenHotspots = areas.garden.hotspots.map((hotspot) => hotspot.id)
+
+    expect(gardenHotspots).toEqual([
+      'garden-object-birdcage',
+      'garden-object-lamp',
+      'garden-object-fountain',
+      'garden-object-angel',
+      'garden-gate',
+      'garden-book',
+    ])
+    expect(areas.garden.hotspots.find((hotspot) => hotspot.id === 'garden-book')?.focusScene?.id).toBe('focus-garden-book')
+    expect(areas.garden.hotspots.find((hotspot) => hotspot.id === 'garden-gate')?.focusScene?.id).toBe('focus-garden-gate')
+  })
+
   it('P07 full correct switch sequence solves and opens the gate', () => {
     let state = createInitialState()
     state = solvePuzzle(state, 'p06_grand_clock', true)

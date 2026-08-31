@@ -290,11 +290,27 @@ export const areas: Record<string, Area> = {
       {
         id: 'garden-gate',
         label: '出口へ続く門',
-        position: { x: 36, y: 18, width: 28, height: 42 },
+        position: { x: 50, y: 28, width: 15, height: 26 },
+        focusScene: {
+          id: 'focus-garden-gate',
+          title: '出口へ続く門',
+          description: '広場の奥に、黒い鉄の門がある。',
+        },
         message: (state) =>
           state.worldMode === 'memory'
             ? ['記憶の光が、庭の向こうへ続いている。']
             : ['広場の門は、最後の確認を待っている。'],
+      },
+      {
+        id: 'garden-book',
+        label: '古い本',
+        position: { x: 66, y: 58, width: 14, height: 11 },
+        focusScene: {
+          id: 'focus-garden-book',
+          title: '古い本',
+          description: '緑のベンチの上に、古い本が置かれている。',
+        },
+        message: ['緑のベンチの上に、古い本が置かれている。'],
       },
     ],
     exits: [

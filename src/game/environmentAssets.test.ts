@@ -6,6 +6,11 @@ import bridalClock from '../assets/environments/bridal-clock-focus.jpg'
 import ceremony from '../assets/environments/bg-04-ceremony.jpg'
 import reception from '../assets/environments/bg-05-reception.jpg'
 import garden from '../assets/environments/bg-06-garden.jpg'
+import gardenBirdcage from '../assets/environments/garden-focus-birdcage.jpg'
+import gardenFountain from '../assets/environments/garden-focus-fountain.jpg'
+import gardenAngel from '../assets/environments/garden-focus-angel.jpg'
+import gardenLamp from '../assets/environments/garden-focus-lamp.jpg'
+import gardenGate from '../assets/environments/garden-focus-gate.jpg'
 import grandClock from '../assets/environments/clock-01-grand-clock.jpg'
 
 const environmentAssets = [
@@ -16,6 +21,11 @@ const environmentAssets = [
   ceremony,
   reception,
   garden,
+  gardenBirdcage,
+  gardenFountain,
+  gardenAngel,
+  gardenLamp,
+  gardenGate,
   grandClock,
 ]
 

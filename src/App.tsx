@@ -238,10 +238,6 @@ function GameScreen({
                 changeReceptionView('piano-focus')
                 return
               }
-              if (hotspot.id === 'garden-gate' && (state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open')) {
-                onAction({ type: 'OPEN_GARDEN_GATE' })
-                return
-              }
               if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {
                 onAction({ type: 'USE_SELECTED_ITEM', targetId: hotspot.useTarget })
                 if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
@@ -308,6 +304,7 @@ function GameScreen({
             {focusHotspot.id === 'piano' && <PianoFocus state={state} onAction={onAction} />}
             {focusHotspot.id.startsWith('garden-object-') && <GardenObjectFocus state={state} objectId={focusHotspot.id.replace('garden-object-', '')} onAction={onAction} />}
             {focusHotspot.id === 'garden-gate' && <GardenGateFocus state={state} onAction={onAction} />}
+            {focusHotspot.id === 'garden-book' && <GardenBookFocus />}
             {state.messageQueue.length > 0 && (
               <div className="focusMessage" aria-live="polite">
                 {state.messageQueue.map((message, index) => <p key={index}>{message}</p>)}
@@ -856,9 +853,7 @@ function GardenObjectFocus({ state, objectId, onAction }: { state: GameState; ob
 
   return (
     <div className={`gardenObjectPuzzle ${active ? 'active' : ''}`}>
-      <div className={`gardenObjectIllustration ${object.id}`} aria-hidden="true">
-        <span />
-      </div>
+      <div className={`gardenFocusPhoto ${object.id}`} aria-hidden="true" />
       <p>{object.description}</p>
       <p>台座の側面に、小さな真鍮のスイッチがある。</p>
       <button type="button" disabled={!available || solved || active} onClick={() => onAction({ type: 'ACTIVATE_GARDEN_SWITCH', objectId: object.id })}>
@@ -873,13 +868,25 @@ function GardenGateFocus({ state, onAction }: { state: GameState; onAction: (act
   const open = state.puzzles.p07_garden_final?.status === 'solved' || state.gardenFinal.gateState === 'open'
   return (
     <div className={`gardenGatePuzzle ${open ? 'open' : 'locked'}`}>
-      <div className="gateIllustration" aria-hidden="true">
+      <div className="gardenFocusPhoto gate" aria-hidden="true">
         <span className="gateLock" />
         <span className="gatePanel left" />
         <span className="gatePanel right" />
       </div>
       <p>{open ? '門が開いている。' : '重い鉄の門だ。固く閉ざされている。'}</p>
       {open && <button type="button" onClick={() => onAction({ type: 'OPEN_GARDEN_GATE' })}>門をくぐる</button>}
+    </div>
+  )
+}
+
+function GardenBookFocus() {
+  return (
+    <div className="gardenBookPuzzle">
+      <div className="gardenFocusPhoto book" aria-hidden="true">
+        <span />
+      </div>
+      <p>緑のベンチの上に、古い本が置かれている。</p>
+      <p>ページは湿気を含んでいて、文字はほとんど読めない。</p>
     </div>
   )
 }

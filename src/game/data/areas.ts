@@ -287,7 +287,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'garden-gate',
         label: '出口へ続く門',
-        position: { x: 51, y: 27, width: 13, height: 25 },
+        position: { x: 45, y: 39, width: 11, height: 24 },
         focusScene: {
           id: 'focus-garden-gate',
           title: '出口へ続く門',
@@ -301,7 +301,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'garden-book',
         label: '古い本',
-        position: { x: 67, y: 57, width: 13, height: 12 },
+        position: { x: 62, y: 70, width: 11, height: 9 },
         focusScene: {
           id: 'focus-garden-book',
           title: '古い本',

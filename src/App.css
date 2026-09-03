@@ -3163,6 +3163,22 @@ h3 {
     min-height: clamp(390px, 52svh, 560px);
   }
 
+  .stage.scene-entrance,
+  .stage.scene-entrance-memory,
+  .stage.scene-waiting-room,
+  .stage.scene-waiting-room-memory,
+  .stage.scene-dressing-room,
+  .stage.scene-dressing-room-memory,
+  .stage.scene-ceremony,
+  .stage.scene-ceremony-memory,
+  .stage.scene-reception.receptionView-main,
+  .stage.scene-reception-memory.receptionView-main,
+  .stage.scene-garden,
+  .stage.scene-garden-memory {
+    aspect-ratio: 3 / 4;
+    min-height: 0;
+  }
+
   /* On narrow screens keep the staircase and main passages visible. */
   .stage.scene-entrance,
   .stage.scene-entrance-memory {

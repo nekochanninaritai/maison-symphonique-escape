@@ -1,4 +1,3 @@
-import { lightEventVase } from './ceremonyCandles'
 import { gardenPuzzleObjects } from './memoryPhotos'
 import { receptionTables } from './receptionTables'
 import { trueClockMessages } from './trueRoute'
@@ -15,7 +14,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'grand-clock',
         label: '古い大時計',
-        position: { x: 8, y: 27, width: 12, height: 43 },
+        position: { x: 8, y: 29, width: 12, height: 41 },
         useTarget: 'grand-clock',
         focusScene: {
           id: 'focus-grand-clock',
@@ -44,13 +43,13 @@ export const areas: Record<string, Area> = {
       {
         id: 'entrance-left-space',
         label: '左奥へ',
-        position: { x: 0, y: 18, width: 8, height: 58 },
+        position: { x: 0, y: 18, width: 8, height: 44 },
         message: ['左側に、奥へ続く空間がある。'],
       },
       {
         id: 'entrance-desk',
         label: '受付台',
-        position: { x: 33, y: 58, width: 38, height: 24 },
+        position: { x: 33, y: 59, width: 39, height: 23 },
         message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
       },
@@ -67,13 +66,13 @@ export const areas: Record<string, Area> = {
       {
         id: 'waiting-sofa',
         label: 'ソファ',
-        position: { x: 8, y: 58, width: 32, height: 18 },
+        position: { x: 8, y: 58, width: 31, height: 17 },
         message: ['誰かを待っていた温度だけが、布地に残っている。'],
       },
       {
         id: 'tea-table',
         label: 'ティーテーブル',
-        position: { x: 31, y: 55, width: 45, height: 34 },
+        position: { x: 31, y: 54, width: 45, height: 34 },
         focusScene: {
           id: 'focus-tea-time',
           title: 'Puzzle 01「ティータイム」',
@@ -87,7 +86,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'framed-picture',
         label: '額装された未完成の絵',
-        position: { x: 39, y: 10, width: 30, height: 30 },
+        position: { x: 39, y: 13, width: 29, height: 27 },
         useTarget: 'framed-picture',
         focusScene: {
           id: 'focus-framed-picture',
@@ -102,7 +101,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'ceremony-door',
         label: '挙式会場の扉',
-        position: { x: 86, y: 30, width: 12, height: 36 },
+        position: { x: 86, y: 31, width: 12, height: 35 },
         message: (state) =>
           state.flags.ceremonyUnlocked === true
             ? ['挙式会場へ続く扉が、少し開いている。']
@@ -147,7 +146,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'virgin-road',
         label: 'バージンロード',
-        position: { x: 38, y: 46, width: 24, height: 42 },
+        position: { x: 39, y: 54, width: 23, height: 36 },
         message: ['祭壇へ向かって、まっすぐバージンロードが伸びている。'],
       },
       {
@@ -159,7 +158,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'altar',
         label: '祭壇',
-        position: { x: 34, y: 45, width: 32, height: 18 },
+        position: { x: 35, y: 43, width: 30, height: 18 },
         focusScene: {
           id: 'focus-altar',
           title: '祭壇',
@@ -170,7 +169,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'photo-vows',
         label: '祭壇脇',
-        position: { x: 68, y: 50, width: 12, height: 14 },
+        position: { x: 67, y: 49, width: 12, height: 14 },
         visibilityCondition: (state) => !state.memories.vow?.unlocked,
         message: (state) =>
           state.puzzles.p02_ceremony?.status === 'solved'
@@ -180,11 +179,9 @@ export const areas: Record<string, Area> = {
       {
         id: 'ceremony-light',
         label: '淡い光',
-        position: lightEventVase
-          ? { x: lightEventVase.position.x + 9, y: lightEventVase.position.y + 1, width: 5, height: 5 }
-          : { x: 60, y: 44, width: 16, height: 14 },
+        position: { x: 45, y: 45, width: 10, height: 9 },
         visibilityCondition: (state) => state.flags.ceremonyLightVisible === true && !state.inventory['small-key'].obtained && !state.flags.pianoSecretOpened,
-        message: ['カットガラスの花器が、以前より強い光を返している。', '小さな鍵を手に入れた。'],
+        message: ['祭壇中央の白い台の上に、淡い光が落ちている。', '小さな鍵を手に入れた。'],
         itemReward: 'small-key',
         flagUpdate: { smallKeyObtained: true },
       },
@@ -205,7 +202,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'seating-chart',
         label: '席次表',
-        position: { x: 2, y: 34, width: 18, height: 30 },
+        position: { x: 2, y: 40, width: 17, height: 22 },
         focusScene: {
           id: 'focus-seating-chart',
           title: '席次表',
@@ -227,7 +224,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'reception-box',
         label: 'ロック付きの箱',
-        position: { x: 35, y: 42, width: 14, height: 14 },
+        position: { x: 36, y: 42, width: 13, height: 15 },
         focusScene: {
           id: 'focus-reception-box',
           title: 'ロック付きの箱',
@@ -241,7 +238,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'piano',
         label: 'ピアノ',
-        position: { x: 39, y: 36, width: 28, height: 28 },
+        position: { x: 38, y: 35, width: 29, height: 29 },
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',

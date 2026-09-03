@@ -51,7 +51,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'この席だけ、グラスが置かれていない。',
     targetSeatId: 'seat-3',
     lockOrder: 1,
-    position: { x: 14, y: 62, width: 24, height: 24 },
+    position: { x: 12, y: 61, width: 25, height: 25 },
     seats: createSeats([6, 1, 4, 8, 3, 0, 5, 2]),
   },
   {
@@ -64,7 +64,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'この席だけ、ナプキンの折り方が違う。',
     targetSeatId: 'seat-6',
     lockOrder: 2,
-    position: { x: 46, y: 38, width: 20, height: 20 },
+    position: { x: 37, y: 39, width: 22, height: 21 },
     seats: createSeats([3, 8, 1, 5, 2, 7, 0, 6]),
   },
   {
@@ -77,7 +77,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'この席だけ、椅子が少し引かれている。',
     targetSeatId: 'seat-2',
     lockOrder: 3,
-    position: { x: 65, y: 58, width: 24, height: 24 },
+    position: { x: 65, y: 56, width: 24, height: 24 },
     seats: createSeats([9, 2, 5, 1, 6, 8, 3, 4]),
   },
   {
@@ -90,7 +90,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'この席だけ、小さな花びらが置かれている。',
     targetSeatId: 'seat-8',
     lockOrder: 4,
-    position: { x: 80, y: 70, width: 16, height: 18 },
+    position: { x: 78, y: 64, width: 18, height: 20 },
     seats: createSeats([1, 5, 0, 6, 8, 3, 4, 9]),
   },
 ]

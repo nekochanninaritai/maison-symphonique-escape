@@ -46,14 +46,13 @@ export const ceremonyCandles: CeremonyCandle[] = [
   },
 ]
 
-// Temporary sequence for Phase 2B-2. Final order can be changed by editing vase order only.
 export const ceremonyVases: CeremonyVase[] = [
   {
     id: 'ceremony-vase-orb',
     shape: 'orb',
     name: 'Round Vase',
     description: '丸みを帯びたガラスの花器。淡い花が飾られている。',
-    orderFromEntrance: 1,
+    orderFromEntrance: 3,
     position: { x: 24, y: 66, width: 14, height: 14 },
   },
   {
@@ -61,7 +60,7 @@ export const ceremonyVases: CeremonyVase[] = [
     shape: 'twist',
     name: 'Spiral Vase',
     description: '螺旋を描くような細工の花器。',
-    orderFromEntrance: 2,
+    orderFromEntrance: 1,
     position: { x: 62, y: 60, width: 14, height: 14 },
   },
   {
@@ -69,7 +68,7 @@ export const ceremonyVases: CeremonyVase[] = [
     shape: 'faceted',
     name: 'Faceted Glass Vase',
     description: '光を細かく反射する、カットガラスの花器。',
-    orderFromEntrance: 3,
+    orderFromEntrance: 2,
     position: { x: 28, y: 42, width: 14, height: 14 },
     isFutureLightEventAnchor: true,
   },
@@ -89,5 +88,13 @@ export const correctCandleSequence = ceremonyVases
   .map((vase) => ceremonyCandles.find((candle) => candle.shape === vase.shape)?.id)
   .filter((id): id is string => Boolean(id))
 
+export const altarCandleDisplaySequence = [
+  'ceremony-candle-orb',
+  'ceremony-candle-twist',
+  'ceremony-candle-faceted',
+  'ceremony-candle-cube',
+]
+
+export const solvedCandleLightSequence = correctCandleSequence
 export const allCandleIds = ceremonyCandles.map((candle) => candle.id)
 export const lightEventVase = ceremonyVases.find((vase) => vase.isFutureLightEventAnchor)

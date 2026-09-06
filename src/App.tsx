@@ -1,14 +1,14 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type PointerEvent } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
-import { ceremonyCandles, correctCandleSequence } from './game/data/ceremonyCandles'
+import { altarCandleDisplaySequence, ceremonyCandles, correctCandleSequence, solvedCandleLightSequence } from './game/data/ceremonyCandles'
 import { coupleDisplayName, normalEndingText, trueEndingText, weddingDateDisplay } from './game/data/endingText'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData, pianoReferenceMark } from './game/data/pianoOverlayPuzzle'
 import { allMemoryPhotos, gardenPuzzleObjects, getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './game/data/memoryPhotos'
 import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { trueClockTarget } from './game/data/trueRoute'
-import { oldInvitationSchedule, p06TargetTime } from './game/data/weddingSchedule'
+import { p06TargetTime } from './game/data/weddingSchedule'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
@@ -16,13 +16,21 @@ import { hourHandAngleFromTime, minuteHandAngleFromTime, timeFromClockHandPoint 
 import { canManuallyControlGrandClock, getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, reducer, shouldShowCeremonyNavCue } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
 import type { ClockHandKind } from './game/clock'
+import oldInvitationScheduleImage from './assets/environments/invitation-01-schedule.jpg'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
 type ReceptionView = 'main' | 'tables' | 'piano-area' | 'piano-focus'
+const stageMoveTargets: Partial<Record<string, AreaId>> = {
+  'entrance-to-waiting': 'waiting-room',
+  'dressing-to-entrance': 'entrance',
+  'ceremony-to-entrance': 'entrance',
+  'reception-to-ceremony': 'ceremony',
+}
 
 const isReceptionTableViewHotspot = (hotspot: Hotspot) =>
   hotspot.id === 'seating-chart' || hotspot.id === 'reception-box' || hotspot.id.startsWith('reception-table-')
+const isStageMoveHotspot = (hotspot: Hotspot) => Boolean(stageMoveTargets[hotspot.id])
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -148,6 +156,7 @@ function GameScreen({
   const selectedItem = state.selectedItemId ? state.inventory[state.selectedItemId] : null
   const displayedHotspots = useMemo(() => {
     if (!isReception) return visibleHotspots
+    if (receptionView === 'main') return visibleHotspots.filter(isStageMoveHotspot)
     if (receptionView === 'tables') return visibleHotspots.filter(isReceptionTableViewHotspot)
     if (receptionView === 'piano-area') return visibleHotspots.filter((hotspot) => hotspot.id === 'piano')
     return []
@@ -220,7 +229,7 @@ function GameScreen({
           <button
             key={hotspot.id}
             type="button"
-            className={`hotspot ${showHotspots ? 'visible' : ''}`}
+            className={`hotspot ${isStageMoveHotspot(hotspot) ? 'stageMoveHotspot' : ''} ${showHotspots ? 'visible' : ''}`}
             style={{
               left: `${hotspot.position.x}%`,
               top: `${hotspot.position.y}%`,
@@ -229,6 +238,12 @@ function GameScreen({
             }}
             aria-label={hotspot.label}
             onClick={() => {
+              const moveTarget = stageMoveTargets[hotspot.id]
+              if (moveTarget) {
+                onFocus(null)
+                onAction({ type: 'MOVE', areaId: moveTarget })
+                return
+              }
               if (hotspot.id === 'entrance-left-space') {
                 onAction({ type: 'MOVE', areaId: 'dressing-room' })
                 return
@@ -247,7 +262,7 @@ function GameScreen({
               if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
             }}
           >
-            {showHotspots && hotspot.label}
+            {(showHotspots || isStageMoveHotspot(hotspot)) && hotspot.label}
           </button>
         ))}
         {isReceptionPianoFocus && (
@@ -527,7 +542,7 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
   const available = puzzle?.status === 'available'
   const litIds = solved ? new Set(ceremonyCandles.map((candle) => candle.id)) : new Set(state.ceremonyCandles.lit)
   const altarPhotoState = getAltarPhotoState(state)
-  const altarCandles = correctCandleSequence
+  const altarCandles = altarCandleDisplaySequence
     .map((candleId) => ceremonyCandles.find((candle) => candle.id === candleId))
     .filter((candle): candle is (typeof ceremonyCandles)[number] => Boolean(candle))
 
@@ -540,11 +555,16 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
       <div className="altarRealScene" aria-label="祭壇の四本のキャンドル">
         {altarCandles.map((candle, index) => {
           const lit = litIds.has(candle.id)
+          const lightOrder = solvedCandleLightSequence.indexOf(candle.id)
+          const lightStyle = {
+            '--candle-light-delay': `${Math.max(lightOrder, 0) * 160}ms`,
+          } as CSSProperties
           return (
             <button
               key={candle.id}
               type="button"
               className={`candleButton altarCandleHotspot altarCandle-${index + 1} ${candle.shape} ${lit ? 'lit' : ''}`}
+              style={lightStyle}
               disabled={!available || solved || lit}
               aria-pressed={lit}
               aria-label={`${candle.name} ${lit ? '点灯' : '消灯'}`}
@@ -706,7 +726,7 @@ function FramedPictureFocus({ state }: { state: GameState }) {
         <span>{completed ? 'completed' : 'unfinished'}</span>
         <p>{completed ? '紙の模様が、絵の上にぴたりと重なっている。' : '白い鍵盤の輪郭と、小さな記号の列が描かれている。'}</p>
       </div>
-      <div className="framedPicture" aria-label={completed ? '完成したピアノの絵' : '未完成のピアノの絵'}>
+      <div className="framedPicture" aria-label={completed ? '完成した絵' : '未完成の絵'}>
         <div className="pictureSky" aria-hidden="true" />
         <div className="symbolOrder" aria-label="絵に描かれた記号の順番">
           {getOverlaySymbolSequence().map((symbol, index) => (
@@ -754,19 +774,7 @@ function TransparentSheetLayer() {
 function OldInvitationFocus() {
   return (
     <div className="oldInvitationPaper">
-      <div className="invitationHeader">
-        <span>Maison Symphonique</span>
-        <strong>TODAY&apos;S SCHEDULE</strong>
-      </div>
-      <ol className="invitationSchedule" aria-label="Today's schedule on the old invitation">
-        {oldInvitationSchedule.map((entry) => (
-          <li key={entry.id} className={entry.time === null ? 'missingTime' : ''}>
-            <span className={`scheduleIcon ${entry.iconId}`} aria-hidden="true" />
-            <time aria-label={entry.time ?? 'time missing'}>{entry.time ?? '--:--'}</time>
-            <strong>{entry.label}</strong>
-          </li>
-        ))}
-      </ol>
+      <img src={oldInvitationScheduleImage} alt="古い招待状に記された当日の流れ" className="oldInvitationScheduleImage" />
     </div>
   )
 }

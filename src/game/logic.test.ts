@@ -35,7 +35,7 @@ import {
   timeFromClockPoint,
   updateClockDragSessionFromAngle,
 } from './clock'
-import { allCandleIds, correctCandleSequence, lightEventVase } from './data/ceremonyCandles'
+import { allCandleIds, altarCandleDisplaySequence, correctCandleSequence, lightEventVase, solvedCandleLightSequence } from './data/ceremonyCandles'
 import { areas } from './data/areas'
 import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData, pianoReferenceMark } from './data/pianoOverlayPuzzle'
 import { allMemoryPhotos, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './data/memoryPhotos'
@@ -43,7 +43,7 @@ import { weddingDateDisplay } from './data/endingText'
 import { trueClockMessages, trueClockTarget } from './data/trueRoute'
 import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
 import { correctTeaTimeSlots, teaTimePairs } from './data/teaTime'
-import { oldInvitationSchedule, p06TargetTime } from './data/weddingSchedule'
+import { p06TargetTime } from './data/weddingSchedule'
 import { gameConfig } from './config'
 import { clearSave, loadGame, saveGame } from './save'
 
@@ -316,6 +316,16 @@ describe('PuzzleState', () => {
     expect(areas['dressing-room'].exits).toContainEqual({ to: 'entrance', label: 'エントランスへ戻る' })
   })
 
+  it('keeps the new background move hotspots in the intended rooms', () => {
+    expect(areas.entrance.hotspots.find((hotspot) => hotspot.id === 'entrance-to-waiting')?.label).toBe('待合室へ')
+    expect(areas['dressing-room'].hotspots.find((hotspot) => hotspot.id === 'dressing-to-entrance')?.label).toBe('エントランスに戻る')
+    expect(areas.ceremony.hotspots.find((hotspot) => hotspot.id === 'ceremony-to-entrance')?.label).toBe('エントランスに戻る')
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-to-ceremony')?.label).toBe('挙式会場に戻る')
+    expect(areas.reception.hotspots.some((hotspot) => hotspot.id === 'reception-to-waiting')).toBe(false)
+    expect(areas.reception.exits.some((exit) => exit.to === 'ceremony')).toBe(false)
+    expect(areas.reception.exits.some((exit) => exit.to === 'waiting-room')).toBe(false)
+  })
+
   it('keeps old vase hotspots out of the real-photo Ceremony Main', () => {
     expect(areas.ceremony.hotspots.some((hotspot) => hotspot.id.startsWith('ceremony-vase-'))).toBe(false)
     expect(areas.ceremony.hotspots.some((hotspot) => hotspot.label === 'Round Vase')).toBe(false)
@@ -349,6 +359,29 @@ describe('PuzzleState', () => {
     expect(Object.values(state.inventory).some((item) => item.obtained)).toBe(false)
     expect(Object.values(state.memories).some((memory) => memory.unlocked)).toBe(false)
     expect(state.clockState.currentTime).toBe('11:00')
+  })
+
+  it('uses the real Ceremony lamp order for P02', () => {
+    expect(correctCandleSequence).toEqual([
+      'ceremony-candle-twist',
+      'ceremony-candle-faceted',
+      'ceremony-candle-orb',
+      'ceremony-candle-cube',
+    ])
+  })
+
+  it('keeps altar candle screen placement separate from the P02 answer order', () => {
+    expect(altarCandleDisplaySequence).toEqual([
+      'ceremony-candle-orb',
+      'ceremony-candle-twist',
+      'ceremony-candle-faceted',
+      'ceremony-candle-cube',
+    ])
+    expect(altarCandleDisplaySequence).not.toEqual(correctCandleSequence)
+  })
+
+  it('uses the P02 answer order for the solved candle lighting sequence', () => {
+    expect(solvedCandleLightSequence).toEqual(correctCandleSequence)
   })
 
   it('P01 solved keeps Ceremony locked until the clock hand is attached', () => {
@@ -977,13 +1010,6 @@ describe('PuzzleState', () => {
 
     expect(state.puzzles.p06_grand_clock.status).toBe('locked')
     expect(isP06ClockActive(state)).toBe(false)
-  })
-
-  it('old invitation schedule keeps Finale time missing in normal UI data', () => {
-    const finale = oldInvitationSchedule.find((entry) => entry.id === 'finale')
-
-    expect(finale?.time).toBeNull()
-    expect(JSON.stringify(oldInvitationSchedule)).not.toContain(p06TargetTime)
   })
 
   it('P06 target time is 15:30', () => {

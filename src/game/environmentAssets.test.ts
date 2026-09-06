@@ -12,6 +12,7 @@ import gardenAngel from '../assets/environments/garden-focus-angel.jpg'
 import gardenLamp from '../assets/environments/garden-focus-lamp.jpg'
 import gardenGate from '../assets/environments/garden-focus-gate.jpg'
 import grandClock from '../assets/environments/clock-01-grand-clock.jpg'
+import oldInvitationSchedule from '../assets/environments/invitation-01-schedule.jpg'
 
 const environmentAssets = [
   entrance,
@@ -27,6 +28,7 @@ const environmentAssets = [
   gardenLamp,
   gardenGate,
   grandClock,
+  oldInvitationSchedule,
 ]
 
 describe('EnvironmentAssets', () => {
@@ -34,5 +36,9 @@ describe('EnvironmentAssets', () => {
     for (const assetPath of environmentAssets) {
       expect(assetPath).toMatch(/\.jpg$/)
     }
+  })
+
+  it('keeps the old invitation schedule image resolvable by Vite', () => {
+    expect(oldInvitationSchedule).toMatch(/invitation-01-schedule.*\.jpg$/)
   })
 })

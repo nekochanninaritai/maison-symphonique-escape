@@ -53,6 +53,12 @@ export const areas: Record<string, Area> = {
         message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
       },
+      {
+        id: 'entrance-to-waiting',
+        label: '待合室へ',
+        position: { x: 77, y: 90, width: 22, height: 9 },
+        message: ['待合室へ続いている。'],
+      },
     ],
     exits: [{ to: 'waiting-room', label: '待合室へ' }],
   },
@@ -66,7 +72,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'waiting-sofa',
         label: 'ソファ',
-        position: { x: 8, y: 58, width: 31, height: 17 },
+        position: { x: 37, y: 42, width: 54, height: 20 },
         message: ['誰かを待っていた温度だけが、布地に残っている。'],
       },
       {
@@ -86,22 +92,22 @@ export const areas: Record<string, Area> = {
       {
         id: 'framed-picture',
         label: '額装された未完成の絵',
-        position: { x: 39, y: 13, width: 29, height: 27 },
+        position: { x: 1, y: 10, width: 35, height: 22 },
         useTarget: 'framed-picture',
         focusScene: {
           id: 'focus-framed-picture',
           title: '額装された未完成の絵',
-          description: '額に収められた古い絵。ピアノが描かれているが、どこか未完成に見える。',
+          description: '額に収められた古い絵。どこか未完成に見える。',
         },
         message: (state: GameState) =>
           state.pianoOverlay.overlayApplied || state.puzzles.p04_sheet_overlay?.status === 'solved'
             ? ['紙の模様が、絵の上にぴたりと重なっている。']
-            : ['額に収められた古い絵。', 'ピアノが描かれているが、どこか未完成に見える。'],
+            : ['額に収められた古い絵。', 'どこか未完成に見える。'],
       },
       {
         id: 'ceremony-door',
         label: '挙式会場の扉',
-        position: { x: 86, y: 31, width: 12, height: 35 },
+        position: { x: 40, y: 18, width: 28, height: 27 },
         message: (state) =>
           state.flags.ceremonyUnlocked === true
             ? ['挙式会場へ続く扉が、少し開いている。']
@@ -131,6 +137,12 @@ export const areas: Record<string, Area> = {
           description: '奥のキャビネットに、古い置時計が置かれている。',
         },
         message: ['奥のキャビネットに、古い置時計が置かれている。'],
+      },
+      {
+        id: 'dressing-to-entrance',
+        label: 'エントランスに戻る',
+        position: { x: 66, y: 83, width: 30, height: 8 },
+        message: ['エントランスへ戻れる。'],
       },
     ],
     exits: [{ to: 'entrance', label: 'エントランスへ戻る' }],
@@ -184,6 +196,12 @@ export const areas: Record<string, Area> = {
         message: ['祭壇中央の白い台の上に、淡い光が落ちている。', '小さな鍵を手に入れた。'],
         itemReward: 'small-key',
         flagUpdate: { smallKeyObtained: true },
+      },
+      {
+        id: 'ceremony-to-entrance',
+        label: 'エントランスに戻る',
+        position: { x: 2, y: 91, width: 27, height: 8 },
+        message: ['エントランスへ戻れる。'],
       },
     ],
     exits: [
@@ -254,10 +272,14 @@ export const areas: Record<string, Area> = {
           return ['閉じたピアノが、次の音を待っている。']
         },
       },
+      {
+        id: 'reception-to-ceremony',
+        label: '挙式会場に戻る',
+        position: { x: 2, y: 91, width: 28, height: 8 },
+        message: ['挙式会場へ戻れる。'],
+      },
     ],
     exits: [
-      { to: 'ceremony', label: '挙式会場へ' },
-      { to: 'waiting-room', label: '待合室へ' },
       { to: 'entrance', label: 'エントランスへ' },
       { to: 'garden', label: '広場へ', unlockCondition: (state) => state.flags.gardenUnlocked === true || state.worldMode === 'memory' },
     ],

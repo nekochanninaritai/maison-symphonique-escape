@@ -4,7 +4,7 @@ import { createMemories } from './data/memories'
 import { createPuzzles } from './data/puzzles'
 import { allCandleIds, correctCandleSequence } from './data/ceremonyCandles'
 import { getDerivedPianoSequence, getPhraseLength, isPlayablePianoKey } from './data/pianoOverlayPuzzle'
-import { getReceptionLockDigits, getReceptionTable, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
+import { getReceptionLockDigits, initialReceptionLockInput, isReceptionLockSolved } from './data/receptionTables'
 import { correctTeaTimeSlots, initialTeaTimeSlots, isTeaTimeSolved } from './data/teaTime'
 import { trueClockTarget } from './data/trueRoute'
 import { p06TargetTime } from './data/weddingSchedule'
@@ -449,28 +449,6 @@ export const lightCeremonyCandle = (state: GameState, candleId: string): GameSta
   const lit = Array.from(new Set([...current.ceremonyCandles.lit, candleId]))
   const next = { ...current, ceremonyCandles: { input, lit } }
   return input.length === correctCandleSequence.length ? solvePuzzle(next, 'p02_ceremony') : next
-}
-
-export const discoverReceptionAnomaly = (state: GameState, tableId: string, seatId: string): GameState => {
-  const current = refreshPuzzleAvailability(state)
-  const table = getReceptionTable(tableId)
-  if (!table || current.puzzles.p03_reception?.status === 'locked') return current
-  if (table.targetSeatId !== seatId) {
-    return withMessage(current, ['特に変わったところはなさそうだ。'])
-  }
-  return withMessage(
-    {
-      ...current,
-      receptionTables: {
-        ...current.receptionTables,
-        discoveredAnomalies: {
-          ...current.receptionTables.discoveredAnomalies,
-          [tableId]: seatId,
-        },
-      },
-    },
-    [table.anomalyDescription],
-  )
 }
 
 export const setReceptionLockDigit = (state: GameState, index: number, value: number): GameState => {
@@ -923,8 +901,6 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return examineAltarPhoto(state)
     case 'RESET_P02_CANDLES':
       return resetP02Candles(state)
-    case 'DISCOVER_RECEPTION_ANOMALY':
-      return discoverReceptionAnomaly(state, action.tableId, action.seatId)
     case 'SET_P03_LOCK_DIGIT':
       return setReceptionLockDigit(state, action.index, action.value)
     case 'SET_P03_LOCK_INPUT':

@@ -5,7 +5,6 @@ import {
   canManuallyControlGrandClock,
   canMoveToArea,
   createInitialState,
-  discoverReceptionAnomaly,
   getAltarPhotoState,
   getMemoryCount,
   getPianoSequenceForP05,
@@ -41,7 +40,7 @@ import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOv
 import { allMemoryPhotos, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './data/memoryPhotos'
 import { weddingDateDisplay } from './data/endingText'
 import { trueClockMessages, trueClockTarget } from './data/trueRoute'
-import { getReceptionLockDigits, receptionTables } from './data/receptionTables'
+import { getReceptionAnomalyDigit, getReceptionAnomalyInitial, getReceptionCorrectInitial, getReceptionLockCode, getReceptionLockDigits, receptionSeatingChartImagePath, receptionTables } from './data/receptionTables'
 import { correctTeaTimeSlots, teaTimePairs } from './data/teaTime'
 import { p06TargetTime } from './data/weddingSchedule'
 import { gameConfig } from './config'
@@ -655,33 +654,53 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('12:00')
   })
 
-  it('discovers each P03 table anomaly from the correct seat', () => {
-    let state = createP03ReadyState()
-
-    for (const table of receptionTables) {
-      state = discoverReceptionAnomaly(state, table.id, table.targetSeatId)
-    }
-
-    expect(state.receptionTables.discoveredAnomalies).toEqual(
-      Object.fromEntries(receptionTables.map((table) => [table.id, table.targetSeatId])),
-    )
-  })
-
-  it('does not discover a P03 anomaly from the wrong seat', () => {
-    let state = createP03ReadyState()
-    const table = receptionTables[0]
-    const wrongSeat = table.seats.find((seat) => seat.id !== table.targetSeatId)
-    expect(wrongSeat).toBeDefined()
-
-    state = discoverReceptionAnomaly(state, table.id, wrongSeat!.id)
-
-    expect(state.receptionTables.discoveredAnomalies[table.id]).toBeUndefined()
-    expect(state.messageQueue).toEqual(['特に変わったところはなさそうだ。'])
+  it('uses the new P03 seating-chart comparison code and asset paths', () => {
+    expect(getReceptionLockCode()).toBe('2197')
+    expect(getReceptionLockDigits()).toEqual([2, 1, 9, 7])
+    expect(receptionSeatingChartImagePath).toBe('./assets/environments/p03-reception-seating-chart.jpg')
+    expect(
+      receptionTables.map((table) => ({
+        table: table.name,
+        wrongInitial: getReceptionAnomalyInitial(table),
+        correctInitial: getReceptionCorrectInitial(table),
+        digit: getReceptionAnomalyDigit(table),
+        image: table.focusImagePath,
+      })),
+    ).toEqual([
+      {
+        table: 'ROSE',
+        wrongInitial: 'K.K',
+        correctInitial: 'I.S',
+        digit: 2,
+        image: './assets/environments/p03-reception-table-Rose.jpg',
+      },
+      {
+        table: 'LILY',
+        wrongInitial: 'G.G',
+        correctInitial: 'T.M',
+        digit: 1,
+        image: './assets/environments/p03-reception-table-lily.jpg',
+      },
+      {
+        table: 'OLIVE',
+        wrongInitial: 'W.W',
+        correctInitial: 'S.R',
+        digit: 9,
+        image: './assets/environments/p03-reception-table-Olive.jpg',
+      },
+      {
+        table: 'MIMOSA',
+        wrongInitial: 'G.J',
+        correctInitial: 'Y.M',
+        digit: 7,
+        image: './assets/environments/p03-reception-table-Mimosa.jpg',
+      },
+    ])
   })
 
   it('wrong P03 lock code keeps the box closed', () => {
     let state = createP03ReadyState()
-    state = setReceptionLockInput(state, [4, 7, 2, 8])
+    state = setReceptionLockInput(state, [4, 7, 2, 9])
     state = openReceptionBox(state)
 
     expect(state.receptionTables.boxOpened).toBe(false)
@@ -1365,7 +1384,7 @@ describe('SaveState', () => {
     vi.unstubAllGlobals()
   })
 
-  it('saves and loads P03 anomaly discoveries and opened box state', () => {
+  it('saves and loads P03 lock-only solved state', () => {
     const storage = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => storage.get(key) ?? null,
@@ -1374,17 +1393,12 @@ describe('SaveState', () => {
     })
 
     let state = createP03ReadyState()
-    for (const table of receptionTables) {
-      state = discoverReceptionAnomaly(state, table.id, table.targetSeatId)
-    }
     state = setReceptionLockInput(state, getReceptionLockDigits())
     state = openReceptionBox(state)
     saveGame(state)
 
     const loaded = loadGame()
-    expect(loaded.receptionTables.discoveredAnomalies).toEqual(
-      Object.fromEntries(receptionTables.map((table) => [table.id, table.targetSeatId])),
-    )
+    expect(loaded.receptionTables.discoveredAnomalies).toEqual({})
     expect(loaded.receptionTables.boxOpened).toBe(true)
     expect(loaded.puzzles.p03_reception.status).toBe('solved')
     expect(loaded.inventory['transparent-card'].obtained).toBe(true)

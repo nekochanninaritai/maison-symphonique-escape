@@ -224,7 +224,7 @@ export const areas: Record<string, Area> = {
         focusScene: {
           id: 'focus-seating-chart',
           title: '席次表',
-          description: '四つのゲストテーブルと、それぞれの席に振られた数字が記されている。',
+          description: '四つの長テーブルの席次と、各イニシャルに対応する数字が記されている。',
         },
         message: ['入口の近くに、披露宴の席次表が立てられている。'],
       },
@@ -235,9 +235,9 @@ export const areas: Record<string, Area> = {
         focusScene: {
           id: `focus-reception-table-${table.id}`,
           title: `${table.name} テーブル`,
-          description: `${table.decoration}が飾られたゲストテーブル。席ごとの小物を見比べられそうだ。`,
+          description: `${table.decoration}が飾られた長テーブル。席札を席次表と見比べられそうだ。`,
         },
-        message: [`${table.motif}をモチーフにしたテーブル。ひとつずつ席を確かめられそうだ。`],
+        message: [`${table.motif}をモチーフにした長テーブル。席札を確かめられそうだ。`],
       })),
       {
         id: 'reception-box',

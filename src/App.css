@@ -1449,8 +1449,7 @@ h3 {
   background: #f6f1e8;
 }
 
-.seatingChartPuzzle,
-.receptionTablePuzzle,
+.receptionImagePuzzle,
 .lockBoxPuzzle {
   display: grid;
   gap: 14px;
@@ -1478,200 +1477,19 @@ h3 {
   font-size: 0.9rem;
 }
 
-.seatingChartGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.chartTable {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-  padding: 10px;
-  border: 1px solid rgba(166, 120, 58, 0.35);
-  border-radius: 8px;
-  background:
-    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.72), transparent 36%),
-    #fffaf0;
-}
-
-.chartTable header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-.chartTable header strong {
-  color: var(--ink);
-  font-size: 0.92rem;
-}
-
-.roundSeatMap {
-  position: relative;
-  width: min(100%, 280px);
-  margin: 0 auto;
-  aspect-ratio: 1;
-}
-
-.tableCenter {
-  position: absolute;
-  inset: 28%;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 2px;
-  border: 2px solid rgba(166, 120, 58, 0.36);
-  border-radius: 50%;
-  color: var(--muted);
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.72), transparent 58%),
-    #f6f1e8;
-  text-align: center;
-}
-
-.tableCenter.rose {
-  border-color: rgba(166, 95, 97, 0.52);
-  background: radial-gradient(circle at 50% 48%, rgba(166, 95, 97, 0.18), transparent 56%), #fff5f3;
-}
-
-.tableCenter.lily {
-  border-color: rgba(180, 154, 94, 0.48);
-  background: radial-gradient(circle at 50% 48%, rgba(255, 255, 255, 0.92), transparent 42%), #f1f5ea;
-}
-
-.tableCenter.olive {
-  border-color: rgba(80, 107, 90, 0.55);
-  background: radial-gradient(circle at 50% 48%, rgba(80, 107, 90, 0.18), transparent 54%), #f0f4ea;
-}
-
-.tableCenter.mimosa {
-  border-color: rgba(210, 164, 71, 0.56);
-  background: radial-gradient(circle at 50% 48%, rgba(232, 196, 93, 0.24), transparent 54%), #fff8dc;
-}
-
-.tableCenter strong {
-  color: var(--ink);
-  font-size: 0.82rem;
-}
-
-.tableCenter span {
-  font-size: 0.72rem;
-}
-
-.seatButton {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 54px;
-  min-height: 54px;
-  display: grid;
-  place-items: center;
-  gap: 1px;
-  padding: 4px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: #fffdfa;
-  touch-action: manipulation;
-}
-
-.roundSeatMap.inspect .seatButton {
-  border-color: rgba(80, 107, 90, 0.22);
-  background: linear-gradient(#fffdfa, #f8efe2);
-}
-
-.seatButton:disabled {
-  opacity: 1;
-}
-
-.seatButton.discovered {
-  border-color: var(--rose);
-  box-shadow: 0 0 0 3px rgba(166, 95, 97, 0.14);
-}
-
-.seatButton.missing-glass,
-.seatButton.different-napkin,
-.seatButton.pulled-chair,
-.seatButton.petals {
-  background: #fffaf0;
-}
-
-.seatLabel {
-  color: var(--muted);
-  font-size: 0.62rem;
-}
-
-.seatSetting {
-  position: relative;
-  width: 38px;
-  height: 30px;
+.p03FocusImage {
   display: block;
+  width: 100%;
+  max-height: min(72vh, 760px);
+  object-fit: contain;
+  border: 1px solid rgba(166, 120, 58, 0.34);
+  border-radius: 6px;
+  background: #fffaf0;
+  box-shadow: 0 12px 30px rgba(43, 37, 34, 0.12);
 }
 
-.plate {
-  position: absolute;
-  left: 10px;
-  top: 8px;
-  width: 18px;
-  height: 14px;
-  border: 1px solid rgba(43, 37, 34, 0.28);
-  border-radius: 50%;
-  background: #f8efe2;
-}
-
-.glass {
-  position: absolute;
-  right: 4px;
-  top: 2px;
-  width: 7px;
-  height: 15px;
-  border: 1px solid rgba(65, 93, 117, 0.6);
-  border-radius: 2px 2px 6px 6px;
-}
-
-.napkin {
-  position: absolute;
-  left: 4px;
-  bottom: 2px;
-  width: 12px;
-  height: 10px;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  background: var(--green);
-}
-
-.chair {
-  position: absolute;
-  left: 13px;
-  bottom: 0;
-  width: 12px;
-  height: 5px;
-  border-radius: 2px;
-  background: rgba(43, 37, 34, 0.48);
-}
-
-.different-napkin .napkin {
-  width: 14px;
-  clip-path: polygon(0 0, 100% 16%, 72% 100%, 12% 86%);
-  background: var(--rose);
-}
-
-.pulled-chair .chair {
-  transform: translateY(5px);
-  background: var(--rose);
-}
-
-.petal {
-  position: absolute;
-  right: 2px;
-  bottom: 5px;
-  width: 8px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--rose);
-  transform: rotate(-25deg);
+.tableFocusImage {
+  max-height: min(70vh, 680px);
 }
 
 .lockBox {
@@ -1708,9 +1526,13 @@ h3 {
   min-width: 0;
 }
 
-.lockDial span {
-  color: currentColor;
-  font-size: 0.75rem;
+.lockDialColor {
+  display: block;
+  width: 100%;
+  min-height: 12px;
+  border: 1px solid rgba(255, 250, 240, 0.52);
+  border-radius: 4px;
+  background: var(--dial-color);
 }
 
 .lockDial strong {
@@ -2571,145 +2393,108 @@ h3 {
 
 .framedPicture {
   position: relative;
-  display: grid;
-  align-content: end;
-  gap: 14px;
-  min-height: 280px;
-  padding: 22px 18px;
-  border: 10px solid #8f6b42;
+  width: min(100%, 900px);
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(166, 120, 58, 0.34);
   border-radius: 6px;
-  background: linear-gradient(180deg, #f9f3e8 0 62%, #efe2cf 63% 100%);
+  background: #2b2522;
   overflow: hidden;
-  box-shadow:
-    inset 0 0 0 2px rgba(255, 250, 240, 0.5),
-    0 10px 24px rgba(43, 37, 34, 0.14);
+  box-shadow: 0 12px 30px rgba(43, 37, 34, 0.14);
 }
 
-.pictureSky {
+.p04OverlayImage {
   position: absolute;
-  inset: 12px 18px auto;
-  height: 46%;
-  border-radius: 4px;
-  background:
-    linear-gradient(180deg, rgba(65, 93, 117, 0.1), rgba(166, 120, 58, 0.08)),
-    repeating-linear-gradient(90deg, rgba(80, 107, 90, 0.14) 0 8px, transparent 8px 18px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: #2b2522;
 }
 
-.symbolOrder {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  color: var(--ink);
-  font-size: 1.25rem;
+.p04OverlayImage.completed {
+  opacity: 0;
 }
 
-.symbolOrder span + span::before {
-  content: '→';
-  margin-right: 10px;
-  color: var(--muted);
-  font-size: 0.95rem;
+.pictureOverlayPuzzle.completed .p04OverlayImage.completed {
+  opacity: 1;
 }
 
-.pictureKeyboard {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  width: min(100%, 390px);
-  height: 116px;
-  justify-self: center;
+.pictureOverlayPuzzle.completed .p04OverlayImage.base {
+  opacity: 0;
 }
 
-.whiteKeyOutline {
-  position: relative;
-  border: 1px solid rgba(43, 37, 34, 0.55);
-  background: rgba(255, 253, 250, 0.5);
+.pictureOverlayPuzzle.justApplied .p04OverlayImage.completed {
+  animation: overlayCrossfade 260ms ease-out 520ms both;
 }
 
-.whiteKeyOutline strong {
-  position: absolute;
-  left: 50%;
-  bottom: 8px;
-  transform: translateX(-50%);
-  color: #1f1a16;
-  font-size: 0.92rem;
-  line-height: 1;
-  text-shadow: 0 1px 0 rgba(255, 250, 240, 0.72);
+.pictureOverlayPuzzle.justApplied .p04OverlayImage.base {
+  animation: baseCrossfade 260ms ease-out 520ms both;
 }
 
 .transparentSheetLayer {
   position: absolute;
-  z-index: 2;
-  left: 50%;
-  bottom: 22px;
-  width: min(calc(100% - 36px), 390px);
-  height: 116px;
-  transform: translateX(-50%);
+  z-index: 3;
+  left: 8.8%;
+  bottom: 19%;
+  width: 82.4%;
+  height: 38%;
+  transform-origin: center;
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(217, 233, 226, 0.18), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 3px;
+  background:
+    linear-gradient(120deg, rgba(255, 255, 255, 0.28), rgba(217, 233, 226, 0.08) 42%, rgba(255, 255, 255, 0.18)),
+    rgba(225, 238, 232, 0.14);
+  box-shadow: 0 18px 36px rgba(43, 37, 34, 0.2);
 }
 
 .pictureOverlayPuzzle.justApplied .transparentSheetLayer {
   animation: sheetSettle 780ms ease-out both;
 }
 
-.blackKeyLayer {
-  position: absolute;
-  inset: 0;
-}
-
-.blackKeyMark {
-  position: absolute;
-  top: 0;
-  width: 8.5%;
-  height: 58%;
-  transform: translateX(-50%);
-  border-radius: 0 0 4px 4px;
-  background: #2b2522;
-}
-
-.sheetSymbols {
-  position: absolute;
-  inset: auto 0 16px;
-}
-
-.sheetSymbols span {
-  position: absolute;
-  transform: translateX(-50%);
-  color: var(--rose);
-  font-size: 1.2rem;
-  font-weight: 700;
-  text-shadow: 0 1px 0 #fffaf0;
-}
-
-.transparentSheetPreview {
-  position: relative;
-  height: 128px;
-  border: 1px dashed rgba(65, 93, 117, 0.38);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.38);
-}
-
-.transparentSheetPreview .transparentSheetLayer {
-  bottom: 6px;
-}
-
 @keyframes sheetSettle {
   from {
-    opacity: 0.35;
-    transform: translate(-44%, -22px) rotate(-1.5deg);
+    opacity: 0;
+    transform: translate(7%, -22%) scale(0.9) rotate(-1.5deg);
+  }
+
+  70% {
+    opacity: 0.72;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+}
+
+@keyframes overlayCrossfade {
+  from {
+    opacity: 0;
   }
 
   to {
     opacity: 1;
-    transform: translateX(-50%);
+  }
+}
+
+@keyframes baseCrossfade {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pictureOverlayPuzzle.justApplied .transparentSheetLayer {
+  .pictureOverlayPuzzle.justApplied .transparentSheetLayer,
+  .pictureOverlayPuzzle.justApplied .p04OverlayImage.completed,
+  .pictureOverlayPuzzle.justApplied .p04OverlayImage.base {
     animation: none;
   }
 }
@@ -3194,37 +2979,21 @@ h3 {
     padding: 16px;
   }
 
-  .focusScene.focus-tea-table > div {
-    background:
-      linear-gradient(180deg, rgba(255, 250, 240, 0.76), rgba(255, 250, 240, 0.92)),
-      url('./assets/environments/bg-02-waiting-room.jpg') 52% 78% / 238% auto no-repeat,
-      var(--paper);
-  }
+.focusScene.focus-tea-table > div,
+.focusScene.focus-seating-chart > div,
+.focusScene[class*='focus-reception-table-'] > div {
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.76), rgba(255, 250, 240, 0.92)),
+    url('./assets/environments/bg-02-waiting-room.jpg') 52% 78% / 238% auto no-repeat,
+    var(--paper);
+}
 
   .focusScene.focus-tea-table .teaTimePuzzle {
     padding: 10px;
   }
 
-  .seatingChartGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .chartTable {
-    padding: 8px;
-  }
-
-  .roundSeatMap {
-    width: min(100%, 250px);
-  }
-
-  .seatButton {
-    width: 48px;
-    min-height: 48px;
-  }
-
-  .seatSetting {
-    width: 34px;
-    height: 27px;
+  .p03FocusImage {
+    max-height: 68vh;
   }
 
   .lockBox {
@@ -3288,28 +3057,7 @@ h3 {
   }
 
   .framedPicture {
-    min-height: 240px;
-    padding: 18px 10px;
-    border-width: 8px;
-  }
-
-  .symbolOrder {
-    gap: 6px;
-    font-size: 1.05rem;
-  }
-
-  .symbolOrder span + span::before {
-    margin-right: 6px;
-  }
-
-  .pictureKeyboard,
-  .transparentSheetLayer {
-    height: 104px;
-  }
-
-  .transparentSheetLayer {
-    bottom: 18px;
-    width: min(calc(100% - 20px), 390px);
+    width: 100%;
   }
 
   .areaNav button,

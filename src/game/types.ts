@@ -186,7 +186,6 @@ export type GameAction =
   | { type: 'LIGHT_CEREMONY_CANDLE'; candleId: string }
   | { type: 'EXAMINE_ALTAR_PHOTO' }
   | { type: 'RESET_P02_CANDLES' }
-  | { type: 'DISCOVER_RECEPTION_ANOMALY'; tableId: string; seatId: string }
   | { type: 'SET_P03_LOCK_DIGIT'; index: number; value: number }
   | { type: 'SET_P03_LOCK_INPUT'; input: number[] }
   | { type: 'OPEN_P03_BOX' }

@@ -3,9 +3,9 @@ import './App.css'
 import { areas } from './game/data/areas'
 import { altarCandleDisplaySequence, ceremonyCandles, correctCandleSequence, solvedCandleLightSequence } from './game/data/ceremonyCandles'
 import { coupleDisplayName, normalEndingText, trueEndingText, weddingDateDisplay } from './game/data/endingText'
-import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, getOverlaySymbolSequence, pianoOverlayPuzzleData, pianoReferenceMark } from './game/data/pianoOverlayPuzzle'
+import { getDerivedPianoSequence, getPhraseLength, getPlayablePianoKeys, pianoOverlayPuzzleData, pianoReferenceMark } from './game/data/pianoOverlayPuzzle'
 import { allMemoryPhotos, gardenPuzzleObjects, getGardenPuzzleObject, getMemoryPhotoByMemoryId, getP07CorrectSequence, memoryPhotos, trueMemoryPhoto } from './game/data/memoryPhotos'
-import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables, receptionTables } from './game/data/receptionTables'
+import { getReceptionLockCode, getReceptionLockDigits, getReceptionTable, receptionLockTables } from './game/data/receptionTables'
 import { getTeaDrink, teaTimePairs } from './game/data/teaTime'
 import { trueClockTarget } from './game/data/trueRoute'
 import { p06TargetTime } from './game/data/weddingSchedule'
@@ -17,6 +17,13 @@ import { canManuallyControlGrandClock, getAltarPhotoState, getMemoryCount, getPu
 import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
 import type { ClockHandKind } from './game/clock'
 import oldInvitationScheduleImage from './assets/environments/invitation-01-schedule.jpg'
+import p03ReceptionSeatingChartImage from './assets/environments/p03-reception-seating-chart.jpg'
+import p03ReceptionTableMimosaImage from './assets/environments/p03-reception-table-Mimosa.jpg'
+import p03ReceptionTableOliveImage from './assets/environments/p03-reception-table-Olive.jpg'
+import p03ReceptionTableRoseImage from './assets/environments/p03-reception-table-Rose.jpg'
+import p03ReceptionTableLilyImage from './assets/environments/p03-reception-table-lily.jpg'
+import p04OverlayBaseImage from './assets/environments/p04-overlay-base.jpg'
+import p04OverlayCompletedImage from './assets/environments/p04-overlay-completed.jpg'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
@@ -31,6 +38,13 @@ const stageMoveTargets: Partial<Record<string, AreaId>> = {
 const isReceptionTableViewHotspot = (hotspot: Hotspot) =>
   hotspot.id === 'seating-chart' || hotspot.id === 'reception-box' || hotspot.id.startsWith('reception-table-')
 const isStageMoveHotspot = (hotspot: Hotspot) => Boolean(stageMoveTargets[hotspot.id])
+const receptionTableImages: Record<string, string> = {
+  rose: p03ReceptionTableRoseImage,
+  lily: p03ReceptionTableLilyImage,
+  olive: p03ReceptionTableOliveImage,
+  mimosa: p03ReceptionTableMimosaImage,
+}
+const receptionLockDialColors = ['#eeb3ad', '#cde2ec', '#a9c49a', '#f2d77d']
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -312,7 +326,7 @@ function GameScreen({
             {focusHotspot.id === 'clock-hand-case' && <BridalClockFocus state={state} onAction={onAction} showHotspots={showHotspots} />}
             {focusHotspot.id === 'altar' && <CandleFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'seating-chart' && <SeatingChartFocus />}
-            {focusHotspot.id.startsWith('reception-table-') && <ReceptionTableFocus state={state} tableId={focusHotspot.id.replace('reception-table-', '')} onAction={onAction} />}
+            {focusHotspot.id.startsWith('reception-table-') && <ReceptionTableFocus tableId={focusHotspot.id.replace('reception-table-', '')} />}
             {focusHotspot.id === 'reception-box' && <ReceptionBoxFocus state={state} onAction={onAction} />}
             {focusHotspot.id === 'framed-picture' && <FramedPictureFocus state={state} />}
             {focusHotspot.id === 'grand-clock' && <GrandClockFocus state={state} onAction={onAction} />}
@@ -600,90 +614,28 @@ function CandleFocus({ state, onAction }: { state: GameState; onAction: (action:
 
 function SeatingChartFocus() {
   return (
-    <div className="seatingChartPuzzle">
+    <div className="receptionImagePuzzle">
       <div className="receptionHint">
         <span>Seating Chart</span>
-        <p>テーブル名とモチーフ、席ごとの数字を確認できる。</p>
+        <p>席次表で、各席の正しいイニシャルと数字を確認する。</p>
       </div>
-      <div className="seatingChartGrid">
-        {receptionTables.map((table) => (
-          <section key={table.id} className="chartTable">
-            <header>
-              <strong>{table.name}</strong>
-              <span>{table.motif}</span>
-            </header>
-            <RoundSeatMap table={table} mode="chart" />
-          </section>
-        ))}
-      </div>
+      <img className="p03FocusImage seatingChartImage" src={p03ReceptionSeatingChartImage} alt="披露宴会場の席次表" />
     </div>
   )
 }
 
-function ReceptionTableFocus({ state, tableId, onAction }: { state: GameState; tableId: string; onAction: (action: GameAction) => void }) {
+function ReceptionTableFocus({ tableId }: { tableId: string }) {
   const table = getReceptionTable(tableId)
   if (!table) return null
-  const discovered = state.receptionTables.discoveredAnomalies[table.id] === table.targetSeatId
 
   return (
-    <div className="receptionTablePuzzle">
+    <div className="receptionImagePuzzle">
       <div className="receptionHint">
-        <span>{discovered ? 'found' : 'inspect'}</span>
-        <p>{table.motif}をモチーフにした装花。ひとつだけ、他の席と違うところがある。</p>
-      </div>
-      <RoundSeatMap table={table} mode="inspect" discovered={discovered} onSeat={(seatId) => onAction({ type: 'DISCOVER_RECEPTION_ANOMALY', tableId: table.id, seatId })} />
-    </div>
-  )
-}
-
-function RoundSeatMap({
-  table,
-  mode,
-  discovered = false,
-  onSeat,
-}: {
-  table: (typeof receptionTables)[number]
-  mode: 'chart' | 'inspect'
-  discovered?: boolean
-  onSeat?: (seatId: string) => void
-}) {
-  return (
-    <div className={`roundSeatMap ${mode}`}>
-      <div className={`tableCenter ${table.id}`}>
-        <strong>{table.motifIcon}</strong>
         <span>{table.name}</span>
+        <p>{table.motif} テーブルの席札を、席次表と見比べる。</p>
       </div>
-      {table.seats.map((seat) => {
-        const isAnomaly = seat.id === table.targetSeatId
-        const showAnomaly = mode === 'inspect' && isAnomaly
-        return (
-          <button
-            key={seat.id}
-            type="button"
-            className={`seatButton ${showAnomaly ? table.anomalyType : ''} ${discovered && isAnomaly ? 'discovered' : ''}`}
-            style={{ left: `${seat.x}%`, top: `${seat.y}%` }}
-            disabled={mode === 'chart'}
-            aria-label={`${table.name} ${seat.label}${mode === 'chart' ? ` number ${seat.digit}` : ''}`}
-            onClick={() => onSeat?.(seat.id)}
-          >
-            <span className="seatLabel">{seat.label}</span>
-            {mode === 'chart' ? <strong>{seat.digit}</strong> : <SeatSetting anomalyType={showAnomaly ? table.anomalyType : undefined} />}
-          </button>
-        )
-      })}
+      <img className="p03FocusImage tableFocusImage" src={receptionTableImages[table.id]} alt={`${table.name} テーブルの席札`} />
     </div>
-  )
-}
-
-function SeatSetting({ anomalyType }: { anomalyType?: string }) {
-  return (
-    <span className={`seatSetting ${anomalyType ?? ''}`} aria-hidden="true">
-      <span className="plate" />
-      {anomalyType !== 'missing-glass' && <span className="glass" />}
-      <span className="napkin" />
-      <span className="chair" />
-      {anomalyType === 'petals' && <span className="petal" />}
-    </span>
   )
 }
 
@@ -696,10 +648,10 @@ function ReceptionBoxFocus({ state, onAction }: { state: GameState; onAction: (a
         <div className="lockDialGrid">
           {receptionLockTables.map((table, index) => (
             <div key={table.id} className="lockDial">
-              <span>{table.motif}</span>
-              <button type="button" disabled={solved} aria-label={`${table.motif} digit up`} onClick={() => onAction({ type: 'SET_P03_LOCK_DIGIT', index, value: state.receptionTables.lockInput[index] + 1 })}>+</button>
+              <span className="lockDialColor" style={{ '--dial-color': receptionLockDialColors[index] } as CSSProperties} aria-hidden="true" />
+              <button type="button" disabled={solved} aria-label={`${index + 1}桁目を上げる`} onClick={() => onAction({ type: 'SET_P03_LOCK_DIGIT', index, value: state.receptionTables.lockInput[index] + 1 })}>+</button>
               <strong>{state.receptionTables.lockInput[index]}</strong>
-              <button type="button" disabled={solved} aria-label={`${table.motif} digit down`} onClick={() => onAction({ type: 'SET_P03_LOCK_DIGIT', index, value: state.receptionTables.lockInput[index] - 1 })}>-</button>
+              <button type="button" disabled={solved} aria-label={`${index + 1}桁目を下げる`} onClick={() => onAction({ type: 'SET_P03_LOCK_DIGIT', index, value: state.receptionTables.lockInput[index] - 1 })}>-</button>
             </div>
           ))}
         </div>
@@ -727,48 +679,16 @@ function FramedPictureFocus({ state }: { state: GameState }) {
         <p>{completed ? '紙の模様が、絵の上にぴたりと重なっている。' : '白い鍵盤の輪郭と、小さな記号の列が描かれている。'}</p>
       </div>
       <div className="framedPicture" aria-label={completed ? '完成した絵' : '未完成の絵'}>
-        <div className="pictureSky" aria-hidden="true" />
-        <div className="symbolOrder" aria-label="絵に描かれた記号の順番">
-          {getOverlaySymbolSequence().map((symbol, index) => (
-            <span key={`${symbol}-${index}`}>{symbol}</span>
-          ))}
-        </div>
-        <KeyboardBaseLayer />
-        {completed && <TransparentSheetLayer />}
+        <img className="p04OverlayImage base" src={p04OverlayBaseImage} alt="" aria-hidden="true" />
+        <img className="p04OverlayImage completed" src={p04OverlayCompletedImage} alt="" aria-hidden={!completed} />
+        {justApplied && <TransparentSheetLayer />}
       </div>
-    </div>
-  )
-}
-
-function KeyboardBaseLayer() {
-  return (
-    <div className="pictureKeyboard base">
-      {Array.from({ length: pianoOverlayPuzzleData.whiteKeyCount }, (_, index) => (
-        <span key={index} className="whiteKeyOutline">
-          {index === pianoOverlayPuzzleData.cReferenceKeyIndex && <strong aria-label="基準点">{pianoReferenceMark}</strong>}
-        </span>
-      ))}
     </div>
   )
 }
 
 function TransparentSheetLayer() {
-  return (
-    <div className="transparentSheetLayer">
-      <div className="blackKeyLayer" aria-hidden="true">
-        {pianoOverlayPuzzleData.blackKeyPositions.map((position) => (
-          <span key={position} className="blackKeyMark" style={{ left: `${((position + 1) / pianoOverlayPuzzleData.whiteKeyCount) * 100}%` }} />
-        ))}
-      </div>
-      <div className="sheetSymbols">
-        {pianoOverlayPuzzleData.symbols.map((symbol) => (
-          <span key={symbol.id} style={{ left: `${((symbol.keyIndex + 0.5) / pianoOverlayPuzzleData.whiteKeyCount) * 100}%` }}>
-            {symbol.symbol}
-          </span>
-        ))}
-      </div>
-    </div>
-  )
+  return <div className="transparentSheetLayer" aria-hidden="true" />
 }
 
 function OldInvitationFocus() {
@@ -1407,7 +1327,6 @@ function DebugPanel({ state, showHotspots, onToggleHotspots, onAction }: { state
         <button type="button" onClick={() => onAction({ type: 'SET_FLAG', flagId: 'gardenUnlocked', value: true })}>Garden unlock</button>
       </DebugGroup>
       <DebugGroup title="P03 Reception">
-        <button type="button" onClick={() => receptionTables.forEach((table) => onAction({ type: 'DISCOVER_RECEPTION_ANOMALY', tableId: table.id, seatId: table.targetSeatId }))}>Discover all anomalies</button>
         <button type="button" onClick={() => onAction({ type: 'SET_P03_LOCK_INPUT', input: getReceptionLockDigits() })}>Set lock {getReceptionLockCode()}</button>
         <button type="button" onClick={() => onAction({ type: 'OPEN_P03_BOX' })}>Open / Solve P03</button>
         <button type="button" onClick={() => onAction({ type: 'RESET_P03_RECEPTION' })}>Reset P03</button>

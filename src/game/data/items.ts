@@ -10,6 +10,15 @@ export const createItems = (): Record<string, Item> => ({
     obtained: false,
     consumed: false,
   },
+  'ceremony-door-key': {
+    itemId: 'ceremony-door-key',
+    name: '扉の鍵',
+    description: '挙式会場の扉を開けるための古い鍵。',
+    image: 'placeholder-item-door-key',
+    usableTargets: ['ceremony-door'],
+    obtained: false,
+    consumed: false,
+  },
   'transparent-card': {
     itemId: 'transparent-card',
     name: '半透明の紙',

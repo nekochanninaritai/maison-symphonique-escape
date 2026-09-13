@@ -128,12 +128,13 @@ export const areas: Record<string, Area> = {
         position: { x: 2, y: 91, width: 27, height: 8 },
         message: ['エントランスへ戻れる。'],
         },
-        {
-            id: 'waiting-room-to--ceremony',
-            label: '挙式会場',
-            position: { x: 69, y: 91, width: 27, height: 8 },
-            message: ['挙式会場に進める。'],
-        },
+      {
+        id: 'waiting-room-to-ceremony',
+        label: '挙式会場',
+        position: { x: 69, y: 91, width: 27, height: 8 },
+        visibilityCondition: (state) => state.flags.ceremonyUnlocked === true,
+        message: ['挙式会場に進める。'],
+      },
     ],
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
@@ -185,7 +186,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'virgin-road',
         label: 'バージンロード',
-        position: { x: 39, y: 54, width: 23, height: 36 },
+        position: { x: 39, y: 58, width: 23, height: 36 },
         message: ['祭壇へ向かって、まっすぐバージンロードが伸びている。'],
       },
       {
@@ -197,7 +198,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'altar',
         label: '祭壇',
-        position: { x: 35, y: 43, width: 30, height: 18 },
+        position: { x: 35, y: 40, width: 30, height: 18 },
         focusScene: {
           id: 'focus-altar',
           title: '祭壇',
@@ -225,10 +226,17 @@ export const areas: Record<string, Area> = {
         flagUpdate: { smallKeyObtained: true },
       },
       {
-        id: 'ceremony-to-entrance',
-        label: 'エントランスに戻る',
+          id: 'ceremony-to-waiting-room',
+        label: '待合室',
         position: { x: 2, y: 91, width: 27, height: 8 },
-        message: ['エントランスへ戻れる。'],
+        message: ['待合室へ戻れる。'],
+        },
+        {
+            id: 'ceremony-to-reception',
+            label: '披露宴会場',
+            position: { x: 69, y: 91, width: 27, height: 8 },
+            visibilityCondition: (state) => state.flags.receptionUnlocked === true,
+            message: ['披露宴会場に進める。'],
         },
     ],
     exits: [
@@ -245,12 +253,37 @@ export const areas: Record<string, Area> = {
     unlockCondition: (state) => state.flags.receptionUnlocked === true || state.worldMode === 'memory',
     hotspots: [
       {
+        id: 'reception-view-high-tables',
+        label: '高砂',
+        position: { x: 53, y: 40, width: 25, height: 10 },
+        message: ['高砂周辺へ近づける。'],
+      },
+      {
+        id: 'reception-view-tables-right',
+        label: 'テーブル周辺右',
+        position: { x: 78, y: 40, width: 20, height: 50 },
+        message: ['テーブル周辺右へ近づける。'],
+      },
+      {
+        id: 'reception-view-tables',
+        label: 'テーブル周辺左',
+        position: { x: 5, y: 50, width: 51, height: 30 },
+        message: ['テーブル周辺へ近づける。'],
+      },
+      {
+        id: 'reception-view-piano-area',
+        label: 'ピアノのある方',
+        position: { x: 5, y: 30, width: 28, height: 20 },
+        message: ['ピアノのある方へ近づける。'],
+      },
+      {
         id: 'seating-chart',
         label: '席次表',
-        position: { x: 2, y: 40, width: 17, height: 22 },
+        position: { x: 57, y: 55, width: 20, height: 33 },
         focusScene: {
           id: 'focus-seating-chart',
-          title: '席次表',
+            title: '席次表',
+
           description: '四つの長テーブルの席次と、各イニシャルに対応する数字が記されている。',
         },
         message: ['入口の近くに、披露宴の席次表が立てられている。'],
@@ -269,7 +302,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'reception-box',
         label: 'ロック付きの箱',
-        position: { x: 36, y: 42, width: 13, height: 15 },
+        position: { x: 35, y: 57, width: 30, height: 15 },
         focusScene: {
           id: 'focus-reception-box',
           title: 'ロック付きの箱',
@@ -283,7 +316,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'piano',
         label: 'ピアノ',
-        position: { x: 38, y: 35, width: 29, height: 29 },
+        position: { x: 20, y: 35, width: 40, height: 29 },
         focusScene: {
           id: 'focus-piano',
           title: 'ピアノ',
@@ -304,6 +337,13 @@ export const areas: Record<string, Area> = {
         label: '挙式会場に戻る',
         position: { x: 2, y: 91, width: 28, height: 8 },
         message: ['挙式会場へ戻れる。'],
+      },
+      {
+        id: 'reception-to-garden',
+        label: '広場',
+        position: { x: 69, y: 91, width: 27, height: 8 },
+        visibilityCondition: (state) => state.flags.gardenUnlocked === true || state.worldMode === 'memory',
+        message: ['広場に進める。'],
       },
     ],
     exits: [

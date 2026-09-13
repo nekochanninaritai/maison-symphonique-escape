@@ -9,6 +9,7 @@ import {
   getMemoryCount,
   getPianoSequenceForP05,
   getTeaDrawerState,
+  getVisibleHotspots,
   isP06ClockActive,
   isNearTrueRouteTime,
   lightCeremonyCandle,
@@ -321,11 +322,21 @@ describe('PuzzleState', () => {
   it('keeps the new background move hotspots in the intended rooms', () => {
     expect(areas.entrance.hotspots.find((hotspot) => hotspot.id === 'entrance-to-waiting')?.label).toBe('待合室へ')
     expect(areas['dressing-room'].hotspots.find((hotspot) => hotspot.id === 'dressing-to-entrance')?.label).toBe('エントランスに戻る')
-    expect(areas.ceremony.hotspots.find((hotspot) => hotspot.id === 'ceremony-to-entrance')?.label).toBe('エントランスに戻る')
+    expect(areas.ceremony.hotspots.find((hotspot) => hotspot.id === 'ceremony-to-waiting-room')?.label).toBe('待合室')
     expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-to-ceremony')?.label).toBe('挙式会場に戻る')
     expect(areas.reception.hotspots.some((hotspot) => hotspot.id === 'reception-to-waiting')).toBe(false)
     expect(areas.reception.exits.some((exit) => exit.to === 'ceremony')).toBe(false)
     expect(areas.reception.exits.some((exit) => exit.to === 'waiting-room')).toBe(false)
+  })
+
+  it('defines Reception view hotspots in area data', () => {
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-view-high-tables')?.position).toEqual({ x: 53, y: 40, width: 25, height: 10 })
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-view-tables-right')?.position).toEqual({ x: 78, y: 40, width: 20, height: 50 })
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-view-tables')?.position).toEqual({ x: 5, y: 50, width: 51, height: 30 })
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-view-piano-area')?.position).toEqual({ x: 5, y: 30, width: 28, height: 20 })
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'seating-chart')?.position).toEqual({ x: 57, y: 55, width: 20, height: 33 })
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-table-mimosa')?.position).toEqual({ x: 5, y: 43, width: 85, height: 28 })
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-box')?.position).toEqual({ x: 35, y: 57, width: 30, height: 15 })
   })
 
   it('keeps old vase hotspots out of the real-photo Ceremony Main', () => {
@@ -560,6 +571,7 @@ describe('PuzzleState', () => {
     expect(state.flags.ceremonyUnlocked).toBe(true)
     expect(state.inventory['ceremony-door-key'].obtained).toBe(false)
     expect(state.inventory['ceremony-door-key'].consumed).toBe(true)
+    expect(getVisibleHotspots(state, 'waiting-room').find((hotspot) => hotspot.id === 'waiting-room-to-ceremony')?.label).toBe('挙式会場')
     expect(state.clockState.currentTime).toBe('11:00')
 
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
@@ -568,6 +580,22 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('12:00')
     expect(state.flags.grandClockStarted).not.toBe(true)
     expect(state.flags.receptionUnlocked).not.toBe(true)
+  })
+
+  it('shows the Ceremony stage hotspot only after the door is unlocked', () => {
+    let state = createInitialState()
+    state = reducer(state, { type: 'MOVE', areaId: 'waiting-room' })
+
+    expect(getVisibleHotspots(state).some((hotspot) => hotspot.id === 'waiting-room-to-ceremony')).toBe(false)
+
+    state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
+
+    expect(getVisibleHotspots(state).some((hotspot) => hotspot.id === 'waiting-room-to-ceremony')).toBe(true)
+    state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
+    expect(state.currentArea).toBe('ceremony')
   })
 
   it('re-entering Ceremony does not rewind a later clock time', () => {

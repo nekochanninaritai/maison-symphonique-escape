@@ -63,7 +63,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'K.K の席札が紛れている。本来は I.S、席次表の数字は 2。',
     targetSeatId: 'seat-1',
     lockOrder: 1,
-    position: { x: 12, y: 61, width: 25, height: 25 },
+    position: { x: 10, y: 35, width: 60, height: 10 },
     seats: createInitialSeats(['I.S', 'I.H', 'O.K', 'Y.M', 'H.Y', 'S.Y', 'I.H'], [2, 8, 1, 7, 4, 9, 6], { seat: 1, initial: 'K.K' }),
   },
   {
@@ -77,7 +77,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'G.G の席札が紛れている。本来は T.M、席次表の数字は 1。',
     targetSeatId: 'seat-6',
     lockOrder: 2,
-    position: { x: 37, y: 39, width: 22, height: 21 },
+    position: { x: 20, y: 47, width: 60, height: 10 },
     seats: createInitialSeats(['E.Y', 'F.K', 'Y.S', 'N.K', 'M.T', 'T.M', 'H.Y'], [5, 0, 3, 8, 7, 1, 4], { seat: 6, initial: 'G.G' }),
   },
   {
@@ -91,7 +91,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'W.W の席札が紛れている。本来は S.R、席次表の数字は 9。',
     targetSeatId: 'seat-3',
     lockOrder: 3,
-    position: { x: 65, y: 56, width: 24, height: 24 },
+    position: { x: 50, y: 58, width: 50, height: 24 },
     seats: createInitialSeats(['S.Y', 'S.Y', 'S.R', 'A.K', 'K.M', 'H.H', 'H.K', 'N.Y'], [6, 2, 9, 4, 0, 5, 3, 8], { seat: 3, initial: 'W.W' }),
   },
   {
@@ -105,7 +105,7 @@ export const receptionTables: ReceptionTablePuzzleData[] = [
     anomalyDescription: 'G.J の席札が紛れている。本来は Y.M、席次表の数字は 7。',
     targetSeatId: 'seat-2',
     lockOrder: 4,
-    position: { x: 78, y: 64, width: 18, height: 20 },
+    position: { x: 5, y: 43, width: 85, height: 28 },
     seats: createInitialSeats(['K.S', 'Y.M', 'T.A', 'Y.Y', 'Y.M'], [1, 7, 4, 3, 8], { seat: 2, initial: 'G.J' }),
   },
 ]

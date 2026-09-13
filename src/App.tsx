@@ -26,25 +26,49 @@ import p04OverlayBaseImage from './assets/environments/p04-overlay-base.jpg'
 import p04OverlayCompletedImage from './assets/environments/p04-overlay-completed.jpg'
 import drawerClosedImage from './assets/environments/drawer-closed.jpg'
 import drawerOpenImage from './assets/environments/drawer-open.jpg'
+import photoAImage from './assets/environments/photoA.jpg'
+import photoBImage from './assets/environments/photoB.jpg'
+import photoCImage from './assets/environments/photoC.jpg'
+import photoDImage from './assets/environments/photoD.jpg'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
-type ReceptionView = 'main' | 'tables' | 'piano-area' | 'piano-focus'
+type ReceptionView = 'main' | 'tables' | 'tables-right' | 'high-tables' | 'piano-area'
 const stageMoveTargets: Partial<Record<string, AreaId>> = {
   'entrance-to-waiting': 'waiting-room',
+  'waiting-room-to-entrance': 'entrance',
+  'waiting-room-to-ceremony': 'ceremony',
   'dressing-to-entrance': 'entrance',
-  'ceremony-to-entrance': 'entrance',
+    'ceremony-to-waiting-room': 'waiting-room',
+  'ceremony-to-reception': 'reception',
   'reception-to-ceremony': 'ceremony',
+  'reception-to-garden': 'garden',
+}
+const receptionViewTargets: Partial<Record<string, ReceptionView>> = {
+  'reception-view-tables': 'tables',
+  'reception-view-tables-right': 'tables-right',
+  'reception-view-high-tables': 'high-tables',
+  'reception-view-piano-area': 'piano-area',
 }
 
 const isReceptionTableViewHotspot = (hotspot: Hotspot) =>
-  hotspot.id === 'seating-chart' || hotspot.id === 'reception-box' || hotspot.id.startsWith('reception-table-')
+  hotspot.id.startsWith('reception-table-') && hotspot.id !== 'reception-table-mimosa'
+const isReceptionTableRightViewHotspot = (hotspot: Hotspot) =>
+  hotspot.id === 'reception-table-mimosa'
+const isReceptionHighTablesViewHotspot = (hotspot: Hotspot) =>
+  hotspot.id === 'reception-box'
 const isStageMoveHotspot = (hotspot: Hotspot) => Boolean(stageMoveTargets[hotspot.id])
 const receptionTableImages: Record<string, string> = {
   rose: p03ReceptionTableRoseImage,
   lily: p03ReceptionTableLilyImage,
   olive: p03ReceptionTableOliveImage,
   mimosa: p03ReceptionTableMimosaImage,
+}
+const memoryPhotoImages: Record<string, string> = {
+  tea: photoAImage,
+  vow: photoBImage,
+  banquet: photoCImage,
+  melody: photoDImage,
 }
 const receptionLockDialColors = ['#eeb3ad', '#cde2ec', '#a9c49a', '#f2d77d']
 
@@ -172,13 +196,24 @@ function GameScreen({
   const selectedItem = state.selectedItemId ? state.inventory[state.selectedItemId] : null
   const displayedHotspots = useMemo(() => {
     if (!isReception) return visibleHotspots
-    if (receptionView === 'main') return visibleHotspots.filter(isStageMoveHotspot)
+    if (receptionView === 'main') return visibleHotspots.filter((hotspot) => hotspot.id === 'seating-chart' || isStageMoveHotspot(hotspot) || Boolean(receptionViewTargets[hotspot.id]))
     if (receptionView === 'tables') return visibleHotspots.filter(isReceptionTableViewHotspot)
+    if (receptionView === 'tables-right') return visibleHotspots.filter(isReceptionTableRightViewHotspot)
+    if (receptionView === 'high-tables') return visibleHotspots.filter(isReceptionHighTablesViewHotspot)
     if (receptionView === 'piano-area') return visibleHotspots.filter((hotspot) => hotspot.id === 'piano')
     return []
   }, [isReception, receptionView, visibleHotspots])
-  const receptionViewLabel = receptionView === 'tables' ? 'テーブル周辺' : receptionView === 'piano-area' ? 'ピアノのある方' : receptionView === 'piano-focus' ? 'ピアノ' : '披露宴会場'
-  const isReceptionPianoFocus = isReception && receptionView === 'piano-focus'
+  const receptionViewLabel =
+    receptionView === 'tables'
+      ? 'テーブル周辺'
+      : receptionView === 'tables-right'
+        ? 'テーブル周辺右'
+        : receptionView === 'high-tables'
+          ? '高砂'
+          : receptionView === 'piano-area'
+            ? 'ピアノのある方'
+            : '披露宴会場'
+  const isReceptionPianoFocus = isReception && receptionView === 'piano-area' && activeFocus === 'focus-piano'
 
   useEffect(() => {
     if (!isReception && receptionView !== 'main') {
@@ -212,40 +247,20 @@ function GameScreen({
       >
         <div className="stageVignette" aria-hidden="true" />
         {currentArea.areaId === 'garden' && <GardenStageLayer state={state} />}
-        {isReception && receptionView === 'main' && (
-          <>
-            <button
-              type="button"
-              className={`receptionNavHotspot receptionNavHotspotTables ${showHotspots ? 'visible' : ''}`}
-              aria-label="披露宴テーブル周辺へ近づく"
-              onClick={() => changeReceptionView('tables')}
-            >
-              {showHotspots && 'テーブル周辺'}
-            </button>
-            <button
-              type="button"
-              className={`receptionNavHotspot receptionNavHotspotPiano ${showHotspots ? 'visible' : ''}`}
-              aria-label="ピアノのある方へ近づく"
-              onClick={() => changeReceptionView('piano-area')}
-            >
-              {showHotspots && 'ピアノのある方'}
-            </button>
-          </>
-        )}
         {isReception && receptionView !== 'main' && (
           <button
             type="button"
             className="receptionBackButton"
-            onClick={() => changeReceptionView(receptionView === 'piano-focus' ? 'piano-area' : 'main')}
+            onClick={() => changeReceptionView('main')}
           >
-            {receptionView === 'piano-focus' ? 'ピアノのある方へ戻る' : '披露宴会場へ戻る'}
+            披露宴会場へ戻る
           </button>
         )}
         {displayedHotspots.map((hotspot) => (
           <button
             key={hotspot.id}
             type="button"
-            className={`hotspot ${isStageMoveHotspot(hotspot) ? 'stageMoveHotspot' : ''} ${showHotspots ? 'visible' : ''}`}
+            className={`hotspot hotspot-${hotspot.id} ${isStageMoveHotspot(hotspot) ? 'stageMoveHotspot' : ''} ${showHotspots ? 'visible' : ''}`}
             style={{
               left: `${hotspot.position.x}%`,
               top: `${hotspot.position.y}%`,
@@ -254,6 +269,11 @@ function GameScreen({
             }}
             aria-label={hotspot.label}
             onClick={() => {
+              const nextReceptionView = receptionViewTargets[hotspot.id]
+              if (isReception && nextReceptionView) {
+                changeReceptionView(nextReceptionView)
+                return
+              }
               const moveTarget = stageMoveTargets[hotspot.id]
               if (moveTarget) {
                 onFocus(null)
@@ -266,7 +286,7 @@ function GameScreen({
               }
               if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
                 onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
-                changeReceptionView('piano-focus')
+                if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
                 return
               }
               if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {
@@ -281,22 +301,9 @@ function GameScreen({
             {(showHotspots || isStageMoveHotspot(hotspot)) && hotspot.label}
           </button>
         ))}
-        {isReceptionPianoFocus && (
-          <button
-            type="button"
-            className={`pianoFocusHotspot ${showHotspots ? 'visible' : ''}`}
-            aria-label="ピアノを調べる"
-            onClick={() => {
-              onAction({ type: 'EXAMINE', hotspotId: 'piano' })
-              onFocus('focus-piano')
-            }}
-          >
-            {showHotspots && 'ピアノ'}
-          </button>
-        )}
       </div>
 
-      {isReceptionPianoFocus && activeFocus === 'focus-piano' && (
+      {isReceptionPianoFocus && (
         <div className="pianoPuzzleOverlay" role="dialog" aria-modal="true">
           <div>
             <PianoFocus state={state} onAction={onAction} startOpen />
@@ -738,37 +745,15 @@ function PhotoFocus({ memoryId }: { memoryId: string }) {
   }
   const object = photo?.gardenObjectId ? getGardenPuzzleObject(photo.gardenObjectId) : undefined
   if (!photo || !object) return <p>写真はまだ見つかっていない。</p>
+  const photoImage = memoryPhotoImages[photo.memoryId]
 
   return (
     <div className="photoFocus">
       <h3>{photo.title}</h3>
       <div className={`oldPhotoComposition ${object.id} ${photo.id}`}>
-        <div className="photoRoom">
-          {photo.sceneElements.map((element) => <span key={element}>{element}</span>)}
-        </div>
-        <div className={`photoGardenObject ${object.id}`} aria-label={object.name}>
-          <span className="photoObjectIcon" aria-hidden="true" />
-          <span>{object.name}</span>
-          <small>{object.photoFeature}</small>
-        </div>
-        {photo.clockTime && <PhotoClock time={photo.clockTime} />}
+        <img className="oldPhotoImage" src={photoImage} alt={`${photo.title} ${photo.sourceArea}で見つけた古い写真`} />
       </div>
       <p>{photo.sourceArea}で見つけた古い写真。庭のものらしい装飾と、小さな時計が写っている。</p>
-    </div>
-  )
-}
-
-function PhotoClock({ time }: { time: string }) {
-  const minuteDeg = minuteHandAngleFromTime(time)
-  const hourDeg = hourHandAngleFromTime(time)
-
-  return (
-    <div className="photoClock" aria-label={`写真に写った時計 ${time}`}>
-      <span className="photoClockDial" aria-hidden="true">
-        <i className="clockHand hour" style={{ transform: `rotate(${hourDeg}deg)` }} />
-        <i className="clockHand minute" style={{ transform: `rotate(${minuteDeg}deg)` }} />
-      </span>
-      <span>{time}</span>
     </div>
   )
 }

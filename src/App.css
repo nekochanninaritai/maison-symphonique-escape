@@ -369,7 +369,19 @@ h3 {
 
 .stage.scene-reception.receptionView-tables,
 .stage.scene-reception-memory.receptionView-tables {
-  background-image: url('./assets/environments/reception-table-focus.jpg');
+  background-image: url('./assets/environments/reception-table-focus_left.jpg');
+  background-position: 50% 48%;
+}
+
+.stage.scene-reception.receptionView-tables-right,
+.stage.scene-reception-memory.receptionView-tables-right {
+  background-image: url('./assets/environments/reception-table-focus_right.jpg');
+  background-position: 50% 48%;
+}
+
+.stage.scene-reception.receptionView-high-tables,
+.stage.scene-reception-memory.receptionView-high-tables {
+  background-image: url('./assets/environments/p03-sweetheart-table.jpg');
   background-position: 50% 48%;
 }
 
@@ -379,46 +391,10 @@ h3 {
   background-position: 50% 50%;
 }
 
-.stage.scene-reception.receptionView-piano-focus,
-.stage.scene-reception-memory.receptionView-piano-focus {
-  min-height: clamp(620px, 78svh, 780px);
-  background-image: url('./assets/environments/piano-01-focus.jpg');
-  background-position: 50% 50%;
-}
-
-.receptionNavHotspot,
 .receptionBackButton {
   position: absolute;
   z-index: 4;
   touch-action: manipulation;
-}
-
-.receptionNavHotspot {
-  border: 0;
-  border-radius: 12px;
-  background: transparent;
-  color: transparent;
-}
-
-.receptionNavHotspot.visible {
-  border: 2px dashed #d34848;
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-  text-shadow: 0 1px 6px #000;
-}
-
-.receptionNavHotspotTables {
-  left: 10%;
-  top: 42%;
-  width: 58%;
-  height: 48%;
-}
-
-.receptionNavHotspotPiano {
-  left: 16%;
-  top: 26%;
-  width: 28%;
-  height: 20%;
 }
 
 .receptionBackButton {
@@ -430,27 +406,6 @@ h3 {
   background: rgba(43, 37, 34, 0.62);
   color: #fffaf0;
   box-shadow: 0 10px 24px rgba(28, 24, 23, 0.26);
-}
-
-.pianoFocusHotspot {
-  position: absolute;
-  z-index: 3;
-  left: 24%;
-  top: 34%;
-  width: 48%;
-  height: 38%;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
-  color: transparent;
-  touch-action: manipulation;
-}
-
-.pianoFocusHotspot.visible {
-  border: 2px dashed #d34848;
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-  text-shadow: 0 1px 6px #000;
 }
 
 .pianoPuzzleOverlay {
@@ -601,6 +556,40 @@ h3 {
 .hotspot.stageMoveHotspot.visible {
   border: 2px dashed #d34848;
   background: rgba(43, 37, 34, 0.48);
+}
+
+.hotspot.hotspot-ceremony-light {
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 238, 178, 0.54), rgba(255, 233, 166, 0.2) 42%, rgba(255, 233, 166, 0.04) 68%, transparent 78%);
+  box-shadow:
+    0 0 22px rgba(255, 233, 166, 0.62),
+    0 0 46px rgba(255, 238, 178, 0.32);
+  animation: ceremonyLightGlow 1800ms ease-in-out infinite;
+}
+
+.hotspot.hotspot-ceremony-light::before,
+.hotspot.hotspot-ceremony-light::after {
+  content: '';
+  position: absolute;
+  inset: 16%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.hotspot.hotspot-ceremony-light::before {
+  background: radial-gradient(circle, rgba(255, 250, 226, 0.72), rgba(255, 238, 178, 0.18) 46%, transparent 68%);
+  animation: altarSolvedCandleLight 900ms ease-out both;
+}
+
+.hotspot.hotspot-ceremony-light::after {
+  inset: 28%;
+  background: rgba(255, 250, 226, 0.72);
+  box-shadow: 0 0 18px rgba(255, 250, 226, 0.76);
+  opacity: 0.64;
+}
+
+.hotspot.hotspot-ceremony-light.visible {
+  background: radial-gradient(circle, rgba(255, 238, 178, 0.54), rgba(255, 233, 166, 0.2) 42%, rgba(255, 233, 166, 0.04) 68%, transparent 78%);
 }
 
 .focusScene {
@@ -1366,6 +1355,19 @@ h3 {
   }
 }
 
+@keyframes ceremonyLightGlow {
+  0%,
+  100% {
+    filter: brightness(0.94);
+    transform: scale(0.96);
+  }
+
+  50% {
+    filter: brightness(1.16);
+    transform: scale(1.04);
+  }
+}
+
 .candleInput {
   display: flex;
   justify-content: center;
@@ -1551,7 +1553,7 @@ h3 {
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(43, 37, 34, 0.02), rgba(43, 37, 34, 0.32)),
-    url('./assets/environments/piano-01-focus.jpg') center 55% / cover no-repeat,
+    url('./assets/environments/reception-piano-area.jpg') center 55% / cover no-repeat,
     #6b4532;
   overflow: hidden;
 }
@@ -1584,7 +1586,7 @@ h3 {
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(43, 37, 34, 0.08), rgba(43, 37, 34, 0.56)),
-    url('./assets/environments/piano-01-focus.jpg') center 56% / cover no-repeat,
+    url('./assets/environments/reception-piano-area.jpg') center 56% / cover no-repeat,
     radial-gradient(ellipse at 32% 18%, rgba(255, 250, 240, 0.14), transparent 26%),
     linear-gradient(115deg, transparent 0 16%, rgba(255, 250, 240, 0.06) 16% 17%, transparent 17% 100%),
     linear-gradient(180deg, rgba(43, 37, 34, 0.12), transparent 45%),
@@ -1829,6 +1831,17 @@ h3 {
   inset: 0;
   pointer-events: none;
   background: linear-gradient(135deg, rgba(255,255,255,0.18), transparent 44%, rgba(77,58,38,0.14));
+}
+
+.oldPhotoImage {
+  display: block;
+  position: relative;
+  z-index: 0;
+  width: 100%;
+  height: auto;
+  max-height: min(62vh, 560px);
+  object-fit: contain;
+  border-radius: 2px;
 }
 
 .photoRoom {
@@ -2875,29 +2888,16 @@ h3 {
     background-position: 50% 38%;
   }
 
+  .stage.scene-reception.receptionView-tables-right,
+  .stage.scene-reception-memory.receptionView-tables-right,
+  .stage.scene-reception.receptionView-high-tables,
+  .stage.scene-reception-memory.receptionView-high-tables {
+    background-position: 50% 48%;
+  }
+
   .stage.scene-reception.receptionView-piano-area,
   .stage.scene-reception-memory.receptionView-piano-area {
     background-position: 48% 50%;
-  }
-
-  .stage.scene-reception.receptionView-piano-focus,
-  .stage.scene-reception-memory.receptionView-piano-focus {
-    min-height: min(76svh, 690px);
-    background-position: 50% 50%;
-  }
-
-  .receptionNavHotspotTables {
-    left: 7%;
-    top: 44%;
-    width: 68%;
-    height: 44%;
-  }
-
-  .receptionNavHotspotPiano {
-    left: 13%;
-    top: 28%;
-    width: 36%;
-    height: 20%;
   }
 
   .receptionBackButton {
@@ -2906,13 +2906,6 @@ h3 {
     min-height: 40px;
     padding: 7px 11px;
     font-size: 0.82rem;
-  }
-
-  .pianoFocusHotspot {
-    left: 16%;
-    top: 35%;
-    width: 58%;
-    height: 39%;
   }
 
   .pianoPuzzleOverlay {

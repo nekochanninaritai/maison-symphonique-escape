@@ -1114,7 +1114,7 @@ h3 {
 
 .teaDrawer {
   display: grid;
-  grid-template-columns: 86px 1fr;
+  grid-template-columns: 96px 1fr;
   align-items: center;
   gap: 12px;
   min-height: 64px;
@@ -1123,44 +1123,19 @@ h3 {
 }
 
 .drawerFace {
-  position: relative;
   display: block;
-  width: 86px;
-  height: 38px;
-  border: 2px solid rgba(80, 107, 90, 0.38);
-  border-radius: 4px;
-  background: linear-gradient(#e8d5b5, #c99e69);
-  box-shadow: inset 0 -8px 0 rgba(68, 49, 32, 0.08);
+  width: 96px;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #c99e69;
 }
 
-.teaDrawer.open-with-photo .drawerFace,
-.teaDrawer.open-empty .drawerFace {
-  transform: translateY(7px);
-  background: linear-gradient(#d6ad76 0 34%, #7a5635 34% 100%);
-}
-
-.teaDrawer.open-with-photo .drawerFace::after {
-  content: '';
-  position: absolute;
-  right: 12px;
-  bottom: 6px;
-  width: 28px;
-  height: 20px;
-  border: 1px solid rgba(43, 37, 34, 0.32);
-  border-radius: 2px;
-  background: #f5ead5;
-  transform: rotate(-5deg);
-}
-
-.drawerKnob {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--gold);
-  transform: translate(-50%, -50%);
+.drawerFace img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .teaDrawer strong,

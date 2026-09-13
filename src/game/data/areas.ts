@@ -14,7 +14,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'grand-clock',
         label: '古い大時計',
-        position: { x: 8, y: 29, width: 12, height: 41 },
+        position: { x: 14, y: 29, width: 12, height: 41 },
         useTarget: 'grand-clock',
         focusScene: {
           id: 'focus-grand-clock',
@@ -43,15 +43,21 @@ export const areas: Record<string, Area> = {
       {
         id: 'entrance-left-space',
         label: '左奥へ',
-        position: { x: 0, y: 18, width: 8, height: 44 },
+        position: { x: 0, y: 18, width: 12, height: 44 },
         message: ['左側に、奥へ続く空間がある。'],
       },
       {
         id: 'entrance-desk',
         label: '受付台',
-        position: { x: 33, y: 59, width: 39, height: 23 },
+        position: { x: 45, y: 60, width: 39, height: 25 },
         message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
+      },
+      {
+        id: 'entrance-kitchen',
+        label: 'キッチン',
+        position: { x: 40, y: 22, width: 45, height: 25 },
+        message: ['グラスや食器がきれいに並んでいる。特に変わったものはなさそうだ。'],
       },
       {
         id: 'entrance-to-waiting',
@@ -72,13 +78,13 @@ export const areas: Record<string, Area> = {
       {
         id: 'waiting-sofa',
         label: 'ソファ',
-        position: { x: 37, y: 42, width: 54, height: 20 },
+        position: { x: 37, y: 40, width: 60, height: 18 },
         message: ['誰かを待っていた温度だけが、布地に残っている。'],
       },
       {
         id: 'tea-table',
         label: 'ティーテーブル',
-        position: { x: 31, y: 54, width: 45, height: 34 },
+        position: { x: 45, y: 58, width: 50, height: 26 },
         focusScene: {
           id: 'focus-tea-time',
           title: 'Puzzle 01「ティータイム」',
@@ -92,7 +98,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'framed-picture',
         label: '額装された未完成の絵',
-        position: { x: 1, y: 10, width: 35, height: 22 },
+        position: { x: 3, y: 7, width: 35, height: 20 },
         useTarget: 'framed-picture',
         focusScene: {
           id: 'focus-framed-picture',
@@ -107,12 +113,27 @@ export const areas: Record<string, Area> = {
       {
         id: 'ceremony-door',
         label: '挙式会場の扉',
-        position: { x: 40, y: 18, width: 28, height: 27 },
+        position: { x: 60, y: 6, width: 28, height: 28 },
+        useTarget: 'ceremony-door',
         message: (state) =>
           state.flags.ceremonyUnlocked === true
             ? ['挙式会場へ続く扉が、少し開いている。']
-            : ['挙式会場へ続く扉は、まだ開きそうにない。'],
+            : state.inventory['ceremony-door-key']?.obtained
+              ? ['挙式会場へ続く扉は閉ざされている。', '手元の鍵なら開けられそうだ。']
+              : ['挙式会場へ続く扉は、まだ開きそうにない。'],
       },
+      {
+        id: 'waiting-room-to-entrance',
+        label: 'エントランスに戻る',
+        position: { x: 2, y: 91, width: 27, height: 8 },
+        message: ['エントランスへ戻れる。'],
+        },
+        {
+            id: 'waiting-room-to--ceremony',
+            label: '挙式会場',
+            position: { x: 69, y: 91, width: 27, height: 8 },
+            message: ['挙式会場に進める。'],
+        },
     ],
     exits: [
       { to: 'entrance', label: 'エントランスへ' },
@@ -130,7 +151,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'clock-hand-case',
         label: '置時計',
-        position: { x: 37, y: 24, width: 12, height: 9 },
+        position: { x: 27, y: 24, width: 20, height: 9 },
         focusScene: {
           id: 'focus-bridal-clock',
           title: '置時計',
@@ -139,9 +160,15 @@ export const areas: Record<string, Area> = {
         message: ['奥のキャビネットに、古い置時計が置かれている。'],
       },
       {
+        id: 'old-photo-frame',
+        label: '写真立て',
+        position: { x: 32, y: 35, width: 25, height: 25 },
+        message: ['古びた写真だ。写真は色褪せていて、誰が写っているのかよく分からない。'],
+      },
+      {
         id: 'dressing-to-entrance',
         label: 'エントランスに戻る',
-        position: { x: 66, y: 83, width: 30, height: 8 },
+        position: { x: 69, y: 91, width: 30, height: 8 },
         message: ['エントランスへ戻れる。'],
       },
     ],
@@ -202,7 +229,7 @@ export const areas: Record<string, Area> = {
         label: 'エントランスに戻る',
         position: { x: 2, y: 91, width: 27, height: 8 },
         message: ['エントランスへ戻れる。'],
-      },
+        },
     ],
     exits: [
       { to: 'waiting-room', label: '待合室へ' },

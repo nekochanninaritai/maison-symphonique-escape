@@ -121,14 +121,6 @@ export const isP06ClockActive = (state: GameState): boolean =>
 export const canManuallyControlGrandClock = (state: GameState): boolean =>
   state.clockState.handAttached && (state.clockState.canManualRotate === true || isP06ClockActive(state))
 
-const shouldUnlockCeremony = (state: GameState): boolean =>
-  state.puzzles.p01_waiting_room?.status === 'solved' && state.clockState.handAttached === true
-
-const unlockCeremonyIfReady = (state: GameState): GameState =>
-  shouldUnlockCeremony(state) && state.flags.ceremonyUnlocked !== true
-    ? { ...state, flags: { ...state.flags, ceremonyUnlocked: true } }
-    : state
-
 export type TeaDrawerState = 'locked' | 'open-with-photo' | 'open-empty'
 
 export const getTeaDrawerState = (state: GameState): TeaDrawerState => {
@@ -259,18 +251,18 @@ export const attachClockHand = (state: GameState): GameState => {
     return withMessage(state, ['長針はまだ見つかっていない。'])
   }
 
-  const attached = unlockCeremonyIfReady({
-      ...state,
-      selectedItemId: null,
-      inventory: {
-        ...state.inventory,
-        'clock-hand': cloneItem(hand, { obtained: false, consumed: true }),
-      },
-      clockState: {
-        ...state.clockState,
-        handAttached: true,
-      },
-    })
+  const attached = {
+    ...state,
+    selectedItemId: null,
+    inventory: {
+      ...state.inventory,
+      'clock-hand': cloneItem(hand, { obtained: false, consumed: true }),
+    },
+    clockState: {
+      ...state.clockState,
+      handAttached: true,
+    },
+  }
 
   return withMessage(
     attached,
@@ -399,7 +391,6 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   if (puzzle.rewards.advanceClockTo) {
     next = advanceClock(next, puzzle.rewards.advanceClockTo)
   }
-  next = unlockCeremonyIfReady(next)
   if (puzzle.rewards.goNormalEnd) {
     next = {
       ...next,
@@ -412,7 +403,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
   }
   const messages =
     puzzleId === 'p01_waiting_room'
-      ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', 'ティーテーブルの引き出しが、ゆっくりと開いた。', 'そして館のどこかからも、扉の開く音がした。']
+      ? ['四つのティーセットが、きれいに揃った。', '――カチャ。', 'ティーテーブルの引き出しが、ゆっくりと開いた。']
       : puzzleId === 'p02_ceremony'
           ? ['四つの灯が、静かに祭壇を照らした。']
           : puzzleId === 'p05_piano'
@@ -728,7 +719,26 @@ export const examineTeaDrawer = (state: GameState): GameState => {
   if (drawerState === 'open-empty') {
     return withMessage(state, ['開いた引き出しだ。', '中にはもう何もない。'])
   }
-  return withMessage(unlockMemory(state, 'tea'), ['開いた引き出しの中に、一枚の古い写真が入っている。', '古い写真「PHOTO A」を手に入れた。'])
+  return withMessage(
+    obtainItem(unlockMemory(state, 'tea'), 'ceremony-door-key'),
+    ['開いた引き出しの中に、一枚の古い写真と古い鍵が入っている。', '古い写真「PHOTO A」と扉の鍵を手に入れた。'],
+  )
+}
+
+export const unlockCeremonyDoor = (state: GameState): GameState => {
+  if (state.flags.ceremonyUnlocked) {
+    return withMessage(state, ['挙式会場へ続く扉は、すでに開いている。'])
+  }
+  if (!isItemAvailable(state, 'ceremony-door-key')) {
+    return withMessage(state, ['扉は固く閉ざされている。'])
+  }
+  return withMessage(
+    refreshPuzzleAvailability({
+      ...consumeItem(state, 'ceremony-door-key'),
+      flags: { ...state.flags, ceremonyUnlocked: true },
+    }),
+    ['――カチ。', '扉の鍵が回り、挙式会場への扉が開いた。'],
+  )
 }
 
 export const resetP01TeaTime = (state: GameState): GameState =>
@@ -742,6 +752,10 @@ export const resetP01TeaTime = (state: GameState): GameState =>
       ceremonyUnlocked: false,
       grandClockStarted: false,
       receptionUnlocked: false,
+    },
+    inventory: {
+      ...state.inventory,
+      'ceremony-door-key': cloneItem(state.inventory['ceremony-door-key'], { obtained: false, consumed: false }),
     },
     puzzles: {
       ...state.puzzles,
@@ -839,6 +853,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
       return { ...state, selectedItemId: action.itemId }
     case 'USE_SELECTED_ITEM':
       if (state.selectedItemId === 'clock-hand' && action.targetId === 'grand-clock') return attachClockHandFromAction(state)
+      if (state.selectedItemId === 'ceremony-door-key' && action.targetId === 'ceremony-door') return unlockCeremonyDoor(state)
       if (state.selectedItemId === 'transparent-card' && action.targetId === 'framed-picture') return applyPianoOverlay(state)
       if (state.selectedItemId === 'small-key' && action.targetId === 'piano-keyhole') {
         if (!state.flags.pianoMechanismUnlocked) {
@@ -934,11 +949,11 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
     case 'CLEAR_INVENTORY':
       return { ...state, inventory: createItems(), selectedItemId: null, clockState: { ...state.clockState, handObtained: false } }
     case 'ATTACH_CLOCK_HAND':
-      return unlockCeremonyIfReady({
+      return {
         ...state,
         inventory: { ...state.inventory, 'clock-hand': cloneItem(state.inventory['clock-hand'], { obtained: false, consumed: true }) },
         clockState: { ...state.clockState, handObtained: true, handAttached: true },
-      })
+      }
     case 'GO_NORMAL_END':
       return {
         ...unlockNormalMemories(state),

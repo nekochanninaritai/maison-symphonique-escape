@@ -24,6 +24,8 @@ import p03ReceptionTableRoseImage from './assets/environments/p03-reception-tabl
 import p03ReceptionTableLilyImage from './assets/environments/p03-reception-table-lily.jpg'
 import p04OverlayBaseImage from './assets/environments/p04-overlay-base.jpg'
 import p04OverlayCompletedImage from './assets/environments/p04-overlay-completed.jpg'
+import drawerClosedImage from './assets/environments/drawer-closed.jpg'
+import drawerOpenImage from './assets/environments/drawer-open.jpg'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
@@ -447,6 +449,7 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
   const puzzle = state.puzzles.p01_waiting_room
   const solved = puzzle?.status === 'solved'
   const drawerState = getTeaDrawerState(state)
+  const drawerImage = drawerState === 'locked' ? drawerClosedImage : drawerOpenImage
 
   const finishDrag = (clientX: number, clientY: number) => {
     if (!dragging) return
@@ -519,7 +522,7 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
         onClick={() => onAction({ type: 'EXAMINE_TEA_DRAWER' })}
       >
         <span className="drawerFace" aria-hidden="true">
-          <span className="drawerKnob" />
+          <img src={drawerImage} alt="" />
         </span>
         <span>
           <strong>小さな引き出し</strong>

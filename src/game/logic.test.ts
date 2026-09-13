@@ -49,6 +49,9 @@ import { clearSave, loadGame, saveGame } from './save'
 const createCeremonyReadyState = () => {
   let state = createInitialState()
   state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+  state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+  state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+  state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
   state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
   state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
   return reducer(state, { type: 'MOVE', areaId: 'ceremony' })
@@ -280,7 +283,7 @@ describe('PuzzleState', () => {
     const clockHotspot = areas['dressing-room'].hotspots.find((hotspot) => hotspot.id === 'clock-hand-case')
 
     expect(clockHotspot?.label).toBe('置時計')
-    expect(clockHotspot?.position).toEqual({ x: 37, y: 24, width: 12, height: 9 })
+    expect(clockHotspot?.position).toEqual({ x: 27, y: 24, width: 20, height: 9 })
     expect(clockHotspot?.focusScene?.id).toBe('focus-bridal-clock')
     expect(clockHotspot?.itemReward).toBeUndefined()
 
@@ -458,6 +461,7 @@ describe('PuzzleState', () => {
     state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
 
     expect(state.memories.tea.unlocked).toBe(true)
+    expect(state.inventory['ceremony-door-key'].obtained).toBe(true)
     expect(getTeaDrawerState(state)).toBe('open-empty')
 
     const afterRetap = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
@@ -474,8 +478,8 @@ describe('PuzzleState', () => {
 
     expect(state.clockState.handAttached).toBe(true)
     expect(state.flags.grandClockStarted).not.toBe(true)
-    expect(state.flags.ceremonyUnlocked).toBe(true)
-    expect(canMoveToArea(state, 'ceremony')).toBe(true)
+    expect(state.flags.ceremonyUnlocked).not.toBe(true)
+    expect(canMoveToArea(state, 'ceremony')).toBe(false)
     expect(state.clockState.currentTime).toBe('11:00')
   })
 
@@ -546,13 +550,16 @@ describe('PuzzleState', () => {
     expect(state.messageQueue).toEqual(['炎が、ふっと消えた。'])
   })
 
-  it('P01 and Clock Hand unlock Ceremony, then first entry advances the clock from 11:00 to 12:00', () => {
+  it('using the door key unlocks Ceremony, then first entry advances the clock from 11:00 to 12:00', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
-    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
-    state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
 
     expect(state.flags.ceremonyUnlocked).toBe(true)
+    expect(state.inventory['ceremony-door-key'].obtained).toBe(false)
+    expect(state.inventory['ceremony-door-key'].consumed).toBe(true)
     expect(state.clockState.currentTime).toBe('11:00')
 
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
@@ -572,12 +579,12 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('13:00')
   })
 
-  it('P01 then Clock Hand unlocks Ceremony and P02 unlocks Reception', () => {
+  it('P01 drawer key unlocks Ceremony and P02 unlocks Reception', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
-    state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
-    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
-    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'grand-clock' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
     expect(state.flags.ceremonyUnlocked).toBe(true)
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p02_ceremony' })
@@ -587,7 +594,7 @@ describe('PuzzleState', () => {
     expect(canMoveToArea(state, 'reception')).toBe(true)
   })
 
-  it('Clock Hand then P01 also unlocks Ceremony', () => {
+  it('Clock Hand then P01 still requires the door key to unlock Ceremony', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'SELECT_ITEM', itemId: 'clock-hand' })
@@ -597,6 +604,13 @@ describe('PuzzleState', () => {
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
 
     expect(state.clockState.currentTime).toBe('11:00')
+    expect(state.flags.ceremonyUnlocked).not.toBe(true)
+    expect(canMoveToArea(state, 'ceremony')).toBe(false)
+
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
+
     expect(state.flags.ceremonyUnlocked).toBe(true)
     expect(canMoveToArea(state, 'ceremony')).toBe(true)
   })
@@ -730,7 +744,7 @@ describe('PuzzleState', () => {
     state = openReceptionBox(state)
 
     expect(state.inventory['transparent-card'].obtained).toBe(true)
-    expect(getMemoryCount(state)).toBe(1)
+    expect(getMemoryCount(state)).toBe(2)
     expect(state.clockState.currentTime).toBe('16:00')
   })
 
@@ -955,6 +969,9 @@ describe('PuzzleState', () => {
     expect(state.clockState.currentTime).toBe('11:00')
 
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
     expect(state.clockState.currentTime).toBe('11:00')
@@ -991,6 +1008,9 @@ describe('PuzzleState', () => {
   it('examining the Ceremony light obtains the small key', () => {
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
     state = reducer(state, { type: 'SET_FLAG', flagId: 'ceremonyLightVisible', value: true })
@@ -1284,6 +1304,9 @@ describe('SaveState', () => {
     let state = reducer(createInitialState(), { type: 'MARK_NORMAL_END_CLEARED' })
     state = moveTeaCup(state, 'coffee', 'gateau-chocolat')
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })
@@ -1321,6 +1344,7 @@ describe('SaveState', () => {
     saveGame(loaded)
     const reloaded = loadGame()
     expect(reloaded.memories.tea.unlocked).toBe(true)
+    expect(reloaded.inventory['ceremony-door-key'].obtained).toBe(true)
     expect(getTeaDrawerState(reloaded)).toBe('open-empty')
     vi.unstubAllGlobals()
   })
@@ -1366,6 +1390,9 @@ describe('SaveState', () => {
 
     let state = createInitialState()
     state = reducer(state, { type: 'SOLVE_PUZZLE', puzzleId: 'p01_waiting_room' })
+    state = reducer(state, { type: 'EXAMINE_TEA_DRAWER' })
+    state = reducer(state, { type: 'SELECT_ITEM', itemId: 'ceremony-door-key' })
+    state = reducer(state, { type: 'USE_SELECTED_ITEM', targetId: 'ceremony-door' })
     state = reducer(state, { type: 'OBTAIN_ITEM', itemId: 'clock-hand' })
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
     state = reducer(state, { type: 'MOVE', areaId: 'ceremony' })

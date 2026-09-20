@@ -29,7 +29,7 @@ export const memoryPhotos: MemoryPhoto[] = [
     title: 'PHOTO A',
     sourceArea: 'Waiting Room',
     gardenObjectId: 'birdcage',
-    clockTime: '10:40',
+    clockTime: '16:50',
     sceneElements: ['ティーテーブル', 'カップ', '焼き菓子', '窓辺の花', '小さな置時計'],
   },
   {
@@ -38,7 +38,7 @@ export const memoryPhotos: MemoryPhoto[] = [
     title: 'PHOTO B',
     sourceArea: 'Ceremony',
     gardenObjectId: 'fountain',
-    clockTime: '14:20',
+    clockTime: '14:30',
     sceneElements: ['祭壇', '四本のキャンドル', '花器', '白い布', '柱の時計'],
   },
   {
@@ -47,7 +47,7 @@ export const memoryPhotos: MemoryPhoto[] = [
     title: 'PHOTO C',
     sourceArea: 'Reception',
     gardenObjectId: 'angel',
-    clockTime: '16:50',
+    clockTime: '10:40',
     sceneElements: ['披露宴のテーブル', 'グラス', '席札', '花びら', '壁時計'],
   },
   {
@@ -56,7 +56,7 @@ export const memoryPhotos: MemoryPhoto[] = [
     title: 'PHOTO D',
     sourceArea: 'Reception / Piano',
     gardenObjectId: 'lamp',
-    clockTime: '12:15',
+    clockTime: '12:10',
     sceneElements: ['ピアノ', '●のある鍵盤', '楽譜', 'カーテン', '小さな時計'],
   },
 ]

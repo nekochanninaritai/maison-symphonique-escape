@@ -124,7 +124,7 @@ export const areas: Record<string, Area> = {
       },
       {
         id: 'waiting-room-to-entrance',
-        label: 'エントランスに戻る',
+        label: 'エントランス',
         position: { x: 2, y: 91, width: 27, height: 8 },
         message: ['エントランスへ戻れる。'],
         },
@@ -168,7 +168,7 @@ export const areas: Record<string, Area> = {
       },
       {
         id: 'dressing-to-entrance',
-        label: 'エントランスに戻る',
+        label: 'エントランス',
         position: { x: 69, y: 91, width: 30, height: 8 },
         message: ['エントランスへ戻れる。'],
       },
@@ -334,7 +334,7 @@ export const areas: Record<string, Area> = {
       },
       {
         id: 'reception-to-ceremony',
-        label: '挙式会場に戻る',
+        label: '挙式会場',
         position: { x: 2, y: 91, width: 28, height: 8 },
         message: ['挙式会場へ戻れる。'],
       },
@@ -397,6 +397,18 @@ export const areas: Record<string, Area> = {
           description: '緑のベンチの上に、古い本が置かれている。',
         },
         message: ['緑のベンチの上に、古い本が置かれている。'],
+      },
+      {
+        id: 'garden-to-reception',
+        label: '披露宴会場へ',
+        position: { x: 2, y: 91, width: 28, height: 8 },
+        message: ['披露宴会場へ戻れる。'],
+      },
+      {
+        id: 'garden-to-entrance',
+        label: 'エントランスへ',
+        position: { x: 69, y: 91, width: 27, height: 8 },
+        message: ['エントランスへ戻れる。'],
       },
     ],
     exits: [

@@ -425,21 +425,20 @@ export const lightCeremonyCandle = (state: GameState, candleId: string): GameSta
   if (current.puzzles.p02_ceremony?.status === 'solved') return current
   if (current.puzzles.p02_ceremony?.status !== 'available') return current
 
-  const nextIndex = current.ceremonyCandles.input.length
-  if (correctCandleSequence[nextIndex] !== candleId) {
-    return withMessage(
-      {
-        ...current,
-        ceremonyCandles: { input: [], lit: [] },
-      },
-      ['炎が、ふっと消えた。'],
-    )
-  }
-
   const input = [...current.ceremonyCandles.input, candleId]
   const lit = Array.from(new Set([...current.ceremonyCandles.lit, candleId]))
   const next = { ...current, ceremonyCandles: { input, lit } }
-  return input.length === correctCandleSequence.length ? solvePuzzle(next, 'p02_ceremony') : next
+  if (input.length < correctCandleSequence.length) return next
+  if (input.every((id, index) => id === correctCandleSequence[index])) {
+    return solvePuzzle(next, 'p02_ceremony')
+  }
+  return withMessage(
+    {
+      ...current,
+      ceremonyCandles: { input: [], lit: [] },
+    },
+    ['炎が、ふっと消えた。'],
+  )
 }
 
 export const setReceptionLockDigit = (state: GameState, index: number, value: number): GameState => {
@@ -615,26 +614,25 @@ export const activateGardenSwitch = (state: GameState, objectId: string): GameSt
   if (current.puzzles.p07_garden_final?.status !== 'available') return current
   if (!gardenPuzzleObjects.some((object) => object.id === objectId)) return current
 
-  const correctSequence = getP07CorrectSequence()
-  const expected = correctSequence[current.gardenFinal.input.length]
-  if (objectId !== expected) {
-    return withMessage(
-      {
-        ...current,
-        gardenFinal: {
-          input: [],
-          switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
-          gateState: 'locked',
-        },
-      },
-      ['――カチ。', '……小さな灯りが消えた。'],
-    )
-  }
-
   const input = [...current.gardenFinal.input, objectId]
   const switches = { ...current.gardenFinal.switches, [objectId]: true }
   const next = { ...current, gardenFinal: { ...current.gardenFinal, input, switches } }
-  return input.length === correctSequence.length ? solvePuzzle(next, 'p07_garden_final') : withMessage(next, ['――カチ。'])
+  const correctSequence = getP07CorrectSequence()
+  if (input.length < correctSequence.length) return withMessage(next, ['――カチ。'])
+  if (input.every((id, index) => id === correctSequence[index])) {
+    return solvePuzzle(next, 'p07_garden_final')
+  }
+  return withMessage(
+    {
+      ...current,
+      gardenFinal: {
+        input: [],
+        switches: Object.fromEntries(gardenPuzzleObjects.map((object) => [object.id, false])),
+        gateState: 'locked',
+      },
+    },
+    ['――カチ。', '……小さな灯りが消えた。'],
+  )
 }
 
 export const resetP07Garden = (state: GameState): GameState =>

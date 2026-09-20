@@ -14,7 +14,7 @@ import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
 import { hourHandAngleFromTime, minuteHandAngleFromTime, timeFromClockHandPoint } from './game/clock'
 import { canManuallyControlGrandClock, getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, reducer, shouldShowCeremonyNavCue } from './game/logic'
-import type { AreaId, GameAction, GameState, Hotspot, Puzzle } from './game/types'
+import type { AreaId, GameAction, GameState, Hotspot, Item, Puzzle } from './game/types'
 import type { ClockHandKind } from './game/clock'
 import oldInvitationScheduleImage from './assets/environments/invitation-01-schedule.jpg'
 import p03ReceptionSeatingChartImage from './assets/environments/p03-reception-seating-chart.jpg'
@@ -30,19 +30,34 @@ import photoAImage from './assets/environments/photoA.jpg'
 import photoBImage from './assets/environments/photoB.jpg'
 import photoCImage from './assets/environments/photoC.jpg'
 import photoDImage from './assets/environments/photoD.jpg'
+import coffeeImage from './assets/environments/Puzzle 01/Coffee.jpg'
+import gateauChocolatImage from './assets/environments/Puzzle 01/GateauChocolat.jpg'
+import hotTeeImage from './assets/environments/Puzzle 01/HotTee.jpg'
+import iceTeeImage from './assets/environments/Puzzle 01/IceTee.jpg'
+import mangoCakeImage from './assets/environments/Puzzle 01/MangoCake.jpg'
+import shortCakeImage from './assets/environments/Puzzle 01/ShortCake.jpg'
+import doorKeyItemImage from './assets/environments/item/door-key.png'
+import itemPhotoAImage from './assets/environments/item/item-photoA.jpg'
+import itemPhotoBImage from './assets/environments/item/item-photoB.jpg'
+import itemPhotoCImage from './assets/environments/item/item-photoC.jpg'
+import itemPhotoDImage from './assets/environments/item/item-photoD.jpg'
+import minuteHandItemImage from './assets/environments/item/minute-hand.png'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
 type ReceptionView = 'main' | 'tables' | 'tables-right' | 'high-tables' | 'piano-area'
 const stageMoveTargets: Partial<Record<string, AreaId>> = {
   'entrance-to-waiting': 'waiting-room',
+  'entrance-left-space': 'dressing-room',
   'waiting-room-to-entrance': 'entrance',
   'waiting-room-to-ceremony': 'ceremony',
   'dressing-to-entrance': 'entrance',
-    'ceremony-to-waiting-room': 'waiting-room',
+  'ceremony-to-waiting-room': 'waiting-room',
   'ceremony-to-reception': 'reception',
   'reception-to-ceremony': 'ceremony',
   'reception-to-garden': 'garden',
+  'garden-to-reception': 'reception',
+  'garden-to-entrance': 'entrance',
 }
 const receptionViewTargets: Partial<Record<string, ReceptionView>> = {
   'reception-view-tables': 'tables',
@@ -70,6 +85,35 @@ const memoryPhotoImages: Record<string, string> = {
   banquet: photoCImage,
   melody: photoDImage,
 }
+const teaSweetImages: Record<string, string> = {
+  'gateau-chocolat': gateauChocolatImage,
+  shortcake: shortCakeImage,
+  'mango-cake': mangoCakeImage,
+}
+const teaDrinkImages: Record<string, string> = {
+  coffee: coffeeImage,
+  'hot-tee': hotTeeImage,
+  'ice-tee': iceTeeImage,
+}
+const itemImages: Record<string, string> = {
+  'clock-hand': minuteHandItemImage,
+  'ceremony-door-key': doorKeyItemImage,
+  'small-key': doorKeyItemImage,
+  'transparent-card': p04OverlayBaseImage,
+  'old-invitation': oldInvitationScheduleImage,
+}
+const itemFocusImages: Record<string, string> = {
+  'clock-hand': minuteHandItemImage,
+  'ceremony-door-key': doorKeyItemImage,
+  'small-key': doorKeyItemImage,
+  'transparent-card': p04OverlayBaseImage,
+}
+const memoryThumbnailImages: Record<string, string> = {
+  tea: itemPhotoAImage,
+  vow: itemPhotoBImage,
+  banquet: itemPhotoCImage,
+  melody: itemPhotoDImage,
+}
 const receptionLockDialColors = ['#eeb3ad', '#cde2ec', '#a9c49a', '#f2d77d']
 
 function App() {
@@ -85,8 +129,6 @@ function App() {
 
   const currentArea = areas[state.currentArea]
   const visibleHotspots = useMemo(() => getVisibleHotspots(state), [state])
-  const selectedItem = state.selectedItemId ? state.inventory[state.selectedItemId] : null
-
   const send = (action: GameAction) => dispatchAndSave(dispatch, action)
 
   const resetWithConfirm = () => {
@@ -110,7 +152,6 @@ function App() {
           activeFocus={activeFocus}
           activeItemFocus={activeItemFocus}
           showHotspots={DEBUG_MODE && showHotspots}
-          selectedItemName={selectedItem?.name ?? null}
           onFocus={setActiveFocus}
           onItemFocus={setActiveItemFocus}
           onAction={send}
@@ -173,7 +214,6 @@ function GameScreen({
   activeFocus,
   activeItemFocus,
   showHotspots,
-  selectedItemName,
   onFocus,
   onItemFocus,
   onAction,
@@ -184,7 +224,6 @@ function GameScreen({
   activeFocus: string | null
   activeItemFocus: string | null
   showHotspots: boolean
-  selectedItemName: string | null
   onFocus: (focusId: string | null) => void
   onItemFocus: (itemId: string | null) => void
   onAction: (action: GameAction) => void
@@ -203,6 +242,10 @@ function GameScreen({
     if (receptionView === 'piano-area') return visibleHotspots.filter((hotspot) => hotspot.id === 'piano')
     return []
   }, [isReception, receptionView, visibleHotspots])
+  const navigationHotspots = useMemo(
+    () => displayedHotspots.filter(isStageMoveHotspot).sort((a, b) => a.position.x - b.position.x),
+    [displayedHotspots],
+  )
   const receptionViewLabel =
     receptionView === 'tables'
       ? 'テーブル周辺'
@@ -231,76 +274,106 @@ function GameScreen({
   return (
     <section className="gameScreen">
       <header className="topBar">
+        <button type="button" className="menuButton" aria-label="メニュー">
+          <span aria-hidden="true">☰</span>
+          <small>MENU</small>
+        </button>
         <div className="roomTitle">
-          <p className="eyebrow">{currentArea.chapter}</p>
-          <h2>{currentArea.name}</h2>
+          <p className="eyebrow">Escape Atelier</p>
+          <h2>#001 {currentArea.name}</h2>
+          <span>{currentArea.chapter}</span>
         </div>
         <div className="hud">
-          <ClockWidget state={state} />
           <MemoryMeter state={state} />
+          <ClockWidget state={state} />
+          <button type="button" className="hintButton">ヒント</button>
         </div>
       </header>
 
-      <div
-        className={`stage ${state.worldMode} scene-${background} ${isReception ? `receptionView-${receptionView}` : ''}`}
-        aria-label={isReception ? `${currentArea.name} ${receptionViewLabel}` : `${currentArea.name} ${background}`}
-      >
-        <div className="stageVignette" aria-hidden="true" />
-        {currentArea.areaId === 'garden' && <GardenStageLayer state={state} />}
-        {isReception && receptionView !== 'main' && (
-          <button
-            type="button"
-            className="receptionBackButton"
-            onClick={() => changeReceptionView('main')}
-          >
-            披露宴会場へ戻る
-          </button>
-        )}
-        {displayedHotspots.map((hotspot) => (
-          <button
-            key={hotspot.id}
-            type="button"
-            className={`hotspot hotspot-${hotspot.id} ${isStageMoveHotspot(hotspot) ? 'stageMoveHotspot' : ''} ${showHotspots ? 'visible' : ''}`}
-            style={{
-              left: `${hotspot.position.x}%`,
-              top: `${hotspot.position.y}%`,
-              width: `${hotspot.position.width}%`,
-              height: `${hotspot.position.height}%`,
-            }}
-            aria-label={hotspot.label}
-            onClick={() => {
-              const nextReceptionView = receptionViewTargets[hotspot.id]
-              if (isReception && nextReceptionView) {
-                changeReceptionView(nextReceptionView)
-                return
-              }
-              const moveTarget = stageMoveTargets[hotspot.id]
-              if (moveTarget) {
-                onFocus(null)
-                onAction({ type: 'MOVE', areaId: moveTarget })
-                return
-              }
-              if (hotspot.id === 'entrance-left-space') {
-                onAction({ type: 'MOVE', areaId: 'dressing-room' })
-                return
-              }
-              if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
+      <div className="stagePanel">
+        <div
+          className={`stage ${state.worldMode} scene-${background} ${isReception ? `receptionView-${receptionView}` : ''}`}
+          aria-label={isReception ? `${currentArea.name} ${receptionViewLabel}` : `${currentArea.name} ${background}`}
+        >
+          <div className="stageVignette" aria-hidden="true" />
+          {currentArea.areaId === 'garden' && <GardenStageLayer state={state} />}
+          {isReception && receptionView !== 'main' && (
+            <button
+              type="button"
+              className="receptionBackButton"
+              onClick={() => changeReceptionView('main')}
+            >
+              披露宴会場へ戻る
+            </button>
+          )}
+          {displayedHotspots.map((hotspot) => (
+            <button
+              key={hotspot.id}
+              type="button"
+              className={`hotspot hotspot-${hotspot.id} ${isStageMoveHotspot(hotspot) ? 'stageMoveHotspot' : ''} ${showHotspots ? 'visible' : ''}`}
+              style={{
+                left: `${hotspot.position.x}%`,
+                top: `${hotspot.position.y}%`,
+                width: `${hotspot.position.width}%`,
+                height: `${hotspot.position.height}%`,
+              }}
+              aria-label={hotspot.label}
+              onClick={() => {
+                const nextReceptionView = receptionViewTargets[hotspot.id]
+                if (isReception && nextReceptionView) {
+                  changeReceptionView(nextReceptionView)
+                  return
+                }
+                const moveTarget = stageMoveTargets[hotspot.id]
+                if (moveTarget) {
+                  onFocus(null)
+                  onAction({ type: 'MOVE', areaId: moveTarget })
+                  return
+                }
+                if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
+                  onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
+                  if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
+                  return
+                }
+                if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {
+                  onAction({ type: 'USE_SELECTED_ITEM', targetId: hotspot.useTarget })
+                  if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
+                  return
+                }
                 onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
                 if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
-                return
-              }
-              if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {
-                onAction({ type: 'USE_SELECTED_ITEM', targetId: hotspot.useTarget })
-                if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
-                return
-              }
-              onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
-              if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
-            }}
-          >
-            {(showHotspots || isStageMoveHotspot(hotspot)) && hotspot.label}
-          </button>
-        ))}
+              }}
+            >
+              {(showHotspots || isStageMoveHotspot(hotspot)) && hotspot.label}
+            </button>
+          ))}
+        </div>
+
+        {navigationHotspots.length > 0 && (
+        <nav className="areaNav" aria-label="Area exits">
+          {navigationHotspots.map((hotspot) => {
+            const moveTarget = stageMoveTargets[hotspot.id]
+            const ceremonyCue = moveTarget === 'ceremony' && shouldShowCeremonyNavCue(state)
+            return (
+              <button
+                key={hotspot.id}
+                type="button"
+                className={ceremonyCue ? 'ceremonyCue' : undefined}
+                style={{
+                  left: `${hotspot.position.x}%`,
+                  width: `${hotspot.position.width}%`,
+                }}
+                onClick={() => {
+                  onFocus(null)
+                  if (moveTarget) onAction({ type: 'MOVE', areaId: moveTarget })
+                }}
+              >
+                {hotspot.label}
+              </button>
+            )
+          })}
+        </nav>
+        )}
       </div>
 
       {isReceptionPianoFocus && (
@@ -361,13 +434,15 @@ function GameScreen({
         </div>
       )}
 
-      {activeItemFocus === 'old-invitation' && (
+      {activeItemFocus?.startsWith('item:') && (
         <div className="focusScene" role="dialog" aria-modal="true">
           <div>
             <p className="eyebrow">Item Focus</p>
-            <h3>古い招待状</h3>
-            <p>古い招待状だ。当日の流れが記されているが、最後の時刻だけ読み取れない。</p>
-            <OldInvitationFocus />
+            <ItemFocus
+              item={state.inventory[activeItemFocus.replace('item:', '')]}
+              selected={state.selectedItemId === activeItemFocus.replace('item:', '')}
+              onAction={onAction}
+            />
             <button type="button" onClick={() => onItemFocus(null)}>閉じる</button>
           </div>
         </div>
@@ -383,30 +458,11 @@ function GameScreen({
         </div>
       )}
 
-      {!activeFocus && !activeItemFocus && <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />}
-
-      <nav className="areaNav" aria-label="Area exits">
-        {currentArea.exits.map((exit) => {
-          const ceremonyCue = exit.to === 'ceremony' && shouldShowCeremonyNavCue(state)
-          return (
-            <button
-              key={exit.to}
-              type="button"
-              className={ceremonyCue ? 'ceremonyCue' : undefined}
-              disabled={Boolean(exit.unlockCondition && !exit.unlockCondition(state))}
-              onClick={() => {
-                onFocus(null)
-                onAction({ type: 'MOVE', areaId: exit.to })
-              }}
-            >
-              {exit.label}
-            </button>
-          )
-        })}
-      </nav>
-
-      <Inventory state={state} selectedItemName={selectedItemName} onInspectItem={onItemFocus} onAction={onAction} />
-      <MemoryGallery state={state} onInspectMemory={(memoryId) => onItemFocus(`memory:${memoryId}`)} />
+      <section className="bottomConsole" aria-label="探索情報">
+        <Inventory state={state} onInspectItem={onItemFocus} />
+        <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />
+        <MemoryGallery state={state} onInspectMemory={(memoryId) => onItemFocus(`memory:${memoryId}`)} />
+      </section>
 
       {DEBUG_MODE && (
         <section className="placeholderPuzzles">
@@ -480,7 +536,7 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
           return (
             <div key={pair.sweetId} className={`teaSlot teaPair-${pair.id}`} data-sweet-id={pair.sweetId}>
               <div className={`sweetPlate sweet-${pair.sweetId}`} title={pair.sweetName}>
-                <span className="sweetIcon" aria-hidden="true">{pair.sweetIcon}</span>
+                <img className="teaItemImage sweetImage" src={teaSweetImages[pair.sweetId]} alt="" aria-hidden="true" />
                 <strong>{pair.sweetName}</strong>
               </div>
               {drink && (
@@ -509,7 +565,7 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
                   }}
                   onPointerCancel={() => setDragging(null)}
                 >
-                  <span className="cupIcon" aria-hidden="true">{drink.drinkIcon}</span>
+                  <img className="teaItemImage drinkImage" src={teaDrinkImages[drink.drinkId]} alt="" aria-hidden="true" />
                   <span>{drink.drinkName}</span>
                 </button>
               )}
@@ -717,13 +773,32 @@ function MemoryGallery({ state, onInspectMemory }: { state: GameState; onInspect
       <h3>見つけた古い写真</h3>
       <div className="memoryPhotoGrid">
         {unlockedPhotos.map((photo) => (
-          <button key={photo.id} type="button" onClick={() => onInspectMemory(photo.memoryId)}>
-            <span>{photo.title}</span>
-            <small>{state.memories[photo.memoryId].description}</small>
+          <button key={photo.id} type="button" aria-label={`${photo.title}を調べる`} title={photo.title} onClick={() => onInspectMemory(photo.memoryId)}>
+            <img src={memoryThumbnailImages[photo.memoryId] ?? memoryPhotoImages[photo.memoryId] ?? photoDImage} alt="" aria-hidden="true" />
           </button>
         ))}
       </div>
     </aside>
+  )
+}
+
+function ItemFocus({ item, selected, onAction }: { item?: Item; selected: boolean; onAction: (action: GameAction) => void }) {
+  if (!item) return <p>アイテムは見つかりません。</p>
+  const image = itemFocusImages[item.itemId]
+  const canSelect = item.usableTargets.length > 0
+
+  return (
+    <div className="itemFocus">
+      <h3>{item.name}</h3>
+      {image && <img className="itemFocusImage" src={image} alt={item.name} />}
+      <p>{item.description}</p>
+      {item.itemId === 'old-invitation' && <OldInvitationFocus />}
+      {canSelect && (
+        <button type="button" onClick={() => onAction({ type: 'SELECT_ITEM', itemId: selected ? null : item.itemId })}>
+          {selected ? '選択を外す' : '選択する'}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -1070,43 +1145,44 @@ function MemoryMeter({ state }: { state: GameState }) {
 }
 
 function MessageWindow({ state, onClear }: { state: GameState; onClear: () => void }) {
-  if (state.messageQueue.length === 0) return null
+  const hasMessages = state.messageQueue.length > 0
   return (
-    <div className="messageWindow">
-      {state.messageQueue.map((message, index) => <p key={index}>{message}</p>)}
-      <button type="button" onClick={onClear}>閉じる</button>
+    <div className={`messageWindow ${hasMessages ? '' : 'empty'}`}>
+      <h3>LOG</h3>
+      {hasMessages ? state.messageQueue.map((message, index) => <p key={index}>{message}</p>) : <p>探索ログはまだありません。</p>}
+      {hasMessages && <button type="button" onClick={onClear}>閉じる</button>}
     </div>
   )
 }
 
 function Inventory({
   state,
-  selectedItemName,
   onInspectItem,
-  onAction,
 }: {
   state: GameState
-  selectedItemName: string | null
   onInspectItem: (itemId: string) => void
-  onAction: (action: GameAction) => void
 }) {
   const obtainedItems = Object.values(state.inventory).filter((item) => item.obtained && !item.consumed)
+  const emptySlots = Math.max(0, 5 - obtainedItems.length)
   return (
     <aside className="inventory">
       <h3>所持品</h3>
-      {selectedItemName && <p className="inventorySelection">選択中: {selectedItemName}</p>}
       <div className="inventoryGrid">
-        {obtainedItems.length === 0 && <span className="emptyText">まだ何も手にしていない。</span>}
         {obtainedItems.map((item) => (
           <div key={item.itemId} className="inventoryItem">
-            <button type="button" className={state.selectedItemId === item.itemId ? 'selected' : ''} onClick={() => onAction({ type: 'SELECT_ITEM', itemId: state.selectedItemId === item.itemId ? null : item.itemId })}>
-              <span>{item.name}</span>
-              <small>{item.description}</small>
+            <button
+              type="button"
+              className={state.selectedItemId === item.itemId ? 'selected' : ''}
+              aria-label={`${item.name}を調べる`}
+              title={item.name}
+              onClick={() => onInspectItem(`item:${item.itemId}`)}
+            >
+              <img src={itemImages[item.itemId] ?? doorKeyItemImage} alt="" aria-hidden="true" />
             </button>
-            {item.itemId === 'old-invitation' && (
-              <button type="button" className="inspectItemButton" onClick={() => onInspectItem(item.itemId)}>調べる</button>
-            )}
           </div>
+        ))}
+        {Array.from({ length: emptySlots }, (_, index) => (
+          <span key={`empty-item-${index}`} className="emptyItemSlot" aria-hidden="true" />
         ))}
       </div>
     </aside>

@@ -321,9 +321,9 @@ describe('PuzzleState', () => {
 
   it('keeps the new background move hotspots in the intended rooms', () => {
     expect(areas.entrance.hotspots.find((hotspot) => hotspot.id === 'entrance-to-waiting')?.label).toBe('待合室へ')
-    expect(areas['dressing-room'].hotspots.find((hotspot) => hotspot.id === 'dressing-to-entrance')?.label).toBe('エントランスに戻る')
+    expect(areas['dressing-room'].hotspots.find((hotspot) => hotspot.id === 'dressing-to-entrance')?.label).toBe('エントランス')
     expect(areas.ceremony.hotspots.find((hotspot) => hotspot.id === 'ceremony-to-waiting-room')?.label).toBe('待合室')
-    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-to-ceremony')?.label).toBe('挙式会場に戻る')
+    expect(areas.reception.hotspots.find((hotspot) => hotspot.id === 'reception-to-ceremony')?.label).toBe('挙式会場')
     expect(areas.reception.hotspots.some((hotspot) => hotspot.id === 'reception-to-waiting')).toBe(false)
     expect(areas.reception.exits.some((exit) => exit.to === 'ceremony')).toBe(false)
     expect(areas.reception.exits.some((exit) => exit.to === 'waiting-room')).toBe(false)
@@ -416,26 +416,23 @@ describe('PuzzleState', () => {
     expect(state.teaTime.cupSlots['gateau-chocolat']).toBe('coffee')
     expect(state.puzzles.p01_waiting_room.status).toBe('available')
 
-    state = moveTeaCup(state, 'earl-grey', 'cookies')
-    state = moveTeaCup(state, 'chinese-tea', 'sesame-balls')
+    state = moveTeaCup(state, 'hot-tee', 'shortcake')
 
     expect(state.puzzles.p01_waiting_room.status).toBe('solved')
     expect(state.flags.dressingRoomUnlocked).toBe(true)
     expect(state.flags.ceremonyUnlocked).not.toBe(true)
   })
 
-  it('uses the Phase 3A formal Tea Time pairing data', () => {
+  it('uses the current P01 Tea Time pairing data', () => {
     expect(teaTimePairs.map((pair) => `${pair.drinkName}:${pair.sweetName}`)).toEqual([
-      'Coffee:Gateau Chocolat',
-      'Earl Grey:Cookies',
-      'Matcha:Wagashi',
-      'Chinese Tea:Sesame Balls',
+      'Coffee:GateauChocolat',
+      'HotTee:ShortCake',
+      'IceTee:MangoCake',
     ])
     expect(correctTeaTimeSlots).toEqual({
       'gateau-chocolat': 'coffee',
-      cookies: 'earl-grey',
-      wagashi: 'matcha',
-      'sesame-balls': 'chinese-tea',
+      shortcake: 'hot-tee',
+      'mango-cake': 'ice-tee',
     })
   })
 
@@ -548,12 +545,21 @@ describe('PuzzleState', () => {
     expect(afterRetap.messageQueue).toEqual(['祭壇脇は、静かに灯りを受けている。'])
   })
 
-  it('wrong P02 candle sequence resets input without solving', () => {
+  it('wrong P02 candle sequence resets only after all four candles are lit', () => {
     let state = createCeremonyReadyState()
     const wrongFirst = allCandleIds.find((id) => id !== correctCandleSequence[0])
     expect(wrongFirst).toBeDefined()
 
     state = lightCeremonyCandle(state, wrongFirst!)
+
+    expect(state.puzzles.p02_ceremony.status).toBe('available')
+    expect(state.ceremonyCandles.input).toEqual([wrongFirst])
+    expect(state.ceremonyCandles.lit).toEqual([wrongFirst])
+    expect(state.messageQueue).toEqual([])
+
+    for (const candleId of correctCandleSequence.filter((id) => id !== wrongFirst)) {
+      state = lightCeremonyCandle(state, candleId)
+    }
 
     expect(state.puzzles.p02_ceremony.status).toBe('available')
     expect(state.ceremonyCandles.input).toEqual([])
@@ -1135,11 +1141,11 @@ describe('PuzzleState', () => {
   })
 
   it('P07 correct sequence is derived from photo clock times', () => {
-    expect(memoryPhotos.map((photo) => photo.clockTime)).toEqual(['10:40', '14:20', '16:50', '12:15'])
-    expect(getP07CorrectSequence()).toEqual(['birdcage', 'lamp', 'fountain', 'angel'])
+    expect(memoryPhotos.map((photo) => photo.clockTime)).toEqual(['16:50', '14:30', '10:40', '12:10'])
+    expect(getP07CorrectSequence()).toEqual(['angel', 'lamp', 'fountain', 'birdcage'])
   })
 
-  it('P07 keeps correct partial sequence and resets on a quiet wrong sequence', () => {
+  it('P07 keeps partial switch input and resets only after all four switches are set', () => {
     let state = createInitialState()
     state = solvePuzzle(state, 'p06_grand_clock', true)
     state = reducer(state, { type: 'MOVE', areaId: 'garden' })
@@ -1149,6 +1155,15 @@ describe('PuzzleState', () => {
     expect(state.gardenFinal.switches.birdcage).toBe(true)
 
     state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'fountain' })
+    expect(state.gardenFinal.input).toEqual(['birdcage', 'fountain'])
+    expect(state.gardenFinal.switches.birdcage).toBe(true)
+    expect(state.gardenFinal.switches.fountain).toBe(true)
+    expect(state.puzzles.p07_garden_final.status).toBe('available')
+    expect(state.messageQueue).toEqual(['――カチ。'])
+
+    state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'lamp' })
+    state = reducer(state, { type: 'ACTIVATE_GARDEN_SWITCH', objectId: 'angel' })
+
     expect(state.gardenFinal.input).toEqual([])
     expect(Object.values(state.gardenFinal.switches).every((value) => value === false)).toBe(true)
     expect(state.puzzles.p07_garden_final.status).toBe('available')
@@ -1161,10 +1176,10 @@ describe('PuzzleState', () => {
       object: photo.gardenObjectId,
       time: photo.clockTime,
     }))).toEqual([
-      { title: 'PHOTO A', object: 'birdcage', time: '10:40' },
-      { title: 'PHOTO B', object: 'fountain', time: '14:20' },
-      { title: 'PHOTO C', object: 'angel', time: '16:50' },
-      { title: 'PHOTO D', object: 'lamp', time: '12:15' },
+      { title: 'PHOTO A', object: 'birdcage', time: '16:50' },
+      { title: 'PHOTO B', object: 'fountain', time: '14:30' },
+      { title: 'PHOTO C', object: 'angel', time: '10:40' },
+      { title: 'PHOTO D', object: 'lamp', time: '12:10' },
     ])
   })
 
@@ -1178,9 +1193,13 @@ describe('PuzzleState', () => {
       'garden-object-angel',
       'garden-gate',
       'garden-book',
+      'garden-to-reception',
+      'garden-to-entrance',
     ])
     expect(areas.garden.hotspots.find((hotspot) => hotspot.id === 'garden-book')?.focusScene?.id).toBe('focus-garden-book')
     expect(areas.garden.hotspots.find((hotspot) => hotspot.id === 'garden-gate')?.focusScene?.id).toBe('focus-garden-gate')
+    expect(areas.garden.hotspots.find((hotspot) => hotspot.id === 'garden-to-reception')?.position).toEqual({ x: 2, y: 91, width: 28, height: 8 })
+    expect(areas.garden.hotspots.find((hotspot) => hotspot.id === 'garden-to-entrance')?.position).toEqual({ x: 69, y: 91, width: 27, height: 8 })
   })
 
   it('P07 full correct switch sequence solves and opens the gate', () => {
@@ -1302,7 +1321,7 @@ describe('Ending flow', () => {
   it('PHOTO E does not affect the P07 Garden sequence', () => {
     const before = getP07CorrectSequence()
     expect(trueMemoryPhoto.memoryId).toBe('september23')
-    expect(before).toEqual(['birdcage', 'lamp', 'fountain', 'angel'])
+    expect(before).toEqual(['angel', 'lamp', 'fountain', 'birdcage'])
   })
 })
 
@@ -1400,10 +1419,9 @@ describe('SaveState', () => {
 
     const loaded = loadGame()
     expect(loaded.teaTime.cupSlots).toEqual({
-      'gateau-chocolat': 'earl-grey',
-      cookies: 'chinese-tea',
-      wagashi: 'coffee',
-      'sesame-balls': 'matcha',
+      'gateau-chocolat': 'hot-tee',
+      shortcake: 'ice-tee',
+      'mango-cake': 'coffee',
     })
     vi.unstubAllGlobals()
   })

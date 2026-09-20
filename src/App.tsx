@@ -45,6 +45,17 @@ import minuteHandItemImage from './assets/environments/item/minute-hand.png'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
+const puzzleOrder = ['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final']
+type AudioSettings = {
+  bgmEnabled: boolean
+  seEnabled: boolean
+  bgmVolume: number
+  seVolume: number
+}
+type GuestListState = {
+  status: 'idle' | 'loading' | 'loaded' | 'error'
+  names: string[]
+}
 type ReceptionView = 'main' | 'tables' | 'tables-right' | 'high-tables' | 'piano-area'
 const stageMoveTargets: Partial<Record<string, AreaId>> = {
   'entrance-to-waiting': 'waiting-room',
@@ -115,6 +126,90 @@ const memoryThumbnailImages: Record<string, string> = {
   melody: itemPhotoDImage,
 }
 const receptionLockDialColors = ['#eeb3ad', '#cde2ec', '#a9c49a', '#f2d77d']
+const guestDatabaseUrl = 'https://wedding-web-baddb-default-rtdb.firebaseio.com/butterflyMiracleRecords.json'
+const puzzleHints: Record<string, { title: string; hints: string[] }> = {
+  p01_waiting_room: {
+    title: 'ティータイム',
+    hints: ['お皿とカップの組み合わせを、名前と画像の手がかりで見直す。', 'GateauChocolatにはCoffee、ShortCakeにはHotTee、MangoCakeにはIceTeeを合わせる。'],
+  },
+  p02_ceremony: {
+    title: '誓いの灯',
+    hints: ['挙式会場で見た形の順番を、祭壇のキャンドルに対応させる。', '入力は4つすべて灯してから判定される。形の順番を最後まで並べてみる。'],
+  },
+  p03_reception: {
+    title: '席次表の違和感',
+    hints: ['席次表と各テーブルの席札を見比べ、違うイニシャルを探す。', '色の順番はピンク、水色、緑、黄色。導いた番号をロック付きの箱へ直接入力する。'],
+  },
+  p04_sheet_overlay: {
+    title: '未完成の絵',
+    hints: ['披露宴会場で手に入れた半透明の紙を、待合室の未完成の絵に重ねる。', '絵に浮かぶ記号の並びが、次のピアノの手がかりになる。'],
+  },
+  p05_piano: {
+    title: 'ピアノ演奏',
+    hints: ['未完成の絵に重ねた紙の記号を、ピアノの鍵盤に対応させる。', '鍵盤の印と記号の並びを見て、音を順番に鳴らす。'],
+  },
+  p06_grand_clock: {
+    title: '古い招待状と大時計',
+    hints: ['古い招待状に書かれた予定と、時計を動かせる状態になった大時計を照合する。', `大時計を${p06TargetTime}に合わせる。`],
+  },
+  p07_garden_final: {
+    title: '庭の灯り',
+    hints: ['見つけた古い写真に写る時計の時刻を、小さい順に並べる。', '写真の時刻順に、庭の装飾のスイッチを4つすべて入れる。'],
+  },
+}
+const audioSettingsKey = `${gameConfig.saveKey}-audio-settings`
+const defaultAudioSettings: AudioSettings = {
+  bgmEnabled: true,
+  seEnabled: true,
+  bgmVolume: 0.72,
+  seVolume: 0.68,
+}
+
+const readAudioSettings = (): AudioSettings => {
+  if (typeof localStorage === 'undefined') return defaultAudioSettings
+  try {
+    const raw = localStorage.getItem(audioSettingsKey)
+    if (!raw) return defaultAudioSettings
+    const parsed = JSON.parse(raw) as Partial<AudioSettings>
+    return {
+      bgmEnabled: parsed.bgmEnabled ?? defaultAudioSettings.bgmEnabled,
+      seEnabled: parsed.seEnabled ?? defaultAudioSettings.seEnabled,
+      bgmVolume: typeof parsed.bgmVolume === 'number' ? parsed.bgmVolume : defaultAudioSettings.bgmVolume,
+      seVolume: typeof parsed.seVolume === 'number' ? parsed.seVolume : defaultAudioSettings.seVolume,
+    }
+  } catch {
+    return defaultAudioSettings
+  }
+}
+
+const collectNicknames = (value: unknown): string[] => {
+  const names = new Set<string>()
+  const nicknameKeys = new Set(['nickname', 'nickName', 'nick_name', 'displayName', 'display_name', 'name', '名前', 'ニックネーム'])
+  const walk = (node: unknown) => {
+    if (!node || typeof node !== 'object') return
+    if (Array.isArray(node)) {
+      node.forEach(walk)
+      return
+    }
+    Object.entries(node as Record<string, unknown>).forEach(([key, child]) => {
+      if (typeof child === 'string' && nicknameKeys.has(key)) {
+        const name = child.trim()
+        if (name) names.add(name)
+        return
+      }
+      walk(child)
+    })
+  }
+  walk(value)
+  return [...names].sort((a, b) => a.localeCompare(b, 'ja'))
+}
+
+const getActiveHint = (state: GameState) => {
+  const availablePuzzleId = puzzleOrder.find((puzzleId) => state.puzzles[puzzleId]?.status === 'available')
+  const nextPuzzleId = puzzleOrder.find((puzzleId) => state.puzzles[puzzleId]?.status !== 'solved')
+  const puzzleId = availablePuzzleId ?? nextPuzzleId ?? puzzleOrder[puzzleOrder.length - 1]
+  return puzzleHints[puzzleId]
+}
 
 function App() {
   const [state, dispatch] = useReducer(reducer, undefined, loadGame)
@@ -122,21 +217,65 @@ function App() {
   const [showHotspots, setShowHotspots] = useState(false)
   const [activeFocus, setActiveFocus] = useState<string | null>(null)
   const [activeItemFocus, setActiveItemFocus] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [hintOpen, setHintOpen] = useState(false)
+  const [hintLevel, setHintLevel] = useState(0)
+  const [guestListOpen, setGuestListOpen] = useState(false)
+  const [guestList, setGuestList] = useState<GuestListState>({ status: 'idle', names: [] })
+  const [audioSettings, setAudioSettings] = useState<AudioSettings>(readAudioSettings)
 
   useEffect(() => {
     saveGame(state)
   }, [state])
 
+  useEffect(() => {
+    audioManager.setSettings(audioSettings)
+    try {
+      localStorage.setItem(audioSettingsKey, JSON.stringify(audioSettings))
+    } catch {
+      // Audio settings are optional; game save remains independent.
+    }
+  }, [audioSettings])
+
   const currentArea = areas[state.currentArea]
   const visibleHotspots = useMemo(() => getVisibleHotspots(state), [state])
+  const activeHint = useMemo(() => getActiveHint(state), [state])
   const send = (action: GameAction) => dispatchAndSave(dispatch, action)
 
   const resetWithConfirm = () => {
     if (confirm('保存データを消して、最初から遊びますか？')) {
       clearSave()
+      setActiveFocus(null)
+      setActiveItemFocus(null)
+      setMenuOpen(false)
       send({ type: 'RESET_ALL' })
     }
   }
+
+  const backToTitle = () => {
+    setActiveFocus(null)
+    setActiveItemFocus(null)
+    setMenuOpen(false)
+    setHintOpen(false)
+    send({ type: 'SHOW_TITLE' })
+  }
+
+  const openHint = () => {
+    setHintLevel(0)
+    setHintOpen(true)
+  }
+
+  const openGuestList = useCallback(() => {
+    setGuestListOpen(true)
+    setGuestList({ status: 'loading', names: [] })
+    fetch(guestDatabaseUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Firebase response ${response.status}`)
+        return response.json() as Promise<unknown>
+      })
+      .then((data) => setGuestList({ status: 'loaded', names: collectNicknames(data) }))
+      .catch(() => setGuestList({ status: 'error', names: [] }))
+  }, [])
 
   return (
     <main className="appShell">
@@ -152,6 +291,9 @@ function App() {
           activeFocus={activeFocus}
           activeItemFocus={activeItemFocus}
           showHotspots={DEBUG_MODE && showHotspots}
+          onOpenMenu={() => setMenuOpen(true)}
+          onOpenHint={openHint}
+          onOpenGuestList={openGuestList}
           onFocus={setActiveFocus}
           onItemFocus={setActiveItemFocus}
           onAction={send}
@@ -160,15 +302,166 @@ function App() {
       {state.screen === 'normalEnd' && <NormalEnd state={state} onContinue={() => send({ type: 'START_GAME' })} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
       {state.screen === 'photoE' && <PhotoEReveal state={state} onContinue={() => send({ type: 'GO_TRUE_END' })} />}
       {state.screen === 'trueEnd' && <TrueEnd state={state} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
+      {menuOpen && (
+        <SettingsMenu
+          settings={audioSettings}
+          onChange={setAudioSettings}
+          onClose={() => setMenuOpen(false)}
+          onTitle={backToTitle}
+          onReset={resetWithConfirm}
+        />
+      )}
+      {hintOpen && (
+        <HintMenu
+          hint={activeHint}
+          level={hintLevel}
+          onReveal={() => setHintLevel((value) => Math.min(value + 1, activeHint.hints.length))}
+          onClose={() => setHintOpen(false)}
+        />
+      )}
+      {guestListOpen && (
+        <GuestListMenu guestList={guestList} onClose={() => setGuestListOpen(false)} />
+      )}
       {DEBUG_MODE && (
         <>
-          <button className="debugButton" type="button" onClick={() => setDebugOpen((value) => !value)}>
+        <button className="debugButton" type="button" onClick={() => setDebugOpen((value) => !value)}>
             DEBUG
           </button>
           {debugOpen && <DebugPanel state={state} showHotspots={showHotspots} onToggleHotspots={() => setShowHotspots((value) => !value)} onAction={send} />}
         </>
       )}
     </main>
+  )
+}
+
+function SettingsMenu({
+  settings,
+  onChange,
+  onClose,
+  onTitle,
+  onReset,
+}: {
+  settings: AudioSettings
+  onChange: (settings: AudioSettings) => void
+  onClose: () => void
+  onTitle: () => void
+  onReset: () => void
+}) {
+  const update = (patch: Partial<AudioSettings>) => onChange({ ...settings, ...patch })
+
+  return (
+    <div className="settingsOverlay" role="presentation" onMouseDown={(event) => event.currentTarget === event.target && onClose()}>
+      <section className="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+        <div className="settingsHeader">
+          <h2 id="settings-title">設定</h2>
+          <button type="button" className="settingsClose" aria-label="設定を閉じる" onClick={onClose}>x</button>
+        </div>
+        <label className="settingsCheck">
+          <input type="checkbox" checked={settings.bgmEnabled} onChange={(event) => update({ bgmEnabled: event.currentTarget.checked })} />
+          <span>BGM</span>
+        </label>
+        <label className="settingsCheck">
+          <input type="checkbox" checked={settings.seEnabled} onChange={(event) => update({ seEnabled: event.currentTarget.checked })} />
+          <span>SE</span>
+        </label>
+        <label className="settingsSlider">
+          <span>BGM音量</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={settings.bgmVolume}
+            onChange={(event) => update({ bgmVolume: Number(event.currentTarget.value) })}
+          />
+        </label>
+        <label className="settingsSlider">
+          <span>SE音量</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={settings.seVolume}
+            onChange={(event) => update({ seVolume: Number(event.currentTarget.value) })}
+          />
+        </label>
+        <div className="settingsActions">
+          <button type="button" onClick={onTitle}>タイトルへ戻る</button>
+          <button type="button" onClick={onClose}>ゲームへ戻る</button>
+          <button type="button" onClick={onReset}>セーブリセット</button>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function HintMenu({
+  hint,
+  level,
+  onReveal,
+  onClose,
+}: {
+  hint: { title: string; hints: string[] }
+  level: number
+  onReveal: () => void
+  onClose: () => void
+}) {
+  const nextHintNumber = level + 1
+  const canRevealMore = level < hint.hints.length
+
+  return (
+    <div className="settingsOverlay" role="presentation" onMouseDown={(event) => event.currentTarget === event.target && onClose()}>
+      <section className="settingsModal hintModal" role="dialog" aria-modal="true" aria-labelledby="hint-title">
+        <div className="settingsHeader">
+          <h2 id="hint-title">ヒント</h2>
+          <button type="button" className="settingsClose" aria-label="ヒントを閉じる" onClick={onClose}>x</button>
+        </div>
+        <h3 className="hintPuzzleTitle">{hint.title}</h3>
+        {level > 0 && (
+          <div className="hintText">
+            {hint.hints.slice(0, level).map((text, index) => (
+              <p key={index}>{text}</p>
+            ))}
+          </div>
+        )}
+        {canRevealMore && (
+          <button type="button" className="hintRevealButton" onClick={onReveal}>
+            ヒント{nextHintNumber}を見る
+          </button>
+        )}
+      </section>
+    </div>
+  )
+}
+
+function GuestListMenu({ guestList, onClose }: { guestList: GuestListState; onClose: () => void }) {
+  return (
+    <div className="focusScene focus-guest-list" role="dialog" aria-modal="true" aria-labelledby="guest-list-title">
+      <section className="guestListPaper">
+        <p className="eyebrow">Reception Book</p>
+        <h3 id="guest-list-title">祝福の署名</h3>
+        <p className="guestListDescription">受付台に置かれた芳名帳だ。ここを訪れた人たちのニックネームが、古い紙に並んでいる。</p>
+        <div className="guestSignaturePaper">
+          {guestList.status === 'loading' && <p className="guestListStatus">芳名帳を確認している。</p>}
+          {guestList.status === 'error' && <p className="guestListStatus">署名を読み込めませんでした。</p>}
+          {guestList.status === 'loaded' && guestList.names.length === 0 && <p className="guestListStatus">署名はまだありません。</p>}
+          {guestList.status === 'loaded' && guestList.names.length > 0 && (
+            <div className="guestSignatureBlock">
+              <ul className="guestNicknameList">
+                {guestList.names.map((name) => <li key={name}>{name}</li>)}
+              </ul>
+              <div className="guestBlankLines" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+            </div>
+          )}
+        </div>
+        <button type="button" onClick={onClose}>閉じる</button>
+      </section>
+    </div>
   )
 }
 
@@ -214,6 +507,9 @@ function GameScreen({
   activeFocus,
   activeItemFocus,
   showHotspots,
+  onOpenMenu,
+  onOpenHint,
+  onOpenGuestList,
   onFocus,
   onItemFocus,
   onAction,
@@ -224,6 +520,9 @@ function GameScreen({
   activeFocus: string | null
   activeItemFocus: string | null
   showHotspots: boolean
+  onOpenMenu: () => void
+  onOpenHint: () => void
+  onOpenGuestList: () => void
   onFocus: (focusId: string | null) => void
   onItemFocus: (itemId: string | null) => void
   onAction: (action: GameAction) => void
@@ -278,7 +577,7 @@ function GameScreen({
   return (
     <section className="gameScreen">
       <header className="topBar">
-        <button type="button" className="menuButton" aria-label="メニュー">
+        <button type="button" className="menuButton" aria-label="メニュー" onClick={onOpenMenu}>
           <span aria-hidden="true">☰</span>
           <small>MENU</small>
         </button>
@@ -290,7 +589,7 @@ function GameScreen({
         <div className="hud">
           <MemoryMeter state={state} />
           <ClockWidget state={state} />
-          <button type="button" className="hintButton">ヒント</button>
+          <button type="button" className="hintButton" onClick={onOpenHint}>ヒント</button>
         </div>
       </header>
 
@@ -331,6 +630,11 @@ function GameScreen({
                 if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
                   onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
                   if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
+                  return
+                }
+                if (hotspot.id === 'entrance-desk') {
+                  onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
+                  onOpenGuestList()
                   return
                 }
                 if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {

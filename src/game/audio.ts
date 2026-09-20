@@ -10,19 +10,32 @@ export type AudioCue =
   | 'true-end'
 
 export class AudioManager {
-  private enabled = false
+  private userActivated = false
+  private bgmEnabled = true
+  private seEnabled = true
+  private bgmVolume = 0.72
+  private seVolume = 0.68
   private context: AudioContext | null = null
 
   enable() {
-    this.enabled = true
+    this.userActivated = true
   }
 
   disable() {
-    this.enabled = false
+    this.userActivated = false
+  }
+
+  setSettings(settings: { bgmEnabled: boolean; seEnabled: boolean; bgmVolume: number; seVolume: number }) {
+    this.bgmEnabled = settings.bgmEnabled
+    this.seEnabled = settings.seEnabled
+    this.bgmVolume = this.clampVolume(settings.bgmVolume)
+    this.seVolume = this.clampVolume(settings.seVolume)
   }
 
   play(cue: AudioCue) {
-    if (!this.enabled) return
+    if (!this.userActivated) return
+    if (cue === 'area-bgm' && (!this.bgmEnabled || this.bgmVolume <= 0)) return
+    if (cue !== 'area-bgm' && (!this.seEnabled || this.seVolume <= 0)) return
     if (cue === 'bell') {
       this.playBell()
       return
@@ -31,7 +44,7 @@ export class AudioManager {
   }
 
   playPianoTone(toneOffset: number) {
-    if (!this.enabled || typeof window === 'undefined') return
+    if (!this.userActivated || !this.seEnabled || this.seVolume <= 0 || typeof window === 'undefined') return
     const context = this.getContext()
     if (!context) return
     const start = context.currentTime
@@ -41,7 +54,7 @@ export class AudioManager {
     oscillator.type = 'triangle'
     oscillator.frequency.setValueAtTime(frequency, start)
     gain.gain.setValueAtTime(0.0001, start)
-    gain.gain.exponentialRampToValueAtTime(0.16, start + 0.012)
+    gain.gain.exponentialRampToValueAtTime(0.16 * this.seVolume, start + 0.012)
     gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.42)
     oscillator.connect(gain)
     gain.connect(context.destination)
@@ -60,7 +73,7 @@ export class AudioManager {
       oscillator.type = 'sine'
       oscillator.frequency.setValueAtTime(frequency, start)
       gain.gain.setValueAtTime(0.0001, start)
-      gain.gain.exponentialRampToValueAtTime(0.12 / (index + 1), start + 0.02)
+      gain.gain.exponentialRampToValueAtTime((0.12 * this.seVolume) / (index + 1), start + 0.02)
       gain.gain.exponentialRampToValueAtTime(0.0001, start + 1.1)
       oscillator.connect(gain)
       gain.connect(context.destination)
@@ -79,6 +92,11 @@ export class AudioManager {
     } catch {
       return null
     }
+  }
+
+  private clampVolume(value: number) {
+    if (!Number.isFinite(value)) return 0
+    return Math.min(1, Math.max(0, value))
   }
 }
 

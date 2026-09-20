@@ -246,6 +246,10 @@ function GameScreen({
     () => displayedHotspots.filter(isStageMoveHotspot).sort((a, b) => a.position.x - b.position.x),
     [displayedHotspots],
   )
+  const stageHotspots = useMemo(
+    () => displayedHotspots.filter((hotspot) => !isStageMoveHotspot(hotspot)),
+    [displayedHotspots],
+  )
   const receptionViewLabel =
     receptionView === 'tables'
       ? 'テーブル周辺'
@@ -306,11 +310,11 @@ function GameScreen({
               披露宴会場へ戻る
             </button>
           )}
-          {displayedHotspots.map((hotspot) => (
+          {stageHotspots.map((hotspot) => (
             <button
               key={hotspot.id}
               type="button"
-              className={`hotspot hotspot-${hotspot.id} ${isStageMoveHotspot(hotspot) ? 'stageMoveHotspot' : ''} ${showHotspots ? 'visible' : ''}`}
+              className={`hotspot hotspot-${hotspot.id} ${showHotspots ? 'visible' : ''}`}
               style={{
                 left: `${hotspot.position.x}%`,
                 top: `${hotspot.position.y}%`,
@@ -322,12 +326,6 @@ function GameScreen({
                 const nextReceptionView = receptionViewTargets[hotspot.id]
                 if (isReception && nextReceptionView) {
                   changeReceptionView(nextReceptionView)
-                  return
-                }
-                const moveTarget = stageMoveTargets[hotspot.id]
-                if (moveTarget) {
-                  onFocus(null)
-                  onAction({ type: 'MOVE', areaId: moveTarget })
                   return
                 }
                 if (isReception && receptionView === 'piano-area' && hotspot.id === 'piano') {
@@ -344,7 +342,7 @@ function GameScreen({
                 if (hotspot.focusScene) onFocus(hotspot.focusScene.id)
               }}
             >
-              {(showHotspots || isStageMoveHotspot(hotspot)) && hotspot.label}
+              {showHotspots && hotspot.label}
             </button>
           ))}
         </div>

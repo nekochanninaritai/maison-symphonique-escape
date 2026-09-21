@@ -59,7 +59,6 @@ type GuestListState = {
 type ReceptionView = 'main' | 'tables' | 'tables-right' | 'high-tables' | 'piano-area'
 const stageMoveTargets: Partial<Record<string, AreaId>> = {
   'entrance-to-waiting': 'waiting-room',
-  'entrance-left-space': 'dressing-room',
   'waiting-room-to-entrance': 'entrance',
   'waiting-room-to-ceremony': 'ceremony',
   'dressing-to-entrance': 'entrance',
@@ -653,6 +652,11 @@ function GameScreen({
                 if (hotspot.id === 'entrance-desk') {
                   onAction({ type: 'EXAMINE', hotspotId: hotspot.id })
                   onOpenGuestList()
+                  return
+                }
+                if (hotspot.id === 'entrance-left-space') {
+                  onFocus(null)
+                  onAction({ type: 'MOVE', areaId: 'dressing-room' })
                   return
                 }
                 if (selectedItem && hotspot.useTarget && selectedItem.usableTargets.includes(hotspot.useTarget)) {

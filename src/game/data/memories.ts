@@ -28,7 +28,7 @@ export const createMemories = (): Record<string, Memory> => ({
   september23: {
     id: 'september23',
     title: 'PHOTO E',
-    description: '開いた門の外から、Maison Symphoniqueを振り返った古い写真。',
+    description: '開いた門の外から、Maison Symphoniqueを振り返った写真。',
     unlocked: false,
   },
 })

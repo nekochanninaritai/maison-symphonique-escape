@@ -14,7 +14,7 @@ import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
 import { hourHandAngleFromTime, minuteHandAngleFromTime, timeFromClockHandPoint } from './game/clock'
 import { canManuallyControlGrandClock, getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, reducer, shouldShowCeremonyNavCue } from './game/logic'
-import type { AreaId, GameAction, GameState, Hotspot, Item, Puzzle } from './game/types'
+import type { AreaId, GameAction, GameState, Hotspot, Item } from './game/types'
 import type { ClockHandKind } from './game/clock'
 import oldInvitationScheduleImage from './assets/environments/invitation-01-schedule.jpg'
 import p03ReceptionSeatingChartImage from './assets/environments/p03-reception-seating-chart.jpg'
@@ -30,6 +30,7 @@ import photoAImage from './assets/environments/photoA.jpg'
 import photoBImage from './assets/environments/photoB.jpg'
 import photoCImage from './assets/environments/photoC.jpg'
 import photoDImage from './assets/environments/photoD.jpg'
+import photoEImage from './assets/environments/photoE.png'
 import coffeeImage from './assets/environments/Puzzle 01/Coffee.jpg'
 import gateauChocolatImage from './assets/environments/Puzzle 01/GateauChocolat.jpg'
 import hotTeeImage from './assets/environments/Puzzle 01/HotTee.jpg'
@@ -44,7 +45,6 @@ import itemPhotoDImage from './assets/environments/item/item-photoD.jpg'
 import minuteHandItemImage from './assets/environments/item/minute-hand.png'
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
-const focusOnlyPuzzleIds = new Set(['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final'])
 const puzzleOrder = ['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final']
 type AudioSettings = {
   bgmEnabled: boolean
@@ -223,6 +223,8 @@ function App() {
   const [guestListOpen, setGuestListOpen] = useState(false)
   const [guestList, setGuestList] = useState<GuestListState>({ status: 'idle', names: [] })
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(readAudioSettings)
+  const [logHistory, setLogHistory] = useState<string[]>([])
+  const lastMessageQueueKeyRef = useRef('')
 
   useEffect(() => {
     saveGame(state)
@@ -237,6 +239,17 @@ function App() {
     }
   }, [audioSettings])
 
+  useEffect(() => {
+    if (state.messageQueue.length === 0) {
+      lastMessageQueueKeyRef.current = ''
+      return
+    }
+    const messageKey = JSON.stringify(state.messageQueue)
+    if (messageKey === lastMessageQueueKeyRef.current) return
+    lastMessageQueueKeyRef.current = messageKey
+    setLogHistory((history) => [...history, ...state.messageQueue])
+  }, [state.messageQueue])
+
   const currentArea = areas[state.currentArea]
   const visibleHotspots = useMemo(() => getVisibleHotspots(state), [state])
   const activeHint = useMemo(() => getActiveHint(state), [state])
@@ -248,6 +261,8 @@ function App() {
       setActiveFocus(null)
       setActiveItemFocus(null)
       setMenuOpen(false)
+      setLogHistory([])
+      lastMessageQueueKeyRef.current = ''
       send({ type: 'RESET_ALL' })
     }
   }
@@ -297,6 +312,7 @@ function App() {
           onFocus={setActiveFocus}
           onItemFocus={setActiveItemFocus}
           onAction={send}
+          logHistory={logHistory}
         />
       )}
       {state.screen === 'normalEnd' && <NormalEnd state={state} onContinue={() => send({ type: 'START_GAME' })} onTitle={() => send({ type: 'SHOW_TITLE' })} />}
@@ -507,6 +523,7 @@ function GameScreen({
   activeFocus,
   activeItemFocus,
   showHotspots,
+  logHistory,
   onOpenMenu,
   onOpenHint,
   onOpenGuestList,
@@ -520,6 +537,7 @@ function GameScreen({
   activeFocus: string | null
   activeItemFocus: string | null
   showHotspots: boolean
+  logHistory: string[]
   onOpenMenu: () => void
   onOpenHint: () => void
   onOpenGuestList: () => void
@@ -582,9 +600,9 @@ function GameScreen({
           <small>MENU</small>
         </button>
         <div className="roomTitle">
-          <p className="eyebrow">Escape Atelier</p>
-          <h2>#001 {currentArea.name}</h2>
-          <span>{currentArea.chapter}</span>
+          <p className="eyebrow">Maison Symphonique</p>
+          <h2>{currentArea.name}</h2>
+          <span>{currentArea.chapter.toUpperCase()}</span>
         </div>
         <div className="hud">
           <MemoryMeter state={state} />
@@ -762,23 +780,10 @@ function GameScreen({
 
       <section className="bottomConsole" aria-label="探索情報">
         <Inventory state={state} onInspectItem={onItemFocus} />
-        <MessageWindow state={state} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />
+        <MessageWindow state={state} logHistory={logHistory} onClear={() => onAction({ type: 'CLEAR_MESSAGES' })} />
         <MemoryGallery state={state} onInspectMemory={(memoryId) => onItemFocus(`memory:${memoryId}`)} />
       </section>
 
-      {DEBUG_MODE && (
-        <section className="placeholderPuzzles">
-          <h3>Placeholder Puzzle</h3>
-          {Object.values(state.puzzles)
-            .filter((puzzle) => puzzle.areaId === state.currentArea && !focusOnlyPuzzleIds.has(puzzle.puzzleId))
-            .map((puzzle) => (
-              <PuzzleRow key={puzzle.puzzleId} state={state} puzzle={puzzle} onSolve={() => onAction({ type: 'SOLVE_PUZZLE', puzzleId: puzzle.puzzleId })} />
-            ))}
-          {state.worldMode === 'memory' && state.currentArea === 'garden' && (
-            <button type="button" onClick={() => onAction({ type: 'GO_TRUE_END' })}>TRUE ENDへ</button>
-          )}
-        </section>
-      )}
     </section>
   )
 }
@@ -1111,10 +1116,7 @@ function PhotoFocus({ memoryId }: { memoryId: string }) {
       <div className="photoFocus trueMemoryPhoto">
         <h3>{photo.title}</h3>
         <div className="oldPhotoComposition september23">
-          <div className="photoRoom">
-            {photo.sceneElements.map((element) => <span key={element}>{element}</span>)}
-          </div>
-          <div className="photoInscription">{photo.inscription}</div>
+          <img className="oldPhotoImage" src={photoEImage} alt="PHOTO E Maison Symphoniqueを振り返る古い写真" />
         </div>
         <p>開いた門の外から、Maison Symphoniqueを振り返った古い写真。</p>
       </div>
@@ -1169,11 +1171,9 @@ function GardenGateFocus({ state, onAction }: { state: GameState; onAction: (act
 function GardenBookFocus() {
   return (
     <div className="gardenBookPuzzle">
-      <div className="gardenFocusPhoto book" aria-hidden="true">
-        <span />
-      </div>
-      <p>緑のベンチの上に、古い本が置かれている。</p>
-      <p>ページは湿気を含んでいて、文字はほとんど読めない。</p>
+      <div className="gardenFocusPhoto book" aria-hidden="true" />
+          <p>本を開くと、庭で眠る猫の絵が描かれている。</p>
+          <p>隣のページには、誰かが書き残した文章が並んでいる。</p>
     </div>
   )
 }
@@ -1446,12 +1446,29 @@ function MemoryMeter({ state }: { state: GameState }) {
   )
 }
 
-function MessageWindow({ state, onClear }: { state: GameState; onClear: () => void }) {
+function MessageWindow({ state, logHistory, onClear }: { state: GameState; logHistory: string[]; onClear: () => void }) {
+  const logRef = useRef<HTMLElement | null>(null)
   const hasMessages = state.messageQueue.length > 0
+  const hasLogHistory = logHistory.length > 0
+
+  useEffect(() => {
+    const element = logRef.current
+    if (!element) return
+    element.scrollTop = 0
+  }, [logHistory.length])
+
   return (
-    <div className={`messageWindow ${hasMessages ? '' : 'empty'}`}>
+    <div className={`messageWindow ${hasLogHistory ? '' : 'empty'}`}>
       <h3>LOG</h3>
-      {hasMessages ? state.messageQueue.map((message, index) => <p key={index}>{message}</p>) : <p>探索ログはまだありません。</p>}
+      {hasLogHistory ? (
+        <ul className="messageLogEntries" ref={(element) => { logRef.current = element }}>
+          {[...logHistory].reverse().map((message, index) => <li key={`${logHistory.length - index}-${message}`}>{message}</li>)}
+        </ul>
+      ) : (
+        <div className="messageLogEntries" ref={(element) => { logRef.current = element }}>
+          <p>探索ログはまだありません。</p>
+        </div>
+      )}
       {hasMessages && <button type="button" onClick={onClear}>閉じる</button>}
     </div>
   )
@@ -1465,7 +1482,7 @@ function Inventory({
   onInspectItem: (itemId: string) => void
 }) {
   const obtainedItems = Object.values(state.inventory).filter((item) => item.obtained && !item.consumed)
-  const emptySlots = Math.max(0, 5 - obtainedItems.length)
+  const emptySlots = Math.max(0, 4 - obtainedItems.length)
   return (
     <aside className="inventory">
       <h3>所持品</h3>
@@ -1488,26 +1505,6 @@ function Inventory({
         ))}
       </div>
     </aside>
-  )
-}
-
-function PuzzleRow({ state, puzzle, onSolve }: { state: GameState; puzzle: Puzzle; onSolve: () => void }) {
-  const checklist = getPuzzleDependencyChecklist(state, puzzle)
-  return (
-    <div className="puzzleRow">
-      <div>
-        <small>[ DEVELOPMENT PLACEHOLDER ]</small>
-        <span>{puzzle.title}</span>
-        {puzzle.description && <p>{puzzle.description}</p>}
-        {checklist.length > 0 && (
-          <ul>
-            {checklist.map((item) => <li key={item}>{item}</li>)}
-          </ul>
-        )}
-      </div>
-      <strong>{puzzle.status}</strong>
-      <button type="button" disabled={puzzle.status !== 'available'} onClick={onSolve}>Solved</button>
-    </div>
   )
 }
 

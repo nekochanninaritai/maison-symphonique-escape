@@ -52,11 +52,25 @@ export const areas: Record<string, Area> = {
         position: { x: 45, y: 60, width: 39, height: 25 },
         message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
-      },
+        },
+    {
+        id: 'entrance-menu',
+        label: 'メニュー表',
+        position: { x: 65, y: 35, width: 25, height: 15 },
+        message: [
+            '',
+            'ガトーショコラ　／　ブレンドコーヒー',
+            'レモンケーキ　　／　紅茶(Hot)',
+            '苺のショートケーキ　／　紅茶(Ice)',
+            '',
+            '― Tea & Dessert Selection ―',
+            'テーブルに、小さなメニュー表が置かれている。セットメニューが記されているようだ。',
+        ],
+    },
       {
         id: 'entrance-kitchen',
         label: 'キッチン',
-        position: { x: 40, y: 22, width: 45, height: 25 },
+        position: { x: 30, y: 22, width: 35, height: 25 },
         message: ['グラスや食器がきれいに並んでいる。特に変わったものはなさそうだ。'],
       },
       {
@@ -376,7 +390,7 @@ export const areas: Record<string, Area> = {
       {
         id: 'garden-gate',
         label: '出口へ続く門',
-        position: { x: 45, y: 39, width: 11, height: 24 },
+        position: { x: 45, y: 44, width: 11, height: 24 },
         focusScene: {
           id: 'focus-garden-gate',
           title: '出口へ続く門',
@@ -390,13 +404,13 @@ export const areas: Record<string, Area> = {
       {
         id: 'garden-book',
         label: '古い本',
-        position: { x: 62, y: 70, width: 11, height: 9 },
+        position: { x: 65, y: 70, width: 11, height: 9 },
         focusScene: {
           id: 'focus-garden-book',
           title: '古い本',
           description: '緑のベンチの上に、古い本が置かれている。',
         },
-        message: ['緑のベンチの上に、古い本が置かれている。'],
+          message: ['何気ない一日の記憶を、そっと閉じ込めた本のようだ。'],
       },
       {
         id: 'garden-to-reception',

@@ -61,7 +61,7 @@ export const ceremonyVases: CeremonyVase[] = [
     name: 'Spiral Vase',
     description: '螺旋を描くような細工の花器。',
     orderFromEntrance: 1,
-    position: { x: 62, y: 60, width: 14, height: 14 },
+    position: { x: 40, y: 60, width: 14, height: 14 },
   },
   {
     id: 'ceremony-vase-faceted',
@@ -78,7 +78,7 @@ export const ceremonyVases: CeremonyVase[] = [
     name: 'Square Vase',
     description: '直線的な四角い花器。',
     orderFromEntrance: 4,
-    position: { x: 60, y: 32, width: 14, height: 14 },
+    position: { x: 33, y: 32, width: 14, height: 14 },
   },
 ]
 

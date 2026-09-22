@@ -19,6 +19,7 @@ import hotTea from '../assets/environments/Puzzle 01/HotTea.jpg'
 import iceTea from '../assets/environments/Puzzle 01/IceTea.jpg'
 import mangoCake from '../assets/environments/Puzzle 01/MangoCake.jpg'
 import shortCake from '../assets/environments/Puzzle 01/ShortCake.jpg'
+import hourHand from '../assets/environments/item/hour-hand.jpg'
 import { gameImageAssets, getPreloadImageCount } from './preloadAssets'
 
 const environmentAssets = [
@@ -66,5 +67,9 @@ describe('EnvironmentAssets', () => {
 
   it('keeps preload image assets unique', () => {
     expect(getPreloadImageCount()).toBe(new Set(gameImageAssets).size)
+  })
+
+  it('preloads the dedicated clock hour hand item image', () => {
+    expect(gameImageAssets).toContain(hourHand)
   })
 })

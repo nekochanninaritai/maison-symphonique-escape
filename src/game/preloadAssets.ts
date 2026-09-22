@@ -45,6 +45,7 @@ import itemPhotoB from '../assets/environments/item/item-photoB.jpg'
 import itemPhotoC from '../assets/environments/item/item-photoC.jpg'
 import itemPhotoD from '../assets/environments/item/item-photoD.jpg'
 import minuteHand from '../assets/environments/item/minute-hand.png'
+import hourHand from '../assets/environments/item/hour-hand.jpg'
 
 export const gameImageAssets = Array.from(new Set([
   bgEntrance,
@@ -94,6 +95,7 @@ export const gameImageAssets = Array.from(new Set([
   itemPhotoC,
   itemPhotoD,
   minuteHand,
+  hourHand,
 ]))
 
 export type ImagePreloadProgress = {

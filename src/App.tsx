@@ -45,6 +45,7 @@ import itemPhotoBImage from './assets/environments/item/item-photoB.jpg'
 import itemPhotoCImage from './assets/environments/item/item-photoC.jpg'
 import itemPhotoDImage from './assets/environments/item/item-photoD.jpg'
 import minuteHandItemImage from './assets/environments/item/minute-hand.png'
+import hourHandItemImage from './assets/environments/item/hour-hand.jpg'
 import bgmChapter1 from './assets/audio/1章.mp3'
 import bgmChapter2 from './assets/audio/2章.mp3'
 import bgmChapter3 from './assets/audio/3章.mp3'
@@ -128,7 +129,7 @@ const teaDrinkImages: Record<string, string> = {
 }
 const itemImages: Record<string, string> = {
   'clock-hand': minuteHandItemImage,
-  'clock-hour-hand': minuteHandItemImage,
+  'clock-hour-hand': hourHandItemImage,
   'ceremony-door-key': doorKeyItemImage,
   'small-key': doorKeyItemImage,
   'transparent-card': p04OverlayBaseImage,
@@ -137,7 +138,7 @@ const itemImages: Record<string, string> = {
 }
 const itemFocusImages: Record<string, string> = {
   'clock-hand': minuteHandItemImage,
-  'clock-hour-hand': minuteHandItemImage,
+  'clock-hour-hand': hourHandItemImage,
   'ceremony-door-key': doorKeyItemImage,
   'small-key': doorKeyItemImage,
   'transparent-card': p04OverlayBaseImage,

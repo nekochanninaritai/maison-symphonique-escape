@@ -19,7 +19,7 @@ import hotTea from '../assets/environments/Puzzle 01/HotTea.jpg'
 import iceTea from '../assets/environments/Puzzle 01/IceTea.jpg'
 import mangoCake from '../assets/environments/Puzzle 01/MangoCake.jpg'
 import shortCake from '../assets/environments/Puzzle 01/ShortCake.jpg'
-import hourHand from '../assets/environments/item/hour-hand.jpg'
+import hourHand from '../assets/environments/item/hour-hand.png'
 import { gameImageAssets, getPreloadImageCount } from './preloadAssets'
 
 const environmentAssets = [

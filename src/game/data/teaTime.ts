@@ -1,4 +1,4 @@
-export type TeaPair = {
+﻿export type TeaPair = {
   id: string
   drinkId: string
   drinkName: string
@@ -22,8 +22,8 @@ export const teaTimePairs: TeaPair[] = [
     description: '深い茶色のコーヒーカップ。',
   },
   {
-    id: 'hot-tee-shortcake',
-    drinkId: 'hot-tee',
+    id: 'hot-tea-shortcake',
+    drinkId: 'hot-tea',
     drinkName: 'HotTee',
     drinkIcon: 'HT',
     sweetId: 'shortcake',
@@ -32,8 +32,8 @@ export const teaTimePairs: TeaPair[] = [
     description: '温かい紅茶のカップ。',
   },
   {
-    id: 'ice-tee-mango-cake',
-    drinkId: 'ice-tee',
+    id: 'ice-tea-mango-cake',
+    drinkId: 'ice-tea',
     drinkName: 'IceTee',
     drinkIcon: 'IT',
     sweetId: 'mango-cake',
@@ -48,8 +48,8 @@ export const correctTeaTimeSlots: Record<string, string> = Object.fromEntries(
 )
 
 export const initialTeaTimeSlots: Record<string, string> = {
-  'gateau-chocolat': 'hot-tee',
-  shortcake: 'ice-tee',
+  'gateau-chocolat': 'hot-tea',
+  shortcake: 'ice-tea',
   'mango-cake': 'coffee',
 }
 
@@ -57,3 +57,4 @@ export const getTeaDrink = (drinkId: string): TeaPair | undefined => teaTimePair
 
 export const isTeaTimeSolved = (cupSlots: Record<string, string>): boolean =>
   teaTimePairs.every((pair) => cupSlots[pair.sweetId] === pair.drinkId)
+

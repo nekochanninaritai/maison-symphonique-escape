@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+﻿import { describe, expect, it, vi } from 'vitest'
 import {
   applyPianoOverlay,
   attachClockHand,
@@ -431,7 +431,7 @@ describe('PuzzleState', () => {
     expect(state.teaTime.cupSlots['gateau-chocolat']).toBe('coffee')
     expect(state.puzzles.p01_waiting_room.status).toBe('available')
 
-    state = moveTeaCup(state, 'hot-tee', 'shortcake')
+    state = moveTeaCup(state, 'hot-tea', 'shortcake')
 
     expect(state.puzzles.p01_waiting_room.status).toBe('solved')
     expect(state.flags.dressingRoomUnlocked).toBe(true)
@@ -446,8 +446,8 @@ describe('PuzzleState', () => {
     ])
     expect(correctTeaTimeSlots).toEqual({
       'gateau-chocolat': 'coffee',
-      shortcake: 'hot-tee',
-      'mango-cake': 'ice-tee',
+      shortcake: 'hot-tea',
+      'mango-cake': 'ice-tea',
     })
   })
 
@@ -1554,8 +1554,8 @@ describe('SaveState', () => {
 
     const loaded = loadGame()
     expect(loaded.teaTime.cupSlots).toEqual({
-      'gateau-chocolat': 'hot-tee',
-      shortcake: 'ice-tee',
+      'gateau-chocolat': 'hot-tea',
+      shortcake: 'ice-tea',
       'mango-cake': 'coffee',
     })
     vi.unstubAllGlobals()
@@ -2048,4 +2048,5 @@ describe('Regression: WARN-05 clock hint after normal ending', () => {
     expect(state.messageQueue.some((message) => message.includes('はじめてこの館'))).toBe(false)
   })
 })
+
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+﻿import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import './App.css'
 import { areas } from './game/data/areas'
 import { altarCandleDisplaySequence, ceremonyCandles, correctCandleSequence, solvedCandleLightSequence } from './game/data/ceremonyCandles'
@@ -12,6 +12,7 @@ import { p06TargetTime } from './game/data/weddingSchedule'
 import { gameConfig, DEBUG_MODE } from './game/config'
 import { clearSave, loadGame, saveGame } from './game/save'
 import { audioManager } from './game/audio'
+import { gameImageAssets, getPreloadImageCount, preloadImages } from './game/preloadAssets'
 import { hourHandAngleFromTime, minuteHandAngleFromTime, timeFromClockHandPoint } from './game/clock'
 import { canManuallyControlGrandClock, getAltarPhotoState, getMemoryCount, getPuzzleDependencyChecklist, getTeaDrawerState, getVisibleHotspots, reducer, shouldShowCeremonyNavCue } from './game/logic'
 import type { AreaId, GameAction, GameState, Hotspot, Item } from './game/types'
@@ -71,6 +72,11 @@ type GuestListState = {
   status: 'idle' | 'loading' | 'loaded' | 'error'
   names: string[]
 }
+type PreloadState = {
+  loaded: number
+  total: number
+  ready: boolean
+}
 type ReceptionView = 'main' | 'tables' | 'tables-right' | 'high-tables' | 'piano-area'
 const stageMoveTargets: Partial<Record<string, AreaId>> = {
   'entrance-to-waiting': 'waiting-room',
@@ -117,8 +123,8 @@ const teaSweetImages: Record<string, string> = {
 }
 const teaDrinkImages: Record<string, string> = {
   coffee: coffeeImage,
-  'hot-tee': hotTeeImage,
-  'ice-tee': iceTeeImage,
+  'hot-tea': hotTeeImage,
+  'ice-tea': iceTeeImage,
 }
 const itemImages: Record<string, string> = {
   'clock-hand': minuteHandItemImage,
@@ -241,6 +247,8 @@ function App() {
   const [guestListOpen, setGuestListOpen] = useState(false)
   const [guestList, setGuestList] = useState<GuestListState>({ status: 'idle', names: [] })
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(readAudioSettings)
+  const [preloadState, setPreloadState] = useState<PreloadState>(() => ({ loaded: 0, total: getPreloadImageCount(), ready: false }))
+  const [gameEntered, setGameEntered] = useState(false)
   const bgmAudioRef = useRef<HTMLAudioElement | null>(null)
   const currentBgmRef = useRef<string | null>(null)
   const [logHistory, setLogHistory] = useState<string[]>([])
@@ -249,6 +257,20 @@ function App() {
   useEffect(() => {
     saveGame(state)
   }, [state])
+
+  useEffect(() => {
+    let active = true
+    preloadImages(gameImageAssets, ({ loaded, total }) => {
+      if (!active) return
+      setPreloadState({ loaded, total, ready: loaded >= total })
+    }).then(({ loaded, total }) => {
+      if (!active) return
+      setPreloadState({ loaded, total, ready: true })
+    })
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     audioManager.setSettings(audioSettings)
@@ -260,6 +282,11 @@ function App() {
   }, [audioSettings])
 
   useEffect(() => {
+    if (!gameEntered) {
+      bgmAudioRef.current?.pause()
+      return
+    }
+
     let nextBgm: string | null = null
 
     if (state.screen === 'game') {
@@ -317,6 +344,7 @@ function App() {
     state.currentArea,
     audioSettings.bgmEnabled,
     audioSettings.bgmVolume,
+    gameEntered,
   ])
 
   useEffect(() => {
@@ -379,6 +407,14 @@ function App() {
       .then((data) => setGuestList({ status: 'loaded', names: collectNicknames(data) }))
       .catch(() => setGuestList({ status: 'error', names: [] }))
   }, [])
+
+  if (!gameEntered) {
+    return (
+      <main className="appShell">
+        <PreloadScreen preloadState={preloadState} onStart={() => setGameEntered(true)} />
+      </main>
+    )
+  }
 
   return (
     <main className="appShell">
@@ -587,6 +623,27 @@ function TitleScreen({ state, onStart, onContinue, onReset }: { state: GameState
           <button type="button" className="secondary" onClick={onContinue}>Continue</button>
           <button type="button" className="ghost" onClick={onReset}>最初から遊ぶ</button>
         </div>
+      </div>
+    </section>
+  )
+}
+
+function PreloadScreen({ preloadState, onStart }: { preloadState: PreloadState; onStart: () => void }) {
+  const percent = preloadState.total === 0 ? 100 : Math.min(100, Math.round((preloadState.loaded / preloadState.total) * 100))
+
+  return (
+    <section className="preloadScreen" aria-live="polite" aria-label="画像読み込み">
+      <div className="preloadCard">
+        <p className="eyebrow">Maison Symphonique</p>
+        <h1>Maison Symphonique</h1>
+        <p className="preloadText">{preloadState.ready ? 'Ready' : 'Loading...'}</p>
+        <div className="preloadMeter" aria-label={`Loading ${percent}%`}>
+          <span style={{ width: `${percent}%` }} />
+        </div>
+        <p className="preloadPercent">{percent}%</p>
+        <button type="button" disabled={!preloadState.ready} onClick={onStart}>
+          GAME START
+        </button>
       </div>
     </section>
   )
@@ -1994,3 +2051,4 @@ function DebugState({ state }: { state: GameState }) {
 }
 
 export default App
+

@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --paper: #fbf7ef;
   --ink: #2b2522;
   --muted: #74665d;
@@ -57,6 +57,70 @@ button:disabled {
   width: min(100%, 1120px);
   min-height: 100svh;
   background: var(--paper);
+}
+
+.preloadScreen {
+  width: min(100%, 1120px);
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 247, 224, 0.92), rgba(196, 166, 122, 0.34) 38%, rgba(45, 37, 31, 0.32) 72%),
+    linear-gradient(145deg, #f6efe2, #d8c3a4 52%, #2c2828);
+}
+
+.preloadCard {
+  width: min(100%, 390px);
+  padding: 30px 22px;
+  border: 1px solid rgba(166, 120, 58, 0.56);
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(255, 250, 240, 0.9), rgba(255, 250, 240, 0.82)),
+    var(--paper);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.preloadCard h1 {
+  margin-bottom: 20px;
+  font-size: clamp(2rem, 9vw, 3.8rem);
+}
+
+.preloadText {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.preloadMeter {
+  height: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(166, 120, 58, 0.38);
+  border-radius: 999px;
+  background: rgba(255, 250, 240, 0.72);
+}
+
+.preloadMeter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8f6a3c, #c99b52);
+  transition: width 180ms ease;
+}
+
+.preloadPercent {
+  margin: 10px 0 20px;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.preloadCard button {
+  width: min(100%, 260px);
+  background: #263c64;
+  color: #fffaf0;
+  border-color: var(--gold);
+  font-weight: 700;
 }
 
 /* ── Game screen parchment base ── */
@@ -1318,7 +1382,7 @@ h3 {
   background: linear-gradient(90deg, #3a2118, #8f6b42);
 }
 
-.teaPair-hot-tee-shortcake {
+.teaPair-hot-tea-shortcake {
   border-color: rgba(158, 113, 132, 0.38);
   background:
     radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.72), transparent 28%),
@@ -1327,11 +1391,11 @@ h3 {
     linear-gradient(145deg, rgba(246, 241, 232, 0.95), rgba(255, 250, 240, 0.98));
 }
 
-.teaPair-hot-tee-shortcake::before {
+.teaPair-hot-tea-shortcake::before {
   background: linear-gradient(90deg, #b98396, #e8d5b5);
 }
 
-.teaPair-ice-tee-mango-cake {
+.teaPair-ice-tea-mango-cake {
   border-color: rgba(166, 120, 58, 0.46);
   background:
     radial-gradient(circle at 16% 16%, rgba(255, 255, 255, 0.72), transparent 28%),
@@ -1339,7 +1403,7 @@ h3 {
     linear-gradient(145deg, rgba(239, 245, 235, 0.96), rgba(255, 250, 240, 0.98));
 }
 
-.teaPair-ice-tee-mango-cake::before {
+.teaPair-ice-tea-mango-cake::before {
   background: linear-gradient(90deg, #b88734, #d7ac50);
 }
 
@@ -3555,3 +3619,4 @@ h3 {
     min-height: 300px;
   }
 }
+

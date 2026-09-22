@@ -1051,11 +1051,6 @@ function TeaTimeFocus({ state, onAction }: { state: GameState; onAction: (action
           )
         })}
       </div>
-      {dragging && (
-        <div className="teaDragGhost" style={{ left: dragging.x, top: dragging.y }} aria-hidden="true">
-          {getTeaDrink(dragging.cupId)?.drinkName}
-        </div>
-      )}
       <button
         type="button"
         className={`teaDrawer ${drawerState}`}

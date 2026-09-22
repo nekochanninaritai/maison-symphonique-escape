@@ -13,6 +13,13 @@ import gardenLamp from '../assets/environments/garden-focus-lamp.jpg'
 import gardenGate from '../assets/environments/garden-focus-gate.jpg'
 import grandClock from '../assets/environments/clock-01-grand-clock.jpg'
 import oldInvitationSchedule from '../assets/environments/invitation-01-schedule.jpg'
+import coffee from '../assets/environments/Puzzle 01/Coffee.jpg'
+import gateauChocolat from '../assets/environments/Puzzle 01/GateauChocolat.jpg'
+import hotTea from '../assets/environments/Puzzle 01/HotTea.jpg'
+import iceTea from '../assets/environments/Puzzle 01/IceTea.jpg'
+import mangoCake from '../assets/environments/Puzzle 01/MangoCake.jpg'
+import shortCake from '../assets/environments/Puzzle 01/ShortCake.jpg'
+import { gameImageAssets, getPreloadImageCount } from './preloadAssets'
 
 const environmentAssets = [
   entrance,
@@ -31,6 +38,15 @@ const environmentAssets = [
   oldInvitationSchedule,
 ]
 
+const puzzle01Assets = [
+  coffee,
+  gateauChocolat,
+  hotTea,
+  iceTea,
+  mangoCake,
+  shortCake,
+]
+
 describe('EnvironmentAssets', () => {
   it('keeps Phase 3A core environment assets resolvable by Vite', () => {
     for (const assetPath of environmentAssets) {
@@ -40,5 +56,15 @@ describe('EnvironmentAssets', () => {
 
   it('keeps the old invitation schedule image resolvable by Vite', () => {
     expect(oldInvitationSchedule).toMatch(/invitation-01-schedule.*\.jpg$/)
+  })
+
+  it('preloads every Puzzle 01 image currently used by the Tea Time UI', () => {
+    for (const assetPath of puzzle01Assets) {
+      expect(gameImageAssets).toContain(assetPath)
+    }
+  })
+
+  it('keeps preload image assets unique', () => {
+    expect(getPreloadImageCount()).toBe(new Set(gameImageAssets).size)
   })
 })

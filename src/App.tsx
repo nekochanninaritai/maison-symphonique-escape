@@ -35,8 +35,8 @@ import photoEImage from './assets/environments/photoE.png'
 import letterTrueRouteImage from './assets/environments/letter-true-route.jpg'
 import coffeeImage from './assets/environments/Puzzle 01/Coffee.jpg'
 import gateauChocolatImage from './assets/environments/Puzzle 01/GateauChocolat.jpg'
-import hotTeeImage from './assets/environments/Puzzle 01/HotTee.jpg'
-import iceTeeImage from './assets/environments/Puzzle 01/IceTee.jpg'
+import hotTeeImage from './assets/environments/Puzzle 01/HotTea.jpg'
+import iceTeeImage from './assets/environments/Puzzle 01/IceTea.jpg'
 import mangoCakeImage from './assets/environments/Puzzle 01/MangoCake.jpg'
 import shortCakeImage from './assets/environments/Puzzle 01/ShortCake.jpg'
 import doorKeyItemImage from './assets/environments/item/door-key.png'
@@ -154,7 +154,7 @@ const guestDatabaseUrl = 'https://wedding-web-baddb-default-rtdb.firebaseio.com/
 const puzzleHints: Record<string, { title: string; hints: string[] }> = {
   p01_waiting_room: {
     title: 'ティータイム',
-    hints: ['お皿とカップの組み合わせを、名前と画像の手がかりで見直す。', 'GateauChocolatにはCoffee、ShortCakeにはHotTee、MangoCakeにはIceTeeを合わせる。'],
+    hints: ['お皿とカップの組み合わせを、名前と画像の手がかりで見直す。', 'GateauChocolatにはCoffee、ShortCakeにはHotTea、MangoCakeにはIceTeaを合わせる。'],
   },
   p02_ceremony: {
     title: '誓いの灯',
@@ -2051,4 +2051,5 @@ function DebugState({ state }: { state: GameState }) {
 }
 
 export default App
+
 

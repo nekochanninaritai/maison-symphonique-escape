@@ -1,4 +1,4 @@
-import bgEntrance from '../assets/environments/bg-01-entrance.jpg'
+﻿import bgEntrance from '../assets/environments/bg-01-entrance.jpg'
 import bgWaitingRoom from '../assets/environments/bg-02-waiting-room.jpg'
 import bgDressingRoom from '../assets/environments/bg-03-dressing-room.jpg'
 import bgCeremony from '../assets/environments/bg-04-ceremony.jpg'
@@ -35,8 +35,8 @@ import receptionTableFocusLeft from '../assets/environments/reception-table-focu
 import receptionTableFocusRight from '../assets/environments/reception-table-focus_right.jpg'
 import coffee from '../assets/environments/Puzzle 01/Coffee.jpg'
 import gateauChocolat from '../assets/environments/Puzzle 01/GateauChocolat.jpg'
-import hotTee from '../assets/environments/Puzzle 01/HotTee.jpg'
-import iceTee from '../assets/environments/Puzzle 01/IceTee.jpg'
+import hotTee from '../assets/environments/Puzzle 01/HotTea.jpg'
+import iceTee from '../assets/environments/Puzzle 01/IceTea.jpg'
 import mangoCake from '../assets/environments/Puzzle 01/MangoCake.jpg'
 import shortCake from '../assets/environments/Puzzle 01/ShortCake.jpg'
 import doorKey from '../assets/environments/item/door-key.png'
@@ -135,3 +135,4 @@ export const preloadImages = (
     })
   })
 }
+

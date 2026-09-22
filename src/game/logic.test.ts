@@ -441,8 +441,8 @@ describe('PuzzleState', () => {
   it('uses the current P01 Tea Time pairing data', () => {
     expect(teaTimePairs.map((pair) => `${pair.drinkName}:${pair.sweetName}`)).toEqual([
       'Coffee:GateauChocolat',
-      'HotTee:ShortCake',
-      'IceTee:MangoCake',
+      'HotTea:ShortCake',
+      'IceTea:MangoCake',
     ])
     expect(correctTeaTimeSlots).toEqual({
       'gateau-chocolat': 'coffee',
@@ -2048,5 +2048,6 @@ describe('Regression: WARN-05 clock hint after normal ending', () => {
     expect(state.messageQueue.some((message) => message.includes('はじめてこの館'))).toBe(false)
   })
 })
+
 
 

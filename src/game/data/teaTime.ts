@@ -24,7 +24,7 @@ export const teaTimePairs: TeaPair[] = [
   {
     id: 'hot-tea-shortcake',
     drinkId: 'hot-tea',
-    drinkName: 'HotTee',
+    drinkName: 'HotTea',
     drinkIcon: 'HT',
     sweetId: 'shortcake',
     sweetName: 'ShortCake',
@@ -34,7 +34,7 @@ export const teaTimePairs: TeaPair[] = [
   {
     id: 'ice-tea-mango-cake',
     drinkId: 'ice-tea',
-    drinkName: 'IceTee',
+    drinkName: 'IceTea',
     drinkIcon: 'IT',
     sweetId: 'mango-cake',
     sweetName: 'MangoCake',
@@ -57,4 +57,5 @@ export const getTeaDrink = (drinkId: string): TeaPair | undefined => teaTimePair
 
 export const isTeaTimeSolved = (cupSlots: Record<string, string>): boolean =>
   teaTimePairs.every((pair) => cupSlots[pair.sweetId] === pair.drinkId)
+
 

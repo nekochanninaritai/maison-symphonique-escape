@@ -308,7 +308,6 @@ export const setClockTime = (state: GameState, time: string): GameState => {
       clockState: {
         ...state.clockState,
         currentTime: trueClockTarget,
-        canManualRotate: false,
       },
     }, ['――庭園の方から、かすかに音楽が聞こえる。'])
   }

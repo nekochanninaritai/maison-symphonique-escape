@@ -308,7 +308,6 @@ export const setClockTime = (state: GameState, time: string): GameState => {
       clockState: {
         ...state.clockState,
         currentTime: trueClockTarget,
-        canManualRotate: false,
       },
     }, ['――庭園の方から、かすかに音楽が聞こえる。'])
   }
@@ -441,10 +440,7 @@ export const solvePuzzle = (state: GameState, puzzleId: string, force = false): 
       : puzzleId === 'p02_ceremony'
           ? ['四つの灯が、静かに祭壇を照らした。']
           : puzzleId === 'p05_piano'
-                  ? [
-                      '最後の音が、静かな披露宴会場に響いた。',
-                      '――そのとき、館のどこかから、小さな鐘の音が響いた。',
-                    ]
+                  ? ['最後の音が、静かな披露宴会場に響いた。', '「招待状」を手に入れた。', '「時計の短針」を手に入れた。', '――そのとき、館のどこかから、小さな鐘の音が響いた。']
             : puzzleId === 'p06_grand_clock'
               ? ['――ゴーン。', '時計の奥で、古い歯車がゆっくりと動き始めた。', '……どこかで、重い扉の開く音がした。']
             : [`${puzzle.title} をSolvedにした。`]
@@ -908,7 +904,7 @@ const reduceCore = (state: GameState, action: GameAction): GameState => {
         }
         return withMessage(
           refreshPuzzleAvailability({
-            ...unlockMemory(obtainItem(obtainItem(consumeItem(state, 'small-key'), 'old-invitation'), 'clock-hour-hand'), 'melody'),
+            ...unlockMemory(obtainItem(consumeItem(state, 'small-key'), 'old-invitation'), 'melody'),
             flags: { ...state.flags, pianoSecretOpened: true, invitationObtained: true },
           }),
           ['――カチ。', '小さな収納が開いた。', '古い招待状を手に入れた。'],

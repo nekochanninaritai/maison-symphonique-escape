@@ -956,11 +956,13 @@ describe('PuzzleState', () => {
     expect(solvedState.flags.ceremonyLightVisible).toBe(true)
     expect(shouldShowCeremonyNavCue(solvedState)).toBe(true)
     expect(solvedState.flags.pianoMechanismUnlocked).toBe(true)
-    expect(solvedState.flags.invitationObtained).not.toBe(true)
-    expect(solvedState.inventory['old-invitation'].obtained).toBe(false)
-    expect(solvedState.inventory['clock-hour-hand'].obtained).toBe(false)
+    expect(solvedState.flags.invitationObtained).toBe(true)
+    expect(solvedState.inventory['old-invitation'].obtained).toBe(true)
+    expect(solvedState.inventory['clock-hour-hand'].obtained).toBe(true)
     expect(solvedState.messageQueue).toEqual([
       '最後の音が、静かな披露宴会場に響いた。',
+      '「招待状」を手に入れた。',
+      '「時計の短針」を手に入れた。',
       '――そのとき、館のどこかから、小さな鐘の音が響いた。',
     ])
     expect(state.puzzles.p05_piano.status).toBe('solved')
@@ -1106,50 +1108,23 @@ describe('PuzzleState', () => {
     expect(state.memories.melody.unlocked).toBe(true)
   })
 
-  it('P05 solved unlocks the piano mechanism but keeps the invitation and hour hand in the piano secret', () => {
+  it('P05 solved obtains the invitation and makes P06 available', () => {
     let state = createInitialState()
     state = solvePuzzle(state, 'p05_piano', true)
-
-    expect(state.flags.pianoMechanismUnlocked).toBe(true)
-    expect(state.flags.invitationObtained).not.toBe(true)
-    expect(state.inventory['old-invitation'].obtained).toBe(false)
-    expect(state.inventory['clock-hour-hand'].obtained).toBe(false)
-    expect(state.puzzles.p06_grand_clock.status).toBe('locked')
-  })
-
-  it('P06 becomes available after opening the piano secret but clock operation waits for both hands', () => {
-    let state = createInitialState()
-    state = solvePuzzle(state, 'p05_piano', true)
-
-    expect(state.puzzles.p06_grand_clock.status).toBe('locked')
-    expect(isP06ClockActive(state)).toBe(false)
-
-    state = reducer(state, {
-      type: 'SET_ITEM_OBTAINED',
-      itemId: 'small-key',
-      obtained: true,
-    })
-    state = reducer(state, {
-      type: 'SELECT_ITEM',
-      itemId: 'small-key',
-    })
-    state = reducer(state, {
-      type: 'USE_SELECTED_ITEM',
-      targetId: 'piano-keyhole',
-    })
 
     expect(state.inventory['old-invitation'].obtained).toBe(true)
     expect(state.inventory['clock-hour-hand'].obtained).toBe(true)
     expect(state.puzzles.p06_grand_clock.status).toBe('available')
+  })
+
+  it('P06 clock operation is unavailable before both clock hands are attached', () => {
+    let state = createInitialState()
+    state = solvePuzzle(state, 'p05_piano', true)
+
+    expect(state.puzzles.p06_grand_clock.status).toBe('available')
     expect(isP06ClockActive(state)).toBe(false)
 
-    state = reducer(state, {
-      type: 'SET_ITEM_OBTAINED',
-      itemId: 'clock-hand',
-      obtained: true,
-    })
     state = reducer(state, { type: 'ATTACH_CLOCK_HAND' })
-
     expect(isP06ClockActive(state)).toBe(true)
   })
 

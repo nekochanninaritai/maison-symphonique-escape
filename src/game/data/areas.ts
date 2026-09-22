@@ -19,25 +19,25 @@ export const areas: Record<string, Area> = {
         focusScene: {
           id: 'focus-grand-clock',
           title: '古い大時計',
-          description: 'Maison Symphoniqueの入口にある大時計。長針だけが欠けている。',
+          description: 'Maison Symphoniqueの入口にある大時計。文字盤を見ると、長針も短針も失われている。',
         },
         message: (state) => {
           if (state.normalEndingCleared && state.clockState.handAttached && !state.trueRouteUnlocked && !state.memories.september23?.unlocked) {
             return trueClockMessages.clockHint
           }
           if (state.normalEndingCleared && state.clockState.handAttached && !state.trueRouteUnlocked) {
-            return ['時計は止まっている。', '長針に触れると、わずかに動いた。']
+            return ['時計は止まっている。', '短針と長針に触れると、わずかに動いた。']
           }
           if (state.flags.invitationObtained && state.puzzles.p06_grand_clock?.status !== 'solved') {
-            return ['時計は静かに止まっている。', '長針に触れると、わずかに動いた。']
+            return ['時計は静かに止まっている。', '短針と長針に触れると、わずかに動いた。']
           }
           if (state.puzzles.p06_grand_clock?.status === 'solved') {
             return ['大時計は15:30を指している。']
           }
           if (state.clockState.handAttached) {
-            return ['長針は元の場所に戻っている。', 'しかし、時計は動かない。']
+            return ['長針と短針は元の場所に戻っている。', 'しかし、時計は動かない。']
           }
-          return ['時計は止まっている。', '長針がない。']
+          return ['時計は止まっている。', '文字盤を見ると、長針も短針も失われている。']
         },
       },
       {
@@ -50,7 +50,7 @@ export const areas: Record<string, Area> = {
         id: 'entrance-desk',
         label: '受付台',
         position: { x: 45, y: 60, width: 39, height: 25 },
-        message: ['受付台には、まだ名前のない芳名帳が置かれている。'],
+        message: ['受付台には、芳名帳が置かれている。'],
         flagUpdate: { foundReceptionDesk: true },
         },
     {
@@ -93,7 +93,7 @@ export const areas: Record<string, Area> = {
         id: 'waiting-sofa',
         label: 'ソファ',
         position: { x: 37, y: 40, width: 60, height: 18 },
-        message: ['誰かを待っていた温度だけが、布地に残っている。'],
+            message: ['柔らかなソファ。特に変わったところはなさそうだ。'],
       },
       {
         id: 'tea-table',
@@ -102,12 +102,12 @@ export const areas: Record<string, Area> = {
         focusScene: {
           id: 'focus-tea-time',
           title: 'Puzzle 01「ティータイム」',
-          description: '四人分のティーセットが並んでいる。どうやら、カップの位置が入れ替わっているようだ。',
+          description: '三人分のティーセットが並んでいる。どうやら、カップの位置が入れ替わっているようだ。',
         },
         message: (state: GameState) =>
           state.puzzles.p01_waiting_room?.status === 'solved'
-            ? ['四つのティーセットは、静かに整っている。']
-            : ['四人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
+                ? ['三つのティーセットは、静かに整っている。']
+            : ['三人分のティーセットが並んでいる。', 'カップの位置が入れ替わっているようだ。'],
       },
       {
         id: 'framed-picture',
@@ -411,6 +411,18 @@ export const areas: Record<string, Area> = {
           description: '緑のベンチの上に、古い本が置かれている。',
         },
           message: ['何気ない一日の記憶を、そっと閉じ込めた本のようだ。'],
+      },
+      {
+        id: 'garden-true-light',
+        label: '淡い光',
+        position: { x: 43, y: 60, width: 16, height: 10 },
+        visibilityCondition: (state) =>
+          state.normalEndingCleared === true &&
+          state.inventory.letter?.obtained === true &&
+          state.inventory.letter?.consumed !== true &&
+          state.flags.trueGardenMusicHeard === true &&
+          state.trueEndingCleared !== true,
+        message: ['石畳の中央が、淡く光っている。'],
       },
       {
         id: 'garden-to-reception',

@@ -134,81 +134,25 @@ export const loadGame = (): GameState => {
     }
     if (restored.puzzles.p05_piano?.status === 'solved') {
       restored.pianoPerformance = { input: [] }
-
-      restored.flags = {
-        ...restored.flags,
-        pianoMechanismUnlocked: true,
-        ceremonyLightVisible: true,
+      restored.flags = { ...restored.flags, pianoMechanismUnlocked: true, ceremonyLightVisible: true, invitationObtained: true }
+      restored.inventory = {
+        ...restored.inventory,
+        'old-invitation': restored.inventory['old-invitation']?.consumed
+          ? restored.inventory['old-invitation']
+          : { ...initial.inventory['old-invitation'], obtained: true, consumed: false },
+        'clock-hour-hand': restored.clockState.handAttached || restored.inventory['clock-hour-hand']?.consumed
+          ? { ...initial.inventory['clock-hour-hand'], obtained: false, consumed: true }
+          : { ...initial.inventory['clock-hour-hand'], obtained: true, consumed: false },
       }
-
+      restored.clockState = {
+        ...restored.clockState,
+        hourHandObtained: true,
+      }
       if (restored.flags.pianoSecretOpened) {
-        restored.flags = {
-          ...restored.flags,
-          pianoSecretOpened: true,
-          invitationObtained: true,
-        }
-
+        restored.flags = { ...restored.flags, pianoSecretOpened: true, invitationObtained: true }
         restored.inventory = {
           ...restored.inventory,
-
-          'small-key': {
-            ...initial.inventory['small-key'],
-            obtained: false,
-            consumed: true,
-          },
-
-          'old-invitation': restored.inventory['old-invitation']?.consumed
-            ? restored.inventory['old-invitation']
-            : {
-                ...initial.inventory['old-invitation'],
-                obtained: true,
-                consumed: false,
-              },
-
-          'clock-hour-hand':
-            restored.clockState.handAttached ||
-            restored.inventory['clock-hour-hand']?.consumed
-              ? {
-                  ...initial.inventory['clock-hour-hand'],
-                  obtained: false,
-                  consumed: true,
-                }
-              : {
-                  ...initial.inventory['clock-hour-hand'],
-                  obtained: true,
-                  consumed: false,
-                },
-        }
-
-        restored.clockState = {
-          ...restored.clockState,
-          hourHandObtained: true,
-        }
-      } else {
-        restored.flags = {
-          ...restored.flags,
-          invitationObtained: false,
-        }
-
-        restored.inventory = {
-          ...restored.inventory,
-
-          'old-invitation': {
-            ...initial.inventory['old-invitation'],
-            obtained: false,
-            consumed: false,
-          },
-
-          'clock-hour-hand': {
-            ...initial.inventory['clock-hour-hand'],
-            obtained: false,
-            consumed: false,
-          },
-        }
-
-        restored.clockState = {
-          ...restored.clockState,
-          hourHandObtained: false,
+          'small-key': { ...initial.inventory['small-key'], obtained: false, consumed: true },
         }
       }
     }

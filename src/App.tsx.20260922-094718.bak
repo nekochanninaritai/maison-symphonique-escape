@@ -44,20 +44,6 @@ import itemPhotoBImage from './assets/environments/item/item-photoB.jpg'
 import itemPhotoCImage from './assets/environments/item/item-photoC.jpg'
 import itemPhotoDImage from './assets/environments/item/item-photoD.jpg'
 import minuteHandItemImage from './assets/environments/item/minute-hand.png'
-import bgmChapter1 from './assets/audio/1章.mp3'
-import bgmChapter2 from './assets/audio/2章.mp3'
-import bgmChapter3 from './assets/audio/3章.mp3'
-import bgmChapter4 from './assets/audio/4章.mp3'
-import bgmEnding from './assets/audio/エンディング.mp3'
-
-const bgmByArea: Record<AreaId, string> = {
-  'entrance': bgmChapter1,
-  'waiting-room': bgmChapter2,
-  'dressing-room': bgmChapter1,
-  'ceremony': bgmChapter3,
-  'reception': bgmChapter3,
-  'garden': bgmChapter4,
-}
 
 const dispatchAndSave = (dispatch: React.Dispatch<GameAction>, action: GameAction) => dispatch(action)
 const puzzleOrder = ['p01_waiting_room', 'p02_ceremony', 'p03_reception', 'p04_sheet_overlay', 'p05_piano', 'p06_grand_clock', 'p07_garden_final']
@@ -179,7 +165,7 @@ const audioSettingsKey = `${gameConfig.saveKey}-audio-settings`
 const defaultAudioSettings: AudioSettings = {
   bgmEnabled: true,
   seEnabled: true,
-  bgmVolume: 0.30,
+  bgmVolume: 0.72,
   seVolume: 0.68,
 }
 
@@ -241,8 +227,6 @@ function App() {
   const [guestListOpen, setGuestListOpen] = useState(false)
   const [guestList, setGuestList] = useState<GuestListState>({ status: 'idle', names: [] })
   const [audioSettings, setAudioSettings] = useState<AudioSettings>(readAudioSettings)
-  const bgmAudioRef = useRef<HTMLAudioElement | null>(null)
-  const currentBgmRef = useRef<string | null>(null)
   const [logHistory, setLogHistory] = useState<string[]>([])
   const lastMessageQueueKeyRef = useRef('')
 
@@ -258,74 +242,6 @@ function App() {
       // Audio settings are optional; game save remains independent.
     }
   }, [audioSettings])
-
-  useEffect(() => {
-    let nextBgm: string | null = null
-
-    if (state.screen === 'game') {
-      nextBgm = bgmByArea[state.currentArea]
-    } else if (state.screen === 'normalEnd' || state.screen === 'photoE' || state.screen === 'trueFade') {
-      nextBgm = bgmChapter4
-    } else if (state.screen === 'trueEnd') {
-      nextBgm = bgmEnding
-    }
-
-    const currentAudio = bgmAudioRef.current
-
-    if (!nextBgm) {
-      if (currentAudio) {
-        currentAudio.pause()
-      }
-      currentBgmRef.current = null
-      return
-    }
-
-    if (currentBgmRef.current !== nextBgm) {
-      if (currentAudio) {
-        currentAudio.pause()
-      }
-
-      const audio = new Audio(nextBgm)
-      audio.loop = true
-      audio.volume = audioSettings.bgmVolume
-
-      bgmAudioRef.current = audio
-      currentBgmRef.current = nextBgm
-
-      if (audioSettings.bgmEnabled) {
-        void audio.play().catch(() => {
-          // Browser autoplay policy may block playback until user interaction.
-        })
-      }
-
-      return
-    }
-
-    if (!currentAudio) return
-
-    currentAudio.volume = audioSettings.bgmVolume
-
-    if (audioSettings.bgmEnabled) {
-      void currentAudio.play().catch(() => {
-        // Browser autoplay policy may block playback until user interaction.
-      })
-    } else {
-      currentAudio.pause()
-    }
-  }, [
-    state.screen,
-    state.currentArea,
-    audioSettings.bgmEnabled,
-    audioSettings.bgmVolume,
-  ])
-
-  useEffect(() => {
-    return () => {
-      bgmAudioRef.current?.pause()
-      bgmAudioRef.current = null
-      currentBgmRef.current = null
-    }
-  }, [])
 
   useEffect(() => {
     if (state.messageQueue.length === 0) {

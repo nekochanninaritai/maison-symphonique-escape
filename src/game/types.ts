@@ -1,4 +1,4 @@
-export type Screen = 'title' | 'prologue' | 'game' | 'normalEnd' | 'photoE' | 'trueEnd'
+export type Screen = 'title' | 'prologue' | 'game' | 'normalEnd' | 'photoE' | 'trueFade' | 'trueEnd'
 
 export type AreaId =
   | 'entrance'
@@ -96,6 +96,7 @@ export type Puzzle = {
 
 export type ClockState = {
   handObtained: boolean
+  hourHandObtained: boolean
   handAttached: boolean
   currentTime: string
   canManualRotate: boolean
@@ -206,6 +207,7 @@ export type GameAction =
   | { type: 'GO_NORMAL_END' }
   | { type: 'MARK_NORMAL_END_CLEARED' }
   | { type: 'UNLOCK_TRUE_ROUTE' }
+  | { type: 'OPEN_TRUE_GARDEN_LIGHT' }
   | { type: 'GO_TRUE_END' }
   | { type: 'RESET_TRUE_ROUTE' }
   | { type: 'CLEAR_MESSAGES' }

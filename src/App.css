@@ -833,6 +833,49 @@ h3 {
   text-shadow: 0 1px 6px #000;
 }
 
+.stageMessageOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 56%;
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  padding: 0 clamp(12px, 4vw, 22px);
+  pointer-events: none;
+}
+
+.stageMessageBox {
+  width: min(92%, 440px);
+  max-height: min(28svh, 172px);
+  overflow-y: auto;
+  padding: 12px 14px;
+  border: 1px solid rgba(235, 232, 224, 0.62);
+  border-radius: 10px;
+  color: #fffaf0;
+  background:
+    linear-gradient(180deg, rgba(34, 28, 25, 0.84), rgba(20, 18, 17, 0.78));
+  box-shadow:
+    0 14px 34px rgba(10, 8, 7, 0.34),
+    inset 0 1px 0 rgba(255, 250, 240, 0.18);
+  font-size: clamp(0.82rem, 3.5vw, 0.96rem);
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(2px);
+  pointer-events: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stageMessageBox p {
+  margin: 0;
+}
+
+.stageMessageBox p + p {
+  margin-top: 2px;
+}
+
 .hotspot.stageMoveHotspot {
   display: grid;
   place-items: center;
@@ -854,7 +897,8 @@ h3 {
   background: rgba(43, 37, 34, 0.48);
 }
 
-.hotspot.hotspot-ceremony-light {
+.hotspot.hotspot-ceremony-light,
+.hotspot.hotspot-garden-true-light {
   border-radius: 999px;
   background: radial-gradient(circle, rgba(255, 238, 178, 0.54), rgba(255, 233, 166, 0.2) 42%, rgba(255, 233, 166, 0.04) 68%, transparent 78%);
   box-shadow:
@@ -864,7 +908,9 @@ h3 {
 }
 
 .hotspot.hotspot-ceremony-light::before,
-.hotspot.hotspot-ceremony-light::after {
+.hotspot.hotspot-ceremony-light::after,
+.hotspot.hotspot-garden-true-light::before,
+.hotspot.hotspot-garden-true-light::after {
   content: '';
   position: absolute;
   inset: 16%;
@@ -872,19 +918,22 @@ h3 {
   pointer-events: none;
 }
 
-.hotspot.hotspot-ceremony-light::before {
+.hotspot.hotspot-ceremony-light::before,
+.hotspot.hotspot-garden-true-light::before {
   background: radial-gradient(circle, rgba(255, 250, 226, 0.72), rgba(255, 238, 178, 0.18) 46%, transparent 68%);
   animation: altarSolvedCandleLight 900ms ease-out both;
 }
 
-.hotspot.hotspot-ceremony-light::after {
+.hotspot.hotspot-ceremony-light::after,
+.hotspot.hotspot-garden-true-light::after {
   inset: 28%;
   background: rgba(255, 250, 226, 0.72);
   box-shadow: 0 0 18px rgba(255, 250, 226, 0.76);
   opacity: 0.64;
 }
 
-.hotspot.hotspot-ceremony-light.visible {
+.hotspot.hotspot-ceremony-light.visible,
+.hotspot.hotspot-garden-true-light.visible {
   background: radial-gradient(circle, rgba(255, 238, 178, 0.54), rgba(255, 233, 166, 0.2) 42%, rgba(255, 233, 166, 0.04) 68%, transparent 78%);
 }
 
@@ -2298,12 +2347,38 @@ h3 {
   animation: endingFadeIn 700ms ease both;
 }
 
+.trueEndFade {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 62%, rgba(255, 244, 207, 0.28), rgba(255, 250, 238, 0.12) 30%, rgba(255, 250, 238, 0) 55%),
+    rgba(255, 250, 240, 0.12);
+  animation: trueEndFadeWash 2600ms ease-in-out forwards;
+}
+
+.trueEndFadeGlow {
+  width: min(64vw, 360px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 255, 248, 0.96), rgba(255, 236, 184, 0.56) 34%, rgba(255, 236, 184, 0.14) 62%, transparent 76%);
+  filter: blur(2px);
+  box-shadow:
+    0 0 40px rgba(255, 246, 218, 0.92),
+    0 0 90px rgba(255, 232, 170, 0.62);
+  animation: trueEndGlowBloom 2600ms ease-in-out forwards;
+}
+
 .trueEnding {
   color: #fffaf0;
   background:
     linear-gradient(rgba(32, 28, 24, 0.36), rgba(32, 28, 24, 0.58)),
     url('./assets/environments/photoE.png') center / cover no-repeat;
   text-shadow: 0 1px 8px rgba(24, 18, 14, 0.54);
+  animation: endingFadeIn 1200ms ease both;
 }
 
 .trueEnding .endingDate {
@@ -2313,6 +2388,33 @@ h3 {
 .trueEnding .memoryMeter,
 .trueEnding button {
   text-shadow: none;
+}
+
+@keyframes trueEndFadeWash {
+  0% {
+    background-color: rgba(255, 250, 240, 0);
+  }
+  52% {
+    background-color: rgba(255, 250, 240, 0.52);
+  }
+  100% {
+    background-color: rgba(255, 253, 246, 1);
+  }
+}
+
+@keyframes trueEndGlowBloom {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.48);
+  }
+  54% {
+    opacity: 1;
+    transform: scale(1.65);
+  }
+  100% {
+    opacity: 0.98;
+    transform: scale(4.2);
+  }
 }
 
 @keyframes endingFadeIn {
@@ -2904,13 +3006,6 @@ h3 {
   justify-items: center;
   gap: 12px;
   margin: 14px 0;
-}
-
-.clockCabinetAsset {
-  width: min(42vw, 170px);
-  aspect-ratio: 2 / 3;
-  background: url('./assets/environments/clock-01-grand-clock.jpg') center / contain no-repeat;
-  filter: drop-shadow(0 12px 22px rgba(43, 37, 34, 0.22));
 }
 
 .clockReadout {

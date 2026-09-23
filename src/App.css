@@ -2438,7 +2438,7 @@ h3 {
   color: #fffaf0;
   background:
     linear-gradient(rgba(32, 28, 24, 0.36), rgba(32, 28, 24, 0.58)),
-    url('./assets/environments/photoE.jpg') center / cover no-repeat;
+    url('./assets/environments/photoE.jpg') 34% center / cover no-repeat;
   text-shadow: 0 1px 8px rgba(24, 18, 14, 0.54);
   animation: endingFadeIn 1200ms ease both;
 }
@@ -3393,6 +3393,12 @@ h3 {
   .stage.scene-reception.receptionView-piano-area,
   .stage.scene-reception-memory.receptionView-piano-area {
     background-position: 48% 50%;
+  }
+
+  .trueEnding {
+    background:
+      linear-gradient(rgba(32, 28, 24, 0.36), rgba(32, 28, 24, 0.58)),
+      url('./assets/environments/photoE.jpg') 28% center / cover no-repeat;
   }
 
   .receptionBackButton {
